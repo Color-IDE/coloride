@@ -29,17 +29,18 @@ try {
   page.on("pageerror", error => pageErrors.push(error.message));
   await expect.poll(async () => {try {runtime = JSON.parse(await readFile(join(sandbox,'user-data','terminal-host.json'),'utf8'));return true;}catch{return false;}},{timeout:60000}).toBe(true);
   await page.route('https://**/*', route => route.abort());
-  await expect(page.getByRole('button', {name:'Explorer', exact:true})).toBeVisible({timeout:60000});
+  await expect(page.getByRole('menuitem', {name:'Open Project', exact:true})).toBeVisible({timeout:60000});
   await expect(page.locator('html')).not.toHaveAttribute('data-startup', /.+/);
   await (await app.browserWindow(page)).evaluate(win => { win.webContents.setBackgroundThrottling(false); win.showInactive(); });
   expect(await app.evaluate(({app}) => app.getName())).toBe('Coloride');
   await expect(page).toHaveTitle('Coloride');
   await expect(page.getByRole('img', {name: 'Coloride', exact: true})).toBeVisible();
   await expect.poll(() => page.getByRole('img', {name:'Coloride', exact:true}).evaluate(image =>
-    image.complete && image.naturalWidth > 0 && image.src.includes('coloride-wordmark'))).toBe(true);
+    image.complete && image.naturalWidth > 0 && image.src.includes('coloride-mark'))).toBe(true);
   await page.screenshot({path: resolve('artifacts/terminal-smoke/coloride-welcome.png')});
   await app.evaluate(({dialog}, folder) => { dialog.showOpenDialog = async () => ({canceled:false,filePaths:[folder]}); }, join(sandbox,'project with spaces'));
-  await page.evaluate(() => window.dispatchEvent(new CustomEvent('coloride:app-menu-action', {detail:'open-local-folder'})));
+  await page.getByRole('menuitem', {name:'Open Project', exact:true}).click();
+  await expect(page.getByRole('button', {name:'Explorer', exact:true})).toBeVisible();
   await expect(page.getByLabel('Workspace file tree')).toBeVisible();
   // Real shell actions use the shared notification viewport, with one notice
   // per operation even if the menu action is repeated.
@@ -48,7 +49,7 @@ try {
   }
   const notices = page.getByRole('region', {name:'Notifications', exact:true});
   await expect(notices.locator('.notification-card')).toHaveCount(1);
-  await expect(notices).toContainText('Connect to a server via SSH');
+  await expect(notices).toContainText('SSH connections are turned off in this build.');
   await expect(notices.locator('li')).toHaveCSS('opacity', '1');
   await page.screenshot({path: resolve('artifacts/notifications/local-workspace.png')});
   await notices.getByRole('button', {name:'Dismiss: Workspace notice', exact:true}).click();
