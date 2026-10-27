@@ -70,7 +70,7 @@ Or export a .p12 from another Mac and:
 EOF
     exit 1
   fi
-  echo "    Using CSC_LINK=$CSC_LINK"
+  echo "    Using the certificate supplied through CSC_LINK."
 else
   echo "    Found Developer ID Application identity."
   if [[ -z "${CSC_NAME:-}" ]]; then
