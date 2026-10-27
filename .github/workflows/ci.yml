@@ -88,6 +88,8 @@ jobs:
           node-version: '22'
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Install the Electron binary for clean checkouts
+        run: node node_modules/electron/install.js
       - run: python -m pip install -e 'core/ide-host[dev]'
       - name: PTY and protocol regressions
         run: python -m pytest core/ide-host/tests/terminal/test_local_terminal_protocol.py core/ide-host/tests/terminal/test_local_pty.py core/ide-host/tests/terminal/test_terminal_sessions.py core/ide-host/tests/terminal/test_shell_integration.py -q
