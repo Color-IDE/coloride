@@ -189,7 +189,11 @@ export function App() {
     "terminal",
   );
   /** Agent chat docked on the right inside Explorer. */
-  const [explorerAgentOpen, setExplorerAgentOpen] = useState(true);
+  const [explorerAgentOpen, setExplorerAgentOpen] = useState(() =>
+    appPreferences.startupBehavior === "restore-session"
+      ? lastSessionRef.current.rightPanelOpen
+      : true,
+  );
   const agentWorkspaceResolverRef = useRef<
     ((path: string | null) => void) | null
   >(null);
@@ -421,9 +425,10 @@ export function App() {
       activeTab,
       serverSubTab,
       sidePanelOpen,
+      rightPanelOpen: explorerAgentOpen,
       terminalOpen,
     });
-  }, [activeTab, serverSubTab, sidePanelOpen, terminalOpen]);
+  }, [activeTab, serverSubTab, sidePanelOpen, explorerAgentOpen, terminalOpen]);
 
   useEffect(() => {
     const previous = previousConnectionStateRef.current;

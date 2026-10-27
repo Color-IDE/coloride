@@ -60,6 +60,18 @@ const menuGroups: SettingsMenuGroup[] = [
 ];
 
 const menuItems = menuGroups.flatMap(group => group.items);
+const settingsSubgroups: Record<SettingsSection, string[]> = {
+  general: ["General", "Session", "Notifications"],
+  appearance: ["Theme", "Theme customization", "Preferences"],
+  shortcuts: ["Navigation", "Files", "Terminal", "Agents", "Editor"],
+  editor: ["Layout", "Indentation", "Display", "Files", "Interaction"],
+  terminal: ["Cursor", "Buffer", "Interaction"],
+  agent: ["Autonomy", "Activity"],
+  security: ["Workspace protection", "SSH connections", "Issue reports", "Local privacy"],
+  updates: ["Updates", "Installed version", "Available release"],
+  diagnostics: ["System checks", "Runtime", "Diagnostic report"],
+  about: ["Application", "Resources", "Legal"],
+};
 const sections: Record<SettingsSection, ComponentType> = {
   general: GeneralSettings, appearance: AppearanceSettings, shortcuts: KeyboardShortcutsSettings,
   editor: EditorSettings, terminal: TerminalSettings, agent: AgentSettings,
@@ -69,6 +81,8 @@ const resolveSection = (section?: SettingsSection): SettingsSection => section &
 
 export function SettingsView({ initialSection = "general", onSectionChange, sidePanelOpen = true, onShowNavigation }: SettingsViewProps) {
   const [activeSection, setActiveSection] = useState(() => resolveSection(initialSection));
+  const [expandedSections, setExpandedSections] = useState<SettingsSection[]>(() => [resolveSection(initialSection)]);
+  const [activeGroup, setActiveGroup] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [matches, setMatches] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -92,8 +106,23 @@ export function SettingsView({ initialSection = "general", onSectionChange, side
   const selectSection = useCallback((section: SettingsSection) => {
     setQuery("");
     setActiveSection(section);
+    setActiveGroup(null);
     onSectionChange?.(section);
     contentRef.current?.scrollTo({ top: 0 });
+  }, [onSectionChange]);
+  const toggleSection = useCallback((section: SettingsSection) => {
+    setExpandedSections(current => current.includes(section) ? current.filter(item => item !== section) : [...current, section]);
+  }, []);
+  const openGroup = useCallback((section: SettingsSection, title: string) => {
+    setQuery("");
+    setActiveSection(section);
+    setActiveGroup(title);
+    setExpandedSections(current => current.includes(section) ? current : [...current, section]);
+    onSectionChange?.(section);
+    const slug = title.toLocaleLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    requestAnimationFrame(() => {
+      contentRef.current?.querySelector(`#settings-group-${slug}`)?.scrollIntoView({ block: "start" });
+    });
   }, [onSectionChange]);
 
   // Search the rendered labels and descriptions, so new settings are included
@@ -131,18 +160,33 @@ export function SettingsView({ initialSection = "general", onSectionChange, side
       <div className="settings-layout">
         <aside className="settings-navigation" hidden={!sidePanelOpen}>
           <label className="settings-search">
-            <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4 4"/></svg>
+            <svg aria-hidden="true" fill="none" height="14" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0 0h24v24H0z" fill="none" />
+              <path d="m21 21-4.486-4.494M19 10.5a8.5 8.5 0 1 1-17 0 8.5 8.5 0 0 1 17 0Z" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="2" />
+            </svg>
             <input ref={searchRef} aria-label="Search settings" placeholder="Search settings…" value={query} onChange={event => setQuery(event.target.value)} />
-            {query && <button type="button" aria-label="Clear settings search" onClick={() => { setQuery(""); searchRef.current?.focus(); }}>×</button>}
+
           </label>
           <div className="settings-navigation-scroll-surface vertical-scroll-surface">
             <nav ref={navigationRef} aria-label="Settings sections" className="settings-categories filetree-scroll">
-              {menuGroups.map(group => <section key={group.id}>
-                <h2>{group.label}</h2>
-                {group.items.map(({id, label, icon: Icon}) => <button type="button" key={id} aria-current={!searching && activeSection === id ? "page" : undefined} onClick={() => selectSection(id)}>
-                  {Icon && <Icon />}<span>{label}</span><span className="settings-category-arrow" aria-hidden="true">›</span>
-                </button>)}
-              </section>)}
+              {menuItems.map(({id, label}) => {
+                const open = !searching && expandedSections.includes(id);
+                const groups = settingsSubgroups[id];
+                return <div className={`settings-nav-item${open ? " is-open" : ""}`} key={id}>
+                  <div className="settings-nav-row">
+                    <button type="button" className="settings-nav-label" aria-current={!searching && activeSection === id && !activeGroup ? "page" : undefined} onClick={() => selectSection(id)}>
+                      <span className="settings-nav-toggle" role="button" tabIndex={0} aria-expanded={open} aria-label={open ? `Collapse ${label}` : `Expand ${label}`} onClick={event => { event.stopPropagation(); toggleSection(id); }} onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); toggleSection(id); } }}>
+                        <SettingsNavChevron open={open} />
+                      </span>
+                      <span>{label}</span>
+                    </button>
+                  </div>
+                  {open && groups.length > 0 && <div className="settings-subnav">
+                    <span className="settings-subnav-guide" aria-hidden="true" />
+                    {groups.map(title => <button type="button" key={title} aria-current={!searching && activeSection === id && activeGroup === title ? "page" : undefined} onClick={() => openGroup(id, title)}>{title}</button>)}
+                  </div>}
+                </div>;
+              })}
             </nav>
             <VerticalScrollHairline targetRef={navigationRef} label="Settings categories scroll" />
           </div>
@@ -164,6 +208,16 @@ export function SettingsView({ initialSection = "general", onSectionChange, side
         </section>
       </div>
     </div>
+  );
+}
+
+function SettingsNavChevron({ open }: { open: boolean }) {
+  return (
+    <span className={`settings-category-arrow${open ? " is-open" : ""}`} aria-hidden="true">
+      <svg fill="none" height="12" viewBox="0 0 24 24" width="12" xmlns="http://www.w3.org/2000/svg">
+        <path d="m4 9 8 8 8-8" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" transform="rotate(-90 12 12)" />
+      </svg>
+    </span>
   );
 }
 

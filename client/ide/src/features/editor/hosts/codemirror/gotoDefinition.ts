@@ -1,5 +1,5 @@
 /**
- * Cmd/Ctrl + hover / click → go to definition (VS Code-like).
+ * Cmd/Ctrl + hover or click opens the definition.
  *
  * Hover/click targets in code files:
  *   - identifiers (variables, properties, types, methods, JSX components)

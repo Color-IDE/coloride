@@ -7,7 +7,7 @@ import { type FileTreeItem } from "./types";
 
 export const TREE_DND_MIME = "application/x-coloride-tree-item";
 
-/** Fixed row height (VS Code-like compact rows). Enables O(1) windowing for huge trees. */
+/** Fixed row height. Enables O(1) windowing for huge trees. */
 export const TREE_ROW_HEIGHT = 22;
 
 /** Matches `p-1` on the scroll container. */

@@ -1730,7 +1730,7 @@ async function createWindow() {
   applyAppIcon();
   const appIconPath = resolveAppIconPath();
 
-  // VS Code pattern: macOS keeps native NSWindow (do NOT set frame:false).
+  // macOS keeps the native window frame. Do not set frame:false.
   // Keep native traffic lights and resizing. The compositor must be transparent
   // from construction for the startup material to sample the desktop.
   /** @type {import('electron').BrowserWindowConstructorOptions} */

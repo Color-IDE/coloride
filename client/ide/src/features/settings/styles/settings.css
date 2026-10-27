@@ -12,7 +12,7 @@ body[data-theme="light"] .settings-select svg {
 body[data-theme="light"] .settings-select-menu {
   border: 0 !important;
   background: #fff !important;
-  box-shadow: 0 12px 28px rgb(24 24 27 / 14%) !important;
+  box-shadow: none !important;
 }
 
 body[data-theme="light"] .settings-select-option {
@@ -512,26 +512,40 @@ body[data-theme="light"] .server-dashboard-scroll::-webkit-scrollbar-thumb {
   flex-direction: column;
   width: 228px;
   flex-shrink: 0;
-  padding: 23px 12px 12px;
+  padding: 23px 0 12px 12px;
   border-right: 1px solid var(--ui-border-subtle);
   background: #1d1d1d;
 }
 .settings-search {
   display: flex;
   align-items: center;
-  gap: 7px;
-  height: 32px;
+  gap: 8px;
+  height: 26px;
   flex-shrink: 0;
-  padding: 0 9px;
-  margin: 0 2px 20px;
-  border: 1px solid var(--ui-border-subtle);
-  border-radius: 5px;
-  background: var(--ui-surface);
+  padding: 3px 8px;
+  margin: 0 12px 8px 0;
+  border: 0;
+  border-radius: 4px;
+  background: #2a2a2a;
   color: var(--ui-text-muted);
 }
+.settings-search:hover,
 .settings-search:focus-within {
-  border-color: var(--ui-text-muted);
-  box-shadow: 0 0 0 2px rgb(128 128 128 / 9%);
+  border: 0;
+  background: #323232;
+  box-shadow: none;
+  color: var(--ui-text-primary);
+}
+body[data-theme=light] .settings-search {
+  border: 0;
+  background: #f1f2f3;
+}
+body[data-theme=light] .settings-search:hover,
+body[data-theme=light] .settings-search:focus-within {
+  background: #e7e7ea;
+}
+.settings-search svg {
+  flex-shrink: 0;
 }
 .settings-search input {
   width: 100%;
@@ -557,24 +571,14 @@ body[data-theme="light"] .server-dashboard-scroll::-webkit-scrollbar-thumb {
   flex: 1;
   overflow: auto;
 }
-.settings-categories section {
-  margin-bottom: 21px;
-}
-.settings-categories h2 {
-  margin: 0 10px 7px;
-  color: var(--ui-text-muted);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: .045em;
-}
 .settings-categories button {
   display: flex;
   align-items: center;
-  gap: 10px;
-  width: 100%;
-  min-height: 33px;
-  padding: 7px 10px;
-  margin: 2px 0;
+  gap: 8px;
+  width: calc(100% - 12px);
+  min-height: 26px;
+  padding: 3px 8px;
+  margin: 1px 12px 1px 0;
   border: 0;
   border-radius: 4px;
   background: transparent;
@@ -588,6 +592,10 @@ body[data-theme="light"] .server-dashboard-scroll::-webkit-scrollbar-thumb {
   height: 15px;
   flex-shrink: 0;
 }
+.settings-category-arrow svg {
+  width: 12px;
+  height: 12px;
+}
 .settings-categories button:hover {
   background: var(--ui-tab-hover);
   color: var(--ui-text-primary);
@@ -596,10 +604,77 @@ body[data-theme="light"] .server-dashboard-scroll::-webkit-scrollbar-thumb {
   background: var(--ui-tab-active);
   color: var(--ui-text-primary);
 }
+.settings-nav-row {
+  display: flex;
+  align-items: stretch;
+}
+.settings-nav-label {
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+  padding-left: 4px;
+}
+.settings-nav-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  margin-left: -2px;
+  border-radius: 4px;
+  color: #878888;
+  opacity: .55;
+}
+.settings-nav-toggle:hover {
+  background: var(--ui-tab-hover);
+  opacity: .9;
+}
 .settings-category-arrow {
-  margin-left: auto;
-  font-size: 16px;
-  opacity: .5;
+  display: flex;
+  color: inherit;
+  opacity: 1;
+}
+.settings-category-arrow svg {
+  display: block;
+}
+.settings-category-arrow.is-open svg {
+  transform: rotate(90deg);
+}
+.settings-subnav {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  margin: 1px 0 2px;
+  padding-left: 0;
+}
+.settings-subnav-guide {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 14px;
+  border-left: 2px solid rgb(135 136 136 / 20%);
+  pointer-events: none;
+  transition: border-color 150ms ease;
+}
+.settings-nav-item:hover .settings-subnav-guide {
+  border-left-color: rgb(135 136 136 / 30%);
+}
+.settings-subnav button {
+  position: relative;
+  min-height: 26px;
+  margin: 0;
+  padding: 3px 8px 3px 30px;
+  color: var(--ui-text-muted);
+  font-size: 12px;
+}
+.settings-subnav button:hover {
+  background: var(--ui-tab-hover);
+  color: var(--ui-text-primary);
+}
+.settings-subnav button[aria-current=page] {
+  background: var(--ui-tab-active);
+  color: var(--ui-text-primary);
 }
 .settings-main {
   display: flex;
@@ -615,6 +690,18 @@ body[data-theme="light"] .server-dashboard-scroll::-webkit-scrollbar-thumb {
   overflow-x: hidden;
   padding: 0 32px 32px;
 }
+.settings-shortcut-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  margin: 0 -32px;
+  padding: 16px 32px 10px;
+  background: var(--ui-surface, #171717);
+}
+.settings-shortcut-toolbar .settings-shortcut-search,
+.settings-shortcut-toolbar button {
+  border-radius: 4px;
+}
 .settings-category-content {
   max-width: 972px;
   margin: 0 auto;
@@ -627,13 +714,17 @@ body[data-theme="light"] .server-dashboard-scroll::-webkit-scrollbar-thumb {
   padding-bottom: 0;
   border: 0;
 }
+.settings-workbench #settings-group-theme .settings-section-heading {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
 .settings-workbench .settings-section-heading {
   margin: 0;
   padding: 0 0 11px;
   border-bottom: 1px solid var(--ui-border-subtle);
-  font-size: 11px;
-  font-weight: 400;
-  color: var(--ui-text-muted);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ui-text-primary);
 }
 .settings-workbench .settings-preference-row {
   min-height: 85px;
@@ -641,6 +732,10 @@ body[data-theme="light"] .server-dashboard-scroll::-webkit-scrollbar-thumb {
   gap: 28px;
   border-bottom: 1px solid var(--ui-border-subtle);
   grid-template-columns: minmax(0, 1fr) minmax(140px, 210px);
+}
+.settings-workbench .settings-section-group .settings-preference-row:last-child,
+.settings-workbench .settings-shortcut-group .settings-shortcut-row:last-child {
+  border-bottom: 0;
 }
 .settings-workbench .settings-preference-label {
   color: var(--ui-text-primary);
@@ -723,6 +818,9 @@ body[data-theme=light] .settings-navigation {
 .settings-workbench .settings-section-group:first-child {
   padding-top: 16px;
 }
+.settings-about {
+  margin-top: 28px;
+}
 body[data-theme=light] .settings-workbench nav[aria-label="Settings sections"] button {
   color: var(--ui-text-muted) !important;
 }
@@ -741,6 +839,11 @@ body[data-theme=light] .settings-workbench nav[aria-label="Settings sections"] b
   -webkit-app-region: drag;
 }
 .settings-window--mac .settings-navigation { padding-top: 50px; }
+.settings-navigation-scroll-surface > .vertical-scroll-hairline {
+  top: 0;
+  right: 0;
+  bottom: 0;
+}
 .settings-navigation-scroll-surface,
 .settings-content-scroll-surface {
   position: relative;

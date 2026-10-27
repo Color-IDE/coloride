@@ -1,12 +1,12 @@
 import {
   Add01Icon,
-  ArrowDown01Icon,
   MinusSignIcon,
   Tick02Icon,
 } from "@hugeicons/core-free-icons";
 import { Icon } from "../../shared/ui/Icon";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { MenuCheck, SettingsSelectChevron } from "./SettingsControls";
 import {
   updateAppPreference,
   useAppPreferences,
@@ -34,7 +34,7 @@ export function AppearanceSettings() {
 
   return (
     <div className="settings-appearance mt-6 pb-8">
-      <section className="settings-section-group border-b border-[#303030] pb-6">
+      <section className="settings-section-group border-b border-[#303030] pb-6" data-settings-group="Theme" id="settings-group-theme">
         <h2 className="settings-section-heading mb-3 text-xs font-medium text-[#808085]">Theme</h2>
         <div aria-label="Application theme" className="grid max-w-[640px] grid-cols-3 gap-3" role="radiogroup">
           <ThemePreview label="System" mode="system" selected={preferences.theme === "system"} />
@@ -245,25 +245,25 @@ function CompactSelect<Value extends string>({
       <button
         aria-expanded={open}
         aria-label={ariaLabel}
-        className="settings-select flex h-7 w-full items-center justify-between gap-3 rounded-lg bg-[#2c2c2c] px-2.5 text-left text-xs text-[#e8e8ea] transition-colors hover:bg-[#353535]"
+        className="settings-select flex h-7 w-full items-center justify-between gap-3 rounded bg-[#2c2c2c] px-2.5 text-left text-xs text-[#e8e8ea] transition-colors hover:bg-[#353535]"
         onClick={() => setOpen((current) => !current)}
         type="button"
       >
         <span className="truncate">{selected.label}</span>
-        <Icon icon={ArrowDown01Icon} className={`shrink-0 text-[#85858a] transition-transform ${open ? "rotate-180" : ""}`} size={13} />
+        <SettingsSelectChevron open={open} />
       </button>
       <AnimatePresence>
         {open && (
           <motion.div
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="settings-select-menu absolute right-0 top-9 z-40 w-full min-w-48 rounded-xl bg-[#2c2c2c] p-1.5 shadow-[0_14px_32px_rgba(0,0,0,0.4)]"
+            className="settings-select-menu absolute right-0 top-9 z-40 w-full min-w-48 rounded bg-[#2c2c2c] p-1 shadow-none"
             exit={{ opacity: 0, scale: 0.98, y: -3 }}
             initial={{ opacity: 0, scale: 0.98, y: -3 }}
             transition={{ duration: 0.13, ease: "easeOut" }}
           >
             {options.map((option) => (
               <button
-                className={`settings-select-option flex h-7 w-full items-center justify-between rounded-lg px-2 text-left text-xs transition-colors ${option.value === value ? "bg-[#3a3a3a] text-white" : "text-[#c3c3c7] hover:bg-[#363636] hover:text-white"}`}
+                className={`settings-select-option flex h-7 w-full items-center justify-between rounded px-2 text-left text-xs transition-colors ${option.value === value ? "bg-[#3a3a3a] text-white" : "text-[#c3c3c7] hover:bg-[#363636] hover:text-white"}`}
                 data-active={option.value === value}
                 key={option.value}
                 onClick={() => {
@@ -273,7 +273,7 @@ function CompactSelect<Value extends string>({
                 type="button"
               >
                 <span>{option.label}</span>
-                {option.value === value && <Icon icon={Tick02Icon} aria-hidden="true" size={12} />}
+                {option.value === value && <MenuCheck />}
               </button>
             ))}
           </motion.div>

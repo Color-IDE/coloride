@@ -69,6 +69,8 @@
 }
 
 .agent-composer-model-trigger svg:last-child {
+  width: 12px;
+  height: 12px;
   color: var(--agent-muted);
   transition: transform 140ms ease;
 }
@@ -94,7 +96,7 @@
   overflow: visible;
 }
 
-/* Side flyout of models (Cursor-style submenu) */
+/* Side flyout of models */
 .agent-composer-model-flyout {
   display: flex;
   flex-direction: column;
@@ -238,6 +240,10 @@
   transition: background 100ms ease, color 100ms ease;
 }
 
+.agent-composer-model-menu .agent-model-submenu-trigger > svg:last-child {
+  width: 12px;
+  height: 12px;
+}
 .agent-composer-attach-menu .agent-model-menu-item svg,
 .agent-composer-model-menu .agent-model-menu-item svg,
 .agent-composer-model-flyout .agent-model-menu-item svg,

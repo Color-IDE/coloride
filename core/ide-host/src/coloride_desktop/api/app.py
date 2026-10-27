@@ -578,7 +578,7 @@ def create_app(config: LaunchConfig) -> FastAPI:
         challenge: str = "",
     ) -> Response:
         require_renderer_refresh_allowed()
-        # Cursor-style: device_code === challenge (long secret).
+        # device_code is the challenge itself (a long secret).
         code = (device_code or challenge or "").strip()
         if not code:
             raise _http_error(

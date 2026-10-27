@@ -1,7 +1,6 @@
-import { ArrowDown01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
+
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Icon } from "../../shared/ui/Icon";
 
 export function SettingsGroup({
   children,
@@ -11,7 +10,7 @@ export function SettingsGroup({
   title: string;
 }) {
   return (
-    <section className="settings-section-group border-b border-[#303030] py-4 first:pt-0 last:border-b-0">
+    <section className="settings-section-group border-b border-[#303030] py-4 first:pt-0 last:border-b-0" data-settings-group={title} id={`settings-group-${title.toLocaleLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`}>
       <h2 className="settings-section-heading mb-1 text-xs font-medium text-[#808085]">
         {title}
       </h2>
@@ -89,7 +88,7 @@ export function CompactSelect<Value extends string>({
       <button
         aria-expanded={open}
         aria-label={ariaLabel}
-        className="settings-select flex h-7 w-full items-center justify-between gap-3 rounded-lg bg-[#2c2c2c] px-2.5 text-left text-xs text-[#e8e8ea] transition-colors hover:bg-[#353535] disabled:opacity-50"
+        className="settings-select flex h-7 w-full items-center justify-between gap-3 rounded bg-[#2c2c2c] px-2.5 text-left text-xs text-[#e8e8ea] transition-colors hover:bg-[#353535] disabled:opacity-50"
         disabled={disabled}
         onClick={() => {
           if (!disabled) setOpen((current) => !current);
@@ -97,11 +96,7 @@ export function CompactSelect<Value extends string>({
         type="button"
       >
         <span className="truncate">{selected.label}</span>
-        <Icon
-          icon={ArrowDown01Icon}
-          className={`shrink-0 text-[#85858a] transition-transform ${open ? "rotate-180" : ""}`}
-          size={13}
-        />
+        <SettingsSelectChevron open={open} />
       </button>
       <AnimatePresence>
         {open && (
@@ -110,7 +105,7 @@ export function CompactSelect<Value extends string>({
             className={
               menuStyle === "agent"
                 ? "agent-composer-attach-menu agent-history-filter-menu absolute right-0 top-9 z-40 p-1"
-                : "settings-select-menu absolute right-0 top-9 z-40 w-full min-w-48 rounded-xl bg-[#2c2c2c] p-1.5 shadow-[0_14px_32px_rgba(0,0,0,0.4)]"
+                : "settings-select-menu absolute right-0 top-9 z-40 w-full min-w-48 rounded bg-[#2c2c2c] p-1 shadow-none"
             }
             exit={{ opacity: 0, scale: 0.98, y: -3 }}
             initial={{ opacity: 0, scale: 0.98, y: -3 }}
@@ -121,7 +116,7 @@ export function CompactSelect<Value extends string>({
                 className={
                   menuStyle === "agent"
                     ? `agent-model-menu-item flex h-8 w-full items-center justify-between gap-2 rounded-[4px] px-2 text-left text-xs ${option.value === value ? "is-selected" : ""}`
-                    : `settings-select-option flex h-7 w-full items-center justify-between rounded-lg px-2 text-left text-xs transition-colors ${option.value === value ? "bg-[#3a3a3a] text-white" : "text-[#c3c3c7] hover:bg-[#363636] hover:text-white"}`
+                    : `settings-select-option flex h-7 w-full items-center justify-between rounded px-2 text-left text-xs transition-colors ${option.value === value ? "bg-[#3a3a3a] text-white" : "text-[#c3c3c7] hover:bg-[#363636] hover:text-white"}`
                 }
                 data-active={option.value === value}
                 key={option.value}
@@ -139,14 +134,37 @@ export function CompactSelect<Value extends string>({
                 >
                   {option.label}
                 </span>
-                {option.value === value && (
-                  <Icon icon={Tick02Icon} aria-hidden="true" size={12} />
-                )}
+                {option.value === value && <MenuCheck />}
               </button>
             ))}
           </motion.div>
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+export function MenuCheck() {
+  return (
+    <svg aria-hidden="true" className="size-3.5 shrink-0" fill="none" viewBox="0 0 16 16">
+      <path d="M3.2 8.3 6.3 11.4 12.8 4.6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.4" />
+    </svg>
+  );
+}
+
+export function SettingsSelectChevron({ open }: { open: boolean }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={`size-3 shrink-0 text-[#85858a] transition-transform ${open ? "rotate-180" : ""}`}
+      fill="none"
+      height="12"
+      viewBox="0 0 24 24"
+      width="12"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path d="M0 0h24v24H0z" fill="none" />
+      <path d="m4 9 8 8 8-8" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+    </svg>
   );
 }

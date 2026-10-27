@@ -832,7 +832,7 @@ body[data-theme="light"] .agent-mcp-tool-plugin {
   box-shadow: none;
 }
 
-/* ——— Explorer sidebar only: inset Cursor-style chip ——— */
+/* ——— Explorer sidebar only: inset chip ——— */
 .agent-view-sidebar .agent-docks-stack {
   left: 50%;
   right: auto;

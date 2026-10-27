@@ -1,7 +1,7 @@
 /**
  * In-app auto-update via electron-updater (generic feed on VPS).
  *
- * Seamless flow (Antigravity / Cursor style):
+ * Seamless update flow:
  *  1. check on startup → if available, download immediately (no UI wait)
  *  2. download in background (no progress modal required)
  *  3. on downloaded → quitAndInstall automatically (app restarts on new version)
@@ -224,7 +224,7 @@ function getUpdater() {
         downloadUrl: publicDownloadUrlForVersion(version),
         autoInstalling: true,
       });
-      // Antigravity-style: install + relaunch immediately (no progress UI required).
+      // Install and relaunch immediately. No progress UI is required.
       scheduleAutoInstall();
     });
     updater.on("error", (err) => {

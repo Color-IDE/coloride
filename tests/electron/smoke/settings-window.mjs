@@ -52,11 +52,12 @@ try {
   await (await app.browserWindow(settings)).evaluate(win=>win.setSize(1120,800));
   expect(await (await app.browserWindow(settings)).evaluate(win=>win.getParentWindow())).toBeNull();
   const nav=()=>settings.getByRole('navigation',{name:'Settings sections'});
-  await nav().getByRole('button',{name:'Appearance',exact:true}).click();
+  const category=name=>nav().getByRole('button',{name,exact:true}).and(settings.locator('.settings-nav-label'));
+  await category('Appearance').click();
   await settings.getByRole('radio',{name:'Light theme',exact:true}).click();
   await expect(settings.locator('body')).toHaveAttribute('data-theme','light');
   await expect(page.locator('body')).toHaveAttribute('data-theme','light');
-  await nav().getByRole('button',{name:'General',exact:true}).click();
+  await category('General').click();
   const restore=()=>settings.getByRole('switch',{name:'Restore open files',exact:true});
   const before=await restore().getAttribute('aria-checked');
   await restore().click();
@@ -101,10 +102,10 @@ try {
   await search.fill('minimap');
   await page.evaluate(()=>window.dispatchEvent(new CustomEvent('coloride:open-settings',{detail:{section:'terminal'}})));
   await expect(settings.getByRole('region',{name:'Terminal settings',exact:true})).toBeVisible();
-  await nav().getByRole('button',{name:'Appearance',exact:true}).click();
+  await category('Appearance').click();
   await settings.getByRole('radio',{name:'Dark theme',exact:true}).click();
   await expect(page.locator('body')).toHaveAttribute('data-theme','dark');
-  await nav().getByRole('button',{name:'General',exact:true}).click();
+  await category('General').click();
   await settings.screenshot({path:join(output,'settings-dark.png')});
   await (await app.browserWindow(settings)).evaluate(win=>win.setSize(760,650));
   await expect.poll(()=>settings.evaluate(()=>innerWidth)).toBe(760);

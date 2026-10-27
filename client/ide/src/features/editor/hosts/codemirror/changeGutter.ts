@@ -1,7 +1,7 @@
 /**
  * Far-left change ticks vs the last saved / loaded buffer.
  * Green = added line, yellow = edited line.
- * Click a tick to expand the hunk (old/new, like Zed / agent review).
+ * Click a tick to expand the hunk (old and new text, or the agent review).
  */
 
 import { RangeSetBuilder, StateEffect, StateField, type EditorState, type Extension } from "@codemirror/state";
@@ -175,7 +175,7 @@ export function markChangeBaseline(view: EditorView) {
   view.dispatch({ effects: resetChangeBaseline.of(view.state.doc.toString()) });
 }
 
-/** Unsaved hunks for the overlay scrollbar (Zed-style git/change ticks). */
+/** Unsaved hunks drawn on the overlay scrollbar. */
 export function unsavedChangeRanges(state: EditorState): Array<{ fromLine: number; toLine: number; kind: "add" | "mod" }> {
   const field = state.field(changeGutterField, false);
   if (!field?.hunks.length) return [];

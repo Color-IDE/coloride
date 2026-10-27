@@ -268,7 +268,7 @@ body[data-theme="light"] .coloride-completion-docs-link {
   padding: 0 !important;
 }
 /*
- * Cmd/Ctrl + hover definition links — VS Code style:
+ * Cmd/Ctrl + hover definition links:
  * text + underline share the same link blue; only the identifier span.
  */
 .coloride-code-editor-root .cm-content {

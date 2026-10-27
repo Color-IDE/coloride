@@ -101,7 +101,7 @@ _SERVERS: dict[str, LanguageServerSpec] = {
     "cpp": LanguageServerSpec(
         id="cpp",
         path_bins=("clangd",),
-        # Same flags VS Code uses so clangd publishes on open instead of waiting.
+        # Publish diagnostics as soon as a file opens.
         extra_args=(
             "--background-index",
             "--clang-tidy",

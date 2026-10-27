@@ -30,7 +30,7 @@ export type EditorFindBarProps = {
 const emptyStatus: EditorFindStatus = { current: 0, total: 0 };
 
 /**
- * In-file find / replace bar (Cursor style) — under the path breadcrumb.
+ * In-file find and replace bar, under the path breadcrumb.
  * Uses EditorHandle search API; not CodeMirror’s default panel.
  */
 export function EditorFindBar({ open, handle, onClose }: EditorFindBarProps) {
