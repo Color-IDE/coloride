@@ -43,5 +43,5 @@ export default function SettingsWindow() {
       element.classList.toggle("pointer-cursors-off", !preferences.pointerCursors);
     }
   }, [preferences, theme]);
-  return <div className="settings-window"><SettingsView initialSection={section} onSectionChange={setSection} /></div>;
+  return <div className={`settings-window${navigator.platform.toLowerCase().includes("mac") ? " settings-window--mac" : ""}`}><div className="settings-window-drag" aria-hidden="true" /><SettingsView initialSection={section} onSectionChange={setSection} /></div>;
 }

@@ -33,13 +33,23 @@ try {
     const settings=await created;
     settings.setDefaultTimeout(15000);
     settings.on('pageerror', error=>errors.push(error.message));
-    await expect(settings.getByRole('heading',{name:'General',exact:true,level:1})).toBeVisible();
+    await expect(settings.getByRole('region',{name:'General settings',exact:true})).toBeVisible();
     return settings;
   };
   // A separate native window works even without a project or login.
   settings=await newSettings();
   await expect(page.getByRole('menuitem',{name:'Open Project',exact:true})).toBeVisible();
   expect(app.windows()).toHaveLength(2);
+  await expect(settings.locator('.settings-navigation-title, .settings-navigation-footer, .settings-page-header')).toHaveCount(0);
+  if (process.platform === 'darwin') expect(await (await app.browserWindow(settings)).evaluate(win=>win.getContentBounds().height===win.getBounds().height)).toBe(true);
+  await (await app.browserWindow(settings)).evaluate(win=>win.setSize(1120,550));
+  const contentScroll=settings.getByRole('scrollbar',{name:'Settings content scroll'});
+  await expect(contentScroll).toBeAttached();
+  await contentScroll.focus();
+  await contentScroll.press('End');
+  await expect.poll(()=>settings.locator('.settings-page-scroll').evaluate(el=>el.scrollTop)).toBeGreaterThan(0);
+  await contentScroll.press('Home');
+  await (await app.browserWindow(settings)).evaluate(win=>win.setSize(1120,800));
   expect(await (await app.browserWindow(settings)).evaluate(win=>win.getParentWindow())).toBeNull();
   const nav=()=>settings.getByRole('navigation',{name:'Settings sections'});
   await nav().getByRole('button',{name:'Appearance',exact:true}).click();
@@ -90,7 +100,7 @@ try {
   // Section links reuse the same window and leave search results.
   await search.fill('minimap');
   await page.evaluate(()=>window.dispatchEvent(new CustomEvent('coloride:open-settings',{detail:{section:'terminal'}})));
-  await expect(settings.getByRole('heading',{name:'Terminal',exact:true,level:1})).toBeVisible();
+  await expect(settings.getByRole('region',{name:'Terminal settings',exact:true})).toBeVisible();
   await nav().getByRole('button',{name:'Appearance',exact:true}).click();
   await settings.getByRole('radio',{name:'Dark theme',exact:true}).click();
   await expect(page.locator('body')).toHaveAttribute('data-theme','dark');

@@ -1888,6 +1888,10 @@ async function openSettingsWindow(section) {
   const appearance = readStartupAppearance();
   const win = new BrowserWindow({
     title: "Settings — Coloride",
+    ...(process.platform === "darwin" ? {
+      titleBarStyle: "hidden",
+      trafficLightPosition: { x: 14, y: 14 },
+    } : {}),
     width: 1120, height: 800, minWidth: 700, minHeight: 500,
     show: false,
     backgroundColor: appearance === "light" ? WINDOW_BACKGROUND_LIGHT : WINDOW_BACKGROUND_DARK,

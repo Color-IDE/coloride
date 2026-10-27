@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ComponentType } from "react";
+import { VerticalScrollHairline } from "../../shared/ui/VerticalScrollHairline";
 import { AboutSettings } from "./AboutSettings";
 import { AgentSettings } from "./AgentSettings";
 import { AppearanceSettings } from "./AppearanceSettings";
@@ -64,13 +65,6 @@ const sections: Record<SettingsSection, ComponentType> = {
   editor: EditorSettings, terminal: TerminalSettings, agent: AgentSettings,
   security: SecuritySettings, updates: UpdatesSettings, diagnostics: DiagnosticsSettings, about: AboutSettings,
 };
-const descriptions: Record<SettingsSection, string> = {
-  general: "Startup, sessions and notifications.", appearance: "Colors, typography and the way Coloride feels.",
-  shortcuts: "Make your everyday actions a keystroke away.", editor: "Indentation, navigation and the details of your editor.",
-  terminal: "Your shell, text and terminal behavior.", agent: "Models and preferences for your coding assistant.",
-  security: "Control access to your workspace and tools.", updates: "Keep your desktop up to date.",
-  diagnostics: "Inspect activity and troubleshoot your desktop.", about: "Coloride, your local desktop IDE.",
-};
 const resolveSection = (section?: SettingsSection): SettingsSection => section && section in sections ? section : "general";
 
 export function SettingsView({ initialSection = "general", onSectionChange, sidePanelOpen = true, onShowNavigation }: SettingsViewProps) {
@@ -78,6 +72,7 @@ export function SettingsView({ initialSection = "general", onSectionChange, side
   const [query, setQuery] = useState("");
   const [matches, setMatches] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
+  const navigationRef = useRef<HTMLElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const searching = query.trim().length > 0;
   useEffect(() => {
@@ -135,37 +130,36 @@ export function SettingsView({ initialSection = "general", onSectionChange, side
     }}>
       <div className="settings-layout">
         <aside className="settings-navigation" hidden={!sidePanelOpen}>
-          <div className="settings-navigation-title"><SettingsGeneralIcon /><span>Settings</span></div>
           <label className="settings-search">
             <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4 4"/></svg>
             <input ref={searchRef} aria-label="Search settings" placeholder="Search settings…" value={query} onChange={event => setQuery(event.target.value)} />
             {query && <button type="button" aria-label="Clear settings search" onClick={() => { setQuery(""); searchRef.current?.focus(); }}>×</button>}
           </label>
-          <nav aria-label="Settings sections" className="settings-categories">
-            {menuGroups.map(group => <section key={group.id}>
-              <h2>{group.label}</h2>
-              {group.items.map(({id, label, icon: Icon}) => <button type="button" key={id} aria-current={!searching && activeSection === id ? "page" : undefined} onClick={() => selectSection(id)}>
-                {Icon && <Icon />}<span>{label}</span><span className="settings-category-arrow" aria-hidden="true">›</span>
-              </button>)}
-            </section>)}
-          </nav>
-          <div className="settings-navigation-footer"><span>On this device</span><kbd>⌘ ,</kbd></div>
+          <div className="settings-navigation-scroll-surface vertical-scroll-surface">
+            <nav ref={navigationRef} aria-label="Settings sections" className="settings-categories filetree-scroll">
+              {menuGroups.map(group => <section key={group.id}>
+                <h2>{group.label}</h2>
+                {group.items.map(({id, label, icon: Icon}) => <button type="button" key={id} aria-current={!searching && activeSection === id ? "page" : undefined} onClick={() => selectSection(id)}>
+                  {Icon && <Icon />}<span>{label}</span><span className="settings-category-arrow" aria-hidden="true">›</span>
+                </button>)}
+              </section>)}
+            </nav>
+            <VerticalScrollHairline targetRef={navigationRef} label="Settings categories scroll" />
+          </div>
         </aside>
-        <section className="settings-main" aria-labelledby="settings-section-title">
-          <header className="settings-page-header">
-            <div><span className="settings-scope">User</span><span className="settings-save-hint">Changes save automatically</span></div>
-            <h1 id="settings-section-title">{searching ? "Search settings" : activeItem.label}</h1>
-            <p>{searching ? `Results for “${query.trim()}”` : descriptions[activeSection]}</p>
-          </header>
-          <div className="settings-page-scroll" ref={contentRef}>
-            {(searching ? menuItems : [activeItem]).map(item => {
-              const Content = sections[item.id];
-              return <div className="settings-category-content" data-settings-category={item.label} key={item.id}>
-                {searching && <h2 className="settings-result-category">{item.label}</h2>}
-                <Content />
-              </div>;
-            })}
-            {searching && matches === 0 && <div className="settings-no-results" role="status"><h2>No settings found</h2><p>Try a preference such as font, minimap or scrollback.</p><button type="button" onClick={() => setQuery("")}>Clear search</button></div>}
+        <section className="settings-main" aria-label={searching ? "Search settings results" : `${activeItem.label} settings`}>
+          <div className="settings-content-scroll-surface vertical-scroll-surface">
+            <div className="settings-page-scroll filetree-scroll" ref={contentRef}>
+              {(searching ? menuItems : [activeItem]).map(item => {
+                const Content = sections[item.id];
+                return <div className="settings-category-content" data-settings-category={item.label} key={item.id}>
+                  {searching && <h2 className="settings-result-category">{item.label}</h2>}
+                  <Content />
+                </div>;
+              })}
+              {searching && matches === 0 && <div className="settings-no-results" role="status"><h2>No settings found</h2><p>Try a preference such as font, minimap or scrollback.</p><button type="button" onClick={() => setQuery("")}>Clear search</button></div>}
+            </div>
+            <VerticalScrollHairline targetRef={contentRef} label="Settings content scroll" />
           </div>
         </section>
       </div>
