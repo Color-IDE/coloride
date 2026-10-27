@@ -90,7 +90,13 @@ test.beforeAll(async () => {
       ...env,
       COLORIDE_TEST_USER_DATA: join(sandbox, "user-data"),
       COLORIDE_TEST_URL: base + "/tests/login-gate.html?local=1&session=none",
-      COLORIDE_TEST_CONFIG: "{}",
+      COLORIDE_TEST_CONFIG: JSON.stringify({
+        cloudConfig: {
+          enabled: true,
+          appBase: "https://coloride.test",
+          apiBase: "https://api.coloride.test",
+        },
+      }),
     },
   });
   page = await app.firstWindow();
