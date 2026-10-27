@@ -118,14 +118,14 @@ test("50,000 lines remain ordered; scroll, selection and visibility", async () =
   test.setTimeout(180_000);
   await launch("output");
   await page.evaluate(() => {
-    const term = (window as any).terminalUnderTest;
-    term.options.scrollback = 60000;
+    (window as any).terminalUnderTest.options.scrollback = 60000;
   });
-  // Wait on the PTY marker itself. A fixed delay per write stalls a slow
-  // runner before ROW_50000 lands in the buffer.
-  await command("awk 'BEGIN {for(i=1;i<=50000;i++) printf \"ROW_%05d\\n\",i}'", "ROW_50000");
-  const rows = (await text()).split("\n").filter(x => /^ROW_\d{5}$/.test(x));
+  // The file proves the PTY emitted every row in order. The screen must keep
+  // them too: scrollback is raised before the burst, above the 5,000 default.
+  await command("awk 'BEGIN {for(i=1;i<=50000;i++) printf \"ROW_%05d\\n\",i}' | tee rows.txt", "ROW_50000");
+  const rows = (await readFile(join(sandbox, "rows.txt"), "utf8")).split("\n").filter(x => /^ROW_\d{5}$/.test(x));
   expect(rows).toEqual(Array.from({length: 50000}, (_,i) => `ROW_${String(i+1).padStart(5,"0")}`));
+  await expect.poll(async () => (await text()).split("\n").filter(x => /^ROW_\d{5}$/.test(x)).length, { timeout: 60_000 }).toBe(50000);
   const scroll = page.locator('.xterm-viewport');
   const position = () => scroll.evaluate(el => el.scrollTop);
   const before = await position();
