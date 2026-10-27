@@ -99,21 +99,13 @@ The project is licensed under the [MIT License](./LICENSE). The supported deskto
 
 ### Optional cloud services and community builds
 
-Files, editing and local terminals work without an account. Sign-in is only for
-cloud features. To run the desktop without cloud authentication, dashboard sync
-or managed AI:
-
-```sh
-COLORIDE_CLOUD_ENABLED=0 pnpm dev
-```
-
-For a community installer, set `enabled` to `false` in
-`client/desktop/src/cloud-config.json` before building the renderer and desktop.
-That file is packaged with Electron, so users do not need environment variables.
-The existing distribution defaults remain enabled.
+Files, editing and local terminals work without an account. This repository ships
+with cloud services disabled: `client/desktop/src/cloud-config.json` contains
+`enabled: false` and empty endpoints. Run `pnpm dev` without additional cloud
+configuration. Community installers inherit these defaults.
 
 Forks operating a compatible cloud service can set `appBase` and `apiBase` in the
-same file. Runtime overrides are `COLORIDE_CLOUD_ENABLED`,
+same file and enable cloud services explicitly. Runtime overrides are `COLORIDE_CLOUD_ENABLED`,
 `COLORIDE_CLOUD_APP_BASE` (browser login) and `COLORIDE_CLOUD_AUTH_BASE` (API);
 `COLORIDE_CLOUD_API_BASE` is an API alias. Endpoints must use HTTPS without embedded
 credentials, query strings or fragments. An alternate server must implement the

@@ -1448,7 +1448,7 @@ function configureMenu() {
     const editor = (label, command, accelerator) => action(label, `editor-command:${command}`, accelerator);
     const unavailable = (label, accelerator) => action(label, "", accelerator, false);
     const localDocument = (label, filename) => {
-      const file = path.join(getRepoRoot(), filename);
+      const file = path.join(app.isPackaged ? process.resourcesPath : getRepoRoot(), filename);
       return {label, enabled:fs.existsSync(file), click:() => void shell.openPath(file)};
     };
     const file = {label:"File", submenu:[

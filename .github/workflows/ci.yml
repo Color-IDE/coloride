@@ -43,7 +43,7 @@ jobs:
         with:
           node-version: "22"
           cache: pnpm
-      - run: pnpm install --frozen-lockfile=false
+      - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm test:unit
       - run: node tooling/checks/audit-source.mjs --javascript-only
