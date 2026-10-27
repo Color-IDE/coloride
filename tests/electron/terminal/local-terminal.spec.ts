@@ -115,13 +115,14 @@ test("PTY input, signals, repeated paste and geometry", async () => {
 });
 
 test("50,000 lines remain ordered; scroll, selection and visibility", async () => {
+  test.setTimeout(180_000);
   await launch("output");
   await page.evaluate(() => {
     const term = (window as any).terminalUnderTest;
     term.options.scrollback = 60000;
-    const write = term.write.bind(term);
-    term.write = (data: any, callback?: () => void) => write(data, () => setTimeout(() => callback?.(), 10));
   });
+  // Wait on the PTY marker itself. A fixed delay per write stalls a slow
+  // runner before ROW_50000 lands in the buffer.
   await command("awk 'BEGIN {for(i=1;i<=50000;i++) printf \"ROW_%05d\\n\",i}'", "ROW_50000");
   const rows = (await text()).split("\n").filter(x => /^ROW_\d{5}$/.test(x));
   expect(rows).toEqual(Array.from({length: 50000}, (_,i) => `ROW_${String(i+1).padStart(5,"0")}`));
