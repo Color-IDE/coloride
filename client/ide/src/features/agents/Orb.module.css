@@ -1,0 +1,130 @@
+/* Lattice orb — stage is 28×28; --orb-k scales to `size`. */
+
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  line-height: 0;
+  vertical-align: middle;
+}
+
+.root[data-pill] {
+  gap: 7px;
+  border-radius: 999px;
+  padding: 3px 8px 3px 5px;
+  background: rgb(255 255 255 / 6%);
+  border: 1px solid rgb(255 255 255 / 8%);
+}
+
+.glyph {
+  position: relative;
+  display: block;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.lattice {
+  position: absolute;
+  inset: 0;
+  /* Center the 3×3 lattice (pitch 6 → 12px span) inside the stage. */
+  --orb-origin: calc((28px - 12px) / 2 * var(--orb-k, 1));
+}
+
+.cell {
+  position: absolute;
+  width: calc(2.4px * var(--orb-k, 1));
+  height: calc(2.4px * var(--orb-k, 1));
+  margin-left: calc(-1.2px * var(--orb-k, 1));
+  margin-top: calc(-1.2px * var(--orb-k, 1));
+  border-radius: 999px;
+  background: currentColor;
+  color: inherit;
+  opacity: 0.22;
+  transform: translate(
+      calc(var(--orb-origin) + var(--cell-x, 0px) * var(--orb-k, 1)),
+      calc(var(--orb-origin) + var(--cell-y, 0px) * var(--orb-k, 1))
+    )
+    scale(0.85);
+  will-change: opacity, transform;
+}
+
+/* S2 — diagonal band sweeps the grid. */
+.lattice[data-variant="S2"] .cell {
+  animation: orb-s2-wave 1.55s ease-in-out infinite;
+}
+
+.cell[data-still] {
+  animation: none !important;
+  opacity: 0.12;
+}
+
+.cell[data-mid] {
+  /* slightly brighter anchor */
+  opacity: 0.35;
+}
+
+.pillLabel {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  color: inherit;
+  opacity: 0.72;
+  white-space: nowrap;
+}
+
+@keyframes orb-s2-wave {
+  0%,
+  100% {
+    opacity: 0.14;
+    transform: translate(
+        calc(var(--orb-origin) + var(--cell-x, 0px) * var(--orb-k, 1)),
+        calc(var(--orb-origin) + var(--cell-y, 0px) * var(--orb-k, 1))
+      )
+      scale(0.75);
+  }
+  45% {
+    opacity: 0.95;
+    transform: translate(
+        calc(
+          var(--orb-origin) + (var(--cell-x, 0px) + var(--orb-ax, 0px) * 0.08) *
+            var(--orb-k, 1)
+        ),
+        calc(
+          var(--orb-origin) + (var(--cell-y, 0px) + var(--orb-ay, 0px) * 0.08) *
+            var(--orb-k, 1)
+        )
+      )
+      scale(1.15);
+  }
+  70% {
+    opacity: 0.35;
+    transform: translate(
+        calc(
+          var(--orb-origin) + (var(--cell-x, 0px) + var(--orb-bx, 0px) * 0.05) *
+            var(--orb-k, 1)
+        ),
+        calc(
+          var(--orb-origin) + (var(--cell-y, 0px) + var(--orb-by, 0px) * 0.05) *
+            var(--orb-k, 1)
+        )
+      )
+      scale(0.9);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lattice[data-variant="S2"] .cell {
+    animation: none;
+    opacity: 0.2;
+  }
+  .lattice[data-variant="S2"] .cell[data-mid] {
+    opacity: 0.85;
+  }
+}
+
+body[data-theme="light"] .root[data-pill] {
+  background: rgb(0 0 0 / 4%);
+  border-color: rgb(0 0 0 / 6%);
+}

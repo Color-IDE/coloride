@@ -1,0 +1,138 @@
+/* The tree retains the overlay hairline used by the editor tab strip. */
+.filetree-scroll {
+  scrollbar-width: none !important;
+  scrollbar-gutter: auto;
+}
+
+.filetree-scroll::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.filetree-edge-fade {
+  right: 10px !important;
+}
+
+.vertical-scroll-hairline {
+  position: absolute;
+  top: 6px;
+  right: 0;
+  bottom: 6px;
+  z-index: 30;
+  width: 10px;
+  outline: none;
+  opacity: 0;
+  cursor: default !important;
+  user-select: none;
+  touch-action: none;
+  transition: opacity 0.18s ease;
+}
+
+.filetree-tree-pane:hover > .vertical-scroll-hairline,
+.filetree-tree-pane:focus-within > .vertical-scroll-hairline,
+.vertical-scroll-surface:hover > .vertical-scroll-hairline,
+.vertical-scroll-surface:focus-within > .vertical-scroll-hairline,
+.vertical-scroll-hairline.is-dragging {
+  opacity: 1;
+}
+
+.vertical-scroll-hairline-thumb {
+  pointer-events: none;
+  position: absolute;
+  right: 1px;
+  width: 2px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 55%);
+}
+
+body[data-theme="light"] .vertical-scroll-hairline-thumb {
+  background: rgb(0 0 0 / 40%);
+}
+
+/* Keep focus neutral: the 2px thumb never changes to the accent color. */
+.vertical-scroll-hairline:focus,
+.vertical-scroll-hairline:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.vertical-scroll-hairline:focus-visible .vertical-scroll-hairline-thumb {
+  filter: brightness(1.25);
+}
+
+/* Native overlay scrollbars on Electron/macOS grow on hover and ignore
+ * ::-webkit-scrollbar height. Hide them and paint a 2px overlay instead. */
+.editor-tabs-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.editor-tabs-scroll::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+
+.editor-tabs-hairline {
+  pointer-events: auto;
+  position: absolute;
+  right: 6px;
+  bottom: 0;
+  left: 6px;
+  z-index: 30;
+  height: 10px;
+  overflow: visible;
+  opacity: 0;
+  cursor: default;
+  touch-action: none;
+  transition: opacity 0.18s ease;
+}
+
+.explorer-editor-header:hover .editor-tabs-hairline,
+.agent-sidebar-header:hover .editor-tabs-hairline,
+.editor-tabs-hairline.is-dragging {
+  opacity: 1;
+}
+
+.editor-tabs-hairline-thumb {
+  pointer-events: none;
+  position: absolute;
+  right: auto;
+  bottom: 1px;
+  left: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 55%);
+}
+
+body[data-theme="light"] .editor-tabs-hairline-thumb {
+  background: rgb(0 0 0 / 40%);
+}
+
+.server-dashboard-scroll {
+  min-height: 0;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #4a4a4a transparent;
+}
+
+.server-dashboard-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.server-dashboard-scroll::-webkit-scrollbar-track {
+  background: transparent;
+  margin-block: 2px;
+}
+
+.server-dashboard-scroll::-webkit-scrollbar-thumb {
+  background: #4a4a4a;
+  border-radius: 999px;
+}
+
+.server-dashboard-scroll::-webkit-scrollbar-thumb:hover {
+  background: #5d5d5d;
+}

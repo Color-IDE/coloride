@@ -1,0 +1,58 @@
+{
+  "agents": [
+    "AgentView"
+  ],
+  "auth": [
+    "LoginGate",
+    "LogoutConfirmDialog",
+    "cloudAuth",
+    "cloudProduct",
+    "linearCloud",
+    "llmCredits",
+    "useCloudProductSync"
+  ],
+  "editor": [
+    "agentEditBridge",
+    "agentLogTab",
+    "codeRefClipboard",
+    "index",
+    "lsp/LspSessionManager",
+    "lsp/documentSync",
+    "lsp/pathUri",
+    "lsp/textEdits"
+  ],
+  "explorer": [
+    "BrowserPane",
+    "ExplorerTab",
+    "RemoteFilePicker",
+    "browserProxy",
+    "filetree/FileTree"
+  ],
+  "onboarding": [
+    "OnboardingFlow"
+  ],
+  "server": [
+    "ConnectServerModal",
+    "ServerView",
+    "useServerWorkspace"
+  ],
+  "settings": [
+    "SettingsControls",
+    "SettingsView",
+    "activity",
+    "agentAccess",
+    "lastSession",
+    "notifications",
+    "preferences",
+    "shortcuts",
+    "updates"
+  ],
+  "terminal": [
+    "TerminalPanel",
+    "TerminalSessionManager",
+    "XTerminal"
+  ],
+  "welcome": [
+    "WelcomeView"
+  ]
+}

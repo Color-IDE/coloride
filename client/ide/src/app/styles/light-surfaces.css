@@ -1,0 +1,267 @@
+/* App chrome and content share the same white canvas in light mode. */
+body[data-theme="light"] [class~="bg-[#111111]"],
+body[data-theme="light"] [class~="bg-[#141417]"],
+body[data-theme="light"] [class~="bg-[#151515]"],
+body[data-theme="light"] [class~="bg-[#171717]"],
+body[data-theme="light"] [class~="bg-[#181818]"],
+body[data-theme="light"] [class~="bg-[#191919]"],
+body[data-theme="light"] [class~="bg-[#1b1b1b]"],
+body[data-theme="light"] [class~="bg-[#1d1d1d]"] {
+  background-color: var(--app-canvas) !important;
+}
+
+/* Editor / terminal content surfaces — pure white */
+body[data-theme="light"] [class~="bg-[#1e1e1e]"],
+body[data-theme="light"] [class~="bg-[#1f1f1f]"] {
+  background-color: var(--app-editor) !important;
+}
+
+body[data-theme="light"] .app-canvas {
+  background: var(--app-canvas) !important;
+  background-color: var(--app-canvas) !important;
+}
+
+body[data-theme="light"] [class~="bg-[#202020]"],
+body[data-theme="light"] [class~="bg-[#212121]"] {
+  background-color: var(--app-surface) !important;
+}
+
+body[data-theme="light"] [class~="bg-[#242424]"],
+body[data-theme="light"] [class~="bg-[#252525]"],
+body[data-theme="light"] [class~="bg-[#262626]"],
+body[data-theme="light"] [class~="bg-[#272727]"],
+body[data-theme="light"] [class~="bg-[#292929]"],
+body[data-theme="light"] [class~="bg-[#2a2a2a]"],
+body[data-theme="light"] [class~="bg-[#2b2b2b]"],
+body[data-theme="light"] [class~="bg-[#2b2b2d]"],
+body[data-theme="light"] [class~="bg-[#2c2c2c]"],
+body[data-theme="light"] [class~="bg-[#2d2d2d]"] {
+  background-color: var(--app-control) !important;
+}
+
+body[data-theme="light"] [class~="bg-[#303030]"],
+body[data-theme="light"] [class~="bg-[#313131]"],
+body[data-theme="light"] [class~="bg-[#323232]"],
+body[data-theme="light"] [class~="bg-[#333333]"],
+body[data-theme="light"] [class~="bg-[#343434]"],
+body[data-theme="light"] [class~="bg-[#353535]"],
+body[data-theme="light"] [class~="bg-[#363636]"],
+body[data-theme="light"] [class~="bg-[#373737]"],
+body[data-theme="light"] [class~="bg-[#383838]"],
+body[data-theme="light"] [class~="bg-[#3a3a3a]"],
+body[data-theme="light"] [class~="bg-[#3b3b3b]"],
+body[data-theme="light"] [class~="bg-[#3c3c3c]"],
+body[data-theme="light"] [class~="bg-[#3f3f3f]"],
+body[data-theme="light"] [class~="bg-[#404040]"],
+body[data-theme="light"] [class~="bg-[#414141]"],
+body[data-theme="light"] [class~="bg-[#424242]"],
+body[data-theme="light"] [class~="bg-[#444]"],
+body[data-theme="light"] [class~="bg-[#454545]"],
+body[data-theme="light"] [class~="bg-[#474747]"] {
+  background-color: var(--app-control-hover) !important;
+}
+
+body[data-theme="light"] [class~="bg-[#171717]/90"],
+body[data-theme="light"] [class~="bg-[#212121]/95"] {
+  background-color: rgb(255 255 255 / 95%) !important;
+}
+
+body[data-theme="light"] [class~="bg-white/[0.06]"],
+body[data-theme="light"] [class~="bg-white/[0.07]"],
+body[data-theme="light"] [class~="bg-white/[0.08]"],
+body[data-theme="light"] [class~="bg-white/10"] {
+  background-color: rgb(0 0 0 / 6%) !important;
+}
+
+body[data-theme="light"] [class~="border-[#2c2c2c]"],
+body[data-theme="light"] [class~="border-[#303030]"],
+body[data-theme="light"] [class~="border-[#313131]"],
+body[data-theme="light"] [class~="border-[#323232]"],
+body[data-theme="light"] [class~="border-[#333333]"],
+body[data-theme="light"] [class~="border-[#343434]"],
+body[data-theme="light"] [class~="border-[#363636]"],
+body[data-theme="light"] [class~="border-[#383838]"],
+body[data-theme="light"] [class~="border-[#3a3a3a]"],
+body[data-theme="light"] [class~="border-[#3b3b3b]"],
+body[data-theme="light"] [class~="border-[#454545]"],
+body[data-theme="light"] [class~="divide-[#2d2d2d]"] > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--app-border) !important;
+}
+
+body[data-theme="light"] [class~="text-white"],
+body[data-theme="light"] [class~="text-neutral-200"],
+body[data-theme="light"] [class~="text-[#eee]"],
+body[data-theme="light"] [class~="text-[#ededf0]"],
+body[data-theme="light"] [class~="text-[#e8e8ea]"],
+body[data-theme="light"] [class~="text-[#e6e6e8]"],
+body[data-theme="light"] [class~="text-[#e5e5e8]"],
+body[data-theme="light"] [class~="text-[#e3e3e7]"],
+body[data-theme="light"] [class~="text-[#f0f4f8]"],
+body[data-theme="light"] [class~="text-[#f2f4f6]"],
+body[data-theme="light"] [class~="text-[#f4f4f5]"],
+body[data-theme="light"] [class~="text-[#dcdce0]"],
+body[data-theme="light"] [class~="text-[#dedee1]"],
+body[data-theme="light"] [class~="text-[#d8d8dc]"],
+body[data-theme="light"] [class~="text-[#d7d7db]"],
+body[data-theme="light"] [class~="text-[#d1d5db]"],
+body[data-theme="light"] [class~="text-[#d0d0d5]"],
+body[data-theme="light"] [class~="text-[#cfcfcf]"],
+body[data-theme="light"] [class~="text-[#c9c9cd]"],
+body[data-theme="light"] [class~="text-[#c8c8cc]"],
+body[data-theme="light"] [class~="text-[#c3c3c7]"] {
+  color: var(--text-primary) !important;
+}
+
+body[data-theme="light"] [class~="text-[#b6b6bc]"],
+body[data-theme="light"] [class~="text-[#b4b4b8]"],
+body[data-theme="light"] [class~="text-[#b0b0b4]"],
+body[data-theme="light"] [class~="text-[#a7a7ac]"],
+body[data-theme="light"] [class~="text-[#a6a6ad]"],
+body[data-theme="light"] [class~="text-[#a6a6aa]"],
+body[data-theme="light"] [class~="text-[#a0a0a5]"],
+body[data-theme="light"] [class~="text-[#929297]"],
+body[data-theme="light"] [class~="text-[#919197]"],
+body[data-theme="light"] [class~="text-[#8d8d92]"],
+body[data-theme="light"] [class~="text-[#878888]"],
+body[data-theme="light"] [class~="text-[#85858a]"],
+body[data-theme="light"] [class~="text-[#858585]"],
+body[data-theme="light"] [class~="text-[#838383]"],
+body[data-theme="light"] [class~="text-[#808085]"],
+body[data-theme="light"] [class~="text-[#77777c]"],
+body[data-theme="light"] [class~="text-[#777]"] {
+  color: var(--text-muted) !important;
+}
+
+body[data-theme="light"] [class~="hover:bg-[#262626]"]:hover,
+body[data-theme="light"] [class~="hover:bg-[#272727]"]:hover,
+body[data-theme="light"] [class~="hover:bg-[#2a2a2a]"]:hover,
+body[data-theme="light"] [class~="hover:bg-[#303030]"]:hover,
+body[data-theme="light"] [class~="hover:bg-[#333333]"]:hover,
+body[data-theme="light"] [class~="hover:bg-[#343434]"]:hover,
+body[data-theme="light"] [class~="hover:bg-[#353535]"]:hover,
+body[data-theme="light"] [class~="hover:bg-[#363636]"]:hover,
+body[data-theme="light"] [class~="hover:bg-[#373737]"]:hover,
+body[data-theme="light"] [class~="hover:bg-[#383838]"]:hover,
+body[data-theme="light"] [class~="hover:bg-[#3a3a3a]"]:hover,
+body[data-theme="light"] [class~="hover:bg-[#3b3b3b]"]:hover,
+body[data-theme="light"] [class~="hover:bg-[#444]"]:hover {
+  background-color: var(--app-control-hover) !important;
+}
+
+body[data-theme="light"] [class~="hover:text-white"]:hover,
+body[data-theme="light"] [class~="hover:text-[#f0f4f8]"]:hover,
+body[data-theme="light"] [class~="group-hover:text-[#f0f4f8]"] {
+  color: var(--text-primary) !important;
+}
+
+/*
+ * Light-mode scroll fades must match the *actual* surface under them.
+ * Tree / editor / terminal headers are pure white.
+ *
+ *  - Tab/tool chrome strips → #ffffff
+ *  - White content panes   → #ffffff
+ */
+body[data-theme="light"] {
+  --fade-chrome: #ffffff;
+  --fade-content: #ffffff;
+}
+
+/* editor / terminal / browser tab strips (horizontal scroll) */
+body[data-theme="light"] .editor-tabs-fade,
+body[data-theme="light"] .terminal-tabs-fade {
+  --scroll-edge-fade-color: #ffffff;
+}
+
+/* White scroll bodies */
+body[data-theme="light"] .filetree-edge-fade,
+body[data-theme="light"] .server-dashboard-fade,
+body[data-theme="light"] .settings-content-fade,
+body[data-theme="light"] .agent-timeline-fade,
+body[data-theme="light"] .agent-list-files-fade,
+body[data-theme="light"] .agent-view .scroll-edge-fade {
+  --scroll-edge-fade-color: var(--fade-content);
+}
+
+/* Soften all edge fades in light mode (less of a hard “shadow” band). */
+body[data-theme="light"] .scroll-edge-fade[data-edge="top"] {
+  background: linear-gradient(
+    to bottom,
+    var(--scroll-edge-fade-color) 0%,
+    color-mix(in srgb, var(--scroll-edge-fade-color) 50%, transparent) 42%,
+    transparent 100%
+  );
+}
+body[data-theme="light"] .scroll-edge-fade[data-edge="bottom"] {
+  background: linear-gradient(
+    to top,
+    var(--scroll-edge-fade-color) 0%,
+    color-mix(in srgb, var(--scroll-edge-fade-color) 50%, transparent) 42%,
+    transparent 100%
+  );
+}
+body[data-theme="light"] .scroll-edge-fade[data-edge="left"] {
+  background: linear-gradient(
+    to right,
+    var(--scroll-edge-fade-color) 0%,
+    color-mix(in srgb, var(--scroll-edge-fade-color) 50%, transparent) 42%,
+    transparent 100%
+  );
+}
+body[data-theme="light"] .scroll-edge-fade[data-edge="right"] {
+  background: linear-gradient(
+    to left,
+    var(--scroll-edge-fade-color) 0%,
+    color-mix(in srgb, var(--scroll-edge-fade-color) 50%, transparent) 42%,
+    transparent 100%
+  );
+}
+
+/*
+ * Header chrome — pure white in light (tree, editor tabs, terminal, browser).
+ */
+body[data-theme="light"] .filetree-toolbar,
+body[data-theme="light"] .explorer-editor-header,
+body[data-theme="light"] .browser-chrome-header,
+body[data-theme="light"] .terminal-pane-header,
+body[data-theme="light"] .terminal-header,
+body[data-theme="light"] header.terminal-panel-header,
+body[data-theme="light"] .agent-workspace-panel > header,
+body[data-theme="light"] .agent-workspace-tabs {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+}
+
+body[data-theme="light"] .terminal-pane-header {
+  box-shadow: none !important;
+}
+
+/* Tab-strip edge fades must match white headers */
+body[data-theme="light"] .filetree-toolbar,
+body[data-theme="light"] .explorer-editor-header,
+body[data-theme="light"] .terminal-pane-header,
+body[data-theme="light"] .agent-workspace-panel > header {
+  --scroll-edge-fade-color: #ffffff;
+}
+
+/* Content panes white so body fades blend */
+body[data-theme="light"] .app-side-surface,
+body[data-theme="light"] .filetree-scroll,
+body[data-theme="light"] .explorer-editor-body,
+body[data-theme="light"] .settings-content-surface,
+body[data-theme="light"] .app-main-card,
+body[data-theme="light"] .coloride-code-editor-root,
+body[data-theme="light"] .coloride-code-editor-root .cm-editor,
+body[data-theme="light"] .coloride-code-editor-root .cm-scroller {
+  background-color: var(--fade-content) !important;
+}
+
+body[data-theme="light"].electron-frameless,
+body[data-theme="light"].electron-frameless #root,
+body[data-theme="light"].electron-frameless main,
+body[data-theme="light"].electron-frameless main > section[aria-label="Coloride desktop app"],
+body[data-theme="light"].electron-frameless nav[aria-label="Primary"],
+body[data-theme="light"].electron-frameless .app-canvas {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+}
+

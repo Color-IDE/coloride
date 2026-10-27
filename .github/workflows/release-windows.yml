@@ -1,0 +1,225 @@
+# Build Windows NSIS installer and ship it to:
+#   1) VPS downloads (primary — electron-updater + website)
+#   2) Coloride-AI/Coloride-Releases (optional backup)
+#
+# Secrets:
+#   COLORIDE_DEPLOY_HOST     e.g. deploy@downloads.example
+#   COLORIDE_DEPLOY_SSH_KEY  private key PEM with write access to downloads
+#   COLORIDE_DEPLOY_PATH     optional; default /var/www/coloride/sites/www/public/downloads
+#   RELEASES_GITHUB_TOKEN   optional backup to Coloride-Releases
+#
+# Note: GitHub Actions artifact storage is often full for large installers —
+# we do NOT depend on upload-artifact for the release path.
+
+name: Release Windows
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v0.1.17). Empty = package.json version."
+        required: false
+        default: ""
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+env:
+  DOWNLOADS_URL: https://www.coloride.com/downloads
+  RELEASES_REPO: Coloride-AI/Coloride-Releases
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.tag || github.ref) || github.ref }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web frontend
+        run: pnpm build:web
+
+      - name: Build Python sidecar
+        shell: pwsh
+        run: |
+          powershell -ExecutionPolicy Bypass -File tooling/build/build-sidecar.ps1 -OutDir client/desktop/resources/sidecar
+
+      - name: Bundle offline voice runtime
+        run: node tooling/build/build-voice-runtime.cjs
+
+      - name: Build Windows NSIS installer
+        working-directory: client/desktop
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: pnpm exec electron-builder --win nsis --x64 --publish never
+
+      - name: Resolve version + list artifacts
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./client/desktop/package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.tag }}" ]; then
+            TAG="${{ github.event.inputs.tag }}"
+          elif [[ "${GITHUB_REF_NAME}" == v* ]]; then
+            TAG="${GITHUB_REF_NAME}"
+          else
+            TAG="v${VERSION}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          ls -lah client/desktop/release/ | head -50
+          test -f "client/desktop/release/Coloride-${VERSION}-win-x64-setup.exe"
+          test -f "client/desktop/release/latest.yml"
+
+      # Optional cache only — never block the release if Actions storage is full.
+      - name: Upload installer to workflow artifacts (optional)
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: Coloride-windows-x64-setup
+          path: |
+            client/desktop/release/Coloride-*-win-x64-setup.exe
+            client/desktop/release/latest.yml
+            client/desktop/release/*-win-*.blockmap
+          if-no-files-found: warn
+          retention-days: 3
+
+      - name: Deploy Windows installer to VPS /downloads
+        shell: bash
+        env:
+          SSH_KEY: ${{ secrets.COLORIDE_DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.COLORIDE_DEPLOY_HOST }}
+          DEPLOY_PATH: ${{ secrets.COLORIDE_DEPLOY_PATH }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SSH_KEY:-}" ] || [ -z "${DEPLOY_HOST:-}" ]; then
+            echo "Missing COLORIDE_DEPLOY_HOST / COLORIDE_DEPLOY_SSH_KEY — cannot deploy"
+            exit 1
+          fi
+          VERSION="${{ steps.meta.outputs.version }}"
+          PATH_REMOTE="${DEPLOY_PATH:-/var/www/coloride/sites/www/public/downloads}"
+          BASE="${{ env.DOWNLOADS_URL }}"
+          REL=client/desktop/release
+          SETUP="Coloride-${VERSION}-win-x64-setup.exe"
+
+          install -m 600 /dev/null /tmp/deploy_key
+          # Normalize possible CRLF from secret paste
+          printf '%s\n' "$SSH_KEY" | tr -d '\r' > /tmp/deploy_key
+          chmod 600 /tmp/deploy_key
+          ssh-keygen -y -f /tmp/deploy_key >/dev/null
+
+          SSH=(ssh -i /tmp/deploy_key -o StrictHostKeyChecking=accept-new -o BatchMode=yes)
+          SCP=(scp -i /tmp/deploy_key -o StrictHostKeyChecking=accept-new -o BatchMode=yes)
+
+          "${SSH[@]}" "$DEPLOY_HOST" "mkdir -p $(printf %q "$PATH_REMOTE")"
+
+          # Ship installer + updater feed + blockmap
+          shopt -s nullglob
+          FILES=(
+            "$REL/$SETUP"
+            "$REL/latest.yml"
+          )
+          FILES+=("$REL"/*-win-*.blockmap)
+
+          "${SCP[@]}" "${FILES[@]}" "${DEPLOY_HOST}:${PATH_REMOTE}/"
+
+          # Merge latest.json: keep existing darwin fields if present, set win32 + version
+          python3 - <<PY | "${SSH[@]}" "$DEPLOY_HOST" "cat > $(printf %q "$PATH_REMOTE")/latest.json"
+          import json, urllib.request, datetime
+          version = "${VERSION}"
+          base = "${BASE}"
+          setup = "${SETUP}"
+          data = {
+            "version": version,
+            "channel": "stable",
+            "publishedAt": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z"),
+            "notes": f"Coloride {version}",
+            "downloadUrl": f"{base}/Coloride-{version}-arm64.dmg",
+            "platforms": {
+              "darwin": {
+                "url": f"{base}/Coloride-{version}-arm64.dmg",
+                "filename": f"Coloride-{version}-arm64.dmg",
+              },
+              "win32": {
+                "url": f"{base}/{setup}",
+                "filename": setup,
+              },
+            },
+          }
+          try:
+            prev = json.load(urllib.request.urlopen(f"{base}/latest.json", timeout=15))
+            # Prefer already-live darwin URL if this Windows-only job runs after Mac deploy
+            d = (prev.get("platforms") or {}).get("darwin") or {}
+            if d.get("url"):
+              data["platforms"]["darwin"] = d
+              data["downloadUrl"] = d.get("url") or data["downloadUrl"]
+          except Exception:
+            pass
+          print(json.dumps(data, indent=2))
+          PY
+
+          rm -f /tmp/deploy_key
+          echo "Deployed Windows ${VERSION} → ${DEPLOY_HOST}:${PATH_REMOTE}"
+
+          # nginx/CDN can briefly 403 right after scp; retry before failing the job
+          for p in latest.yml latest.json "$SETUP"; do
+            ok=0
+            for attempt in 1 2 3 4 5 6; do
+              code=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 60 "${BASE}/${p}" || echo err)
+              echo "  attempt ${attempt}: ${code}  ${BASE}/${p}"
+              if [ "$code" = "200" ]; then ok=1; break; fi
+              sleep 5
+            done
+            test "$ok" = "1"
+          done
+
+      - name: Attach assets to public Coloride-Releases (optional backup)
+        continue-on-error: true
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_GITHUB_TOKEN || secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "No token for Coloride-Releases — skip backup"
+            exit 0
+          fi
+          TAG="${{ steps.meta.outputs.tag }}"
+          VERSION="${{ steps.meta.outputs.version }}"
+          REPO="${{ env.RELEASES_REPO }}"
+          SETUP="client/desktop/release/Coloride-${VERSION}-win-x64-setup.exe"
+
+          gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1 \
+            || gh release create "$TAG" --repo "$REPO" \
+                 --title "Coloride $TAG" \
+                 --notes "Coloride desktop $TAG (binaries only — source is private)."
+
+          FILES=("$SETUP")
+          [[ -f client/desktop/release/latest.yml ]] && FILES+=(client/desktop/release/latest.yml)
+          shopt -s nullglob
+          FILES+=(client/desktop/release/*-win-*.blockmap)
+          gh release upload "$TAG" "${FILES[@]}" --repo "$REPO" --clobber
+          echo "Uploaded to https://github.com/${REPO}/releases/tag/${TAG}"

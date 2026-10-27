@@ -1,0 +1,150 @@
+{
+  "name": "@coloride/electron",
+  "productName": "Coloride",
+  "version": "0.1.28",
+  "private": false,
+  "license": "MIT",
+  "description": "Coloride desktop shell (Electron)",
+  "author": "Coloride",
+  "main": "src/main.cjs",
+  "scripts": {
+    "dev": "electron src/main.cjs",
+    "start": "electron src/main.cjs",
+    "build:sidecar": "bash ../../tooling/build/build-sidecar.sh --out client/desktop/resources/sidecar",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --mac dmg zip --arm64",
+    "dist:signed": "electron-builder --mac dmg zip --arm64 --publish never",
+    "dist:publish": "electron-builder --mac dmg zip --arm64 --publish always",
+    "dist:mac:arm64": "electron-builder --mac dmg zip --arm64 --publish never",
+    "dist:mac:arm64:publish": "electron-builder --mac dmg zip --arm64 --publish always",
+    "dist:win": "electron-builder --win nsis --x64 --publish never",
+    "dist:win:publish": "electron-builder --win nsis --x64 --publish always",
+    "dist:linux": "electron-builder --linux",
+    "build:agent": "node src/agent-runtime/build.mjs",
+    "build:voice": "node ../../tooling/build/build-voice-runtime.cjs"
+  },
+  "dependencies": {
+    "@sentry/electron": "^7.16.0",
+    "electron-updater": "^6.6.2"
+  },
+  "devDependencies": {
+    "electron": "43.2.0",
+    "electron-builder": "^26.0.12",
+    "esbuild": "0.25.12"
+  },
+  "build": {
+    "appId": "com.coloride.desktop",
+    "productName": "Coloride",
+    "copyright": "Copyright \u00a9 Coloride",
+    "directories": {
+      "output": "release",
+      "buildResources": "resources"
+    },
+    "files": [
+      "src/**/*",
+      "resources/icon.icns",
+      "resources/icon.png",
+      "resources/branding/*.svg",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../../client/ide/dist",
+        "to": "frontend-dist",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "resources/sidecar",
+        "to": "sidecar",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "resources/agent-runtime",
+        "to": "agent-runtime",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "resources/voice-runtime",
+        "to": "voice-runtime",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://example.invalid/coloride/downloads/"
+      }
+    ],
+    "mac": {
+      "icon": "resources/icon.icns",
+      "category": "public.app-category.developer-tools",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.inherit.plist",
+      "notarize": true,
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ],
+      "artifactName": "Coloride-${version}-${arch}.${ext}",
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "Dictate text into your agent message."
+      }
+    },
+    "dmg": {
+      "sign": false,
+      "artifactName": "Coloride-${version}-${arch}.${ext}"
+    },
+    "win": {
+      "icon": "resources/icon.png",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "Coloride-${version}-win-${arch}.${ext}",
+      "verifyUpdateCodeSignature": false
+    },
+    "linux": {
+      "icon": "resources/icon.png",
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Development"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Coloride",
+      "uninstallDisplayName": "Coloride",
+      "artifactName": "Coloride-${version}-win-${arch}-setup.${ext}"
+    },
+    "beforePack": "src/before-pack.cjs"
+  }
+}

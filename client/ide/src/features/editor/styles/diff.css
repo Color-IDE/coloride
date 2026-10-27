@@ -1,0 +1,73 @@
+/* Agent right-panel CodeMirror side-by-side diff (replaces Monaco DiffEditor). */
+.agent-workspace-diff,
+.coloride-diff-editor-root,
+.coloride-diff-editor-root .cm-mergeView,
+.coloride-diff-editor-root .coloride-diff-view {
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+  min-width: 0;
+  max-width: 100%;
+}
+.coloride-diff-editor-root .cm-mergeView {
+  display: flex !important;
+  flex-direction: column;
+  overflow: hidden;
+  background: #171717;
+}
+.coloride-diff-editor-root .cm-mergeViewEditors {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex !important;
+  flex-direction: row;
+  overflow: hidden;
+}
+.coloride-diff-editor-root .cm-mergeViewEditor {
+  flex: 1 1 50%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.coloride-diff-editor-root .cm-mergeViewEditor .cm-editor {
+  height: 100%;
+}
+.coloride-diff-editor-root .cm-mergeViewEditor .cm-scroller {
+  overflow: auto;
+}
+/* Soft change tints (same spirit as the old Monaco theme) */
+.coloride-diff-editor-root .cm-deletedChunk {
+  background-color: rgba(248, 81, 73, 0.12) !important;
+}
+.coloride-diff-editor-root .cm-insertedChunk {
+  background-color: rgba(63, 185, 80, 0.12) !important;
+}
+.coloride-diff-editor-root .cm-changedText,
+.coloride-diff-editor-root .cm-deletedText {
+  background-color: rgba(248, 81, 73, 0.22) !important;
+}
+.coloride-diff-editor-root .cm-mergeView .cm-changedLineGutter,
+.coloride-diff-editor-root .cm-mergeView .cm-deletedLineGutter {
+  background-color: rgba(248, 81, 73, 0.18);
+}
+.coloride-diff-editor-root .cm-mergeView .cm-insertedLineGutter {
+  background-color: rgba(63, 185, 80, 0.18);
+}
+body[data-theme="light"] .coloride-diff-editor-root .cm-mergeView {
+  background: #ffffff;
+}
+body[data-theme="light"] .coloride-diff-editor-root .cm-deletedChunk {
+  background-color: rgba(207, 34, 46, 0.10) !important;
+}
+body[data-theme="light"] .coloride-diff-editor-root .cm-insertedChunk {
+  background-color: rgba(26, 127, 55, 0.10) !important;
+}
+
+.agent-workspace-add-menu {
+  border: none;
+  background: var(--agent-surface-raised, #272727);
+  box-shadow:
+    0 12px 40px rgb(0 0 0 / 55%),
+    0 2px 8px rgb(0 0 0 / 35%);
+  /* Always above workspace content / Monaco / browser chrome */
+  z-index: 9999;
+}

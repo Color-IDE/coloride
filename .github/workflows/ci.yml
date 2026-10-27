@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  python:
+    name: Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install shells required by terminal tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes zsh
+      - name: Install backend packages
+        run: python -m pip install -e "core/ide-host[dev]"
+      - name: Bundle the agent runtime the tests drive
+        run: npm install --no-save --prefix client/desktop esbuild@0.25.12 && node client/desktop/src/agent-runtime/build.mjs
+      - name: Audit Python unused code
+        run: python tooling/checks/audit-python.py
+      - name: Verify Python
+        run: ./tooling/checks/verify.sh
+
+  web:
+    name: Desktop UI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile=false
+      - run: pnpm typecheck
+      - run: pnpm test:unit
+      - run: node tooling/checks/audit-source.mjs --javascript-only
+      - run: pnpm build:web
+
+  package-smoke:
+    name: Python Sidecar Smoke
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install backend package
+        run: |
+          python -m pip install -e core/ide-host pyinstaller
+      - name: Build smoke binary
+        run: |
+          pyinstaller --clean --onedir --name coloride-sidecar --paths core/ide-host/src core/ide-host/pyinstaller_entry.py
+
+  terminal-local:
+    name: Local terminal (${{ matrix.shell }})
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shell: [zsh, bash]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: python -m pip install -e 'core/ide-host[dev]'
+      - name: PTY and protocol regressions
+        run: python -m pytest core/ide-host/tests/terminal/test_local_terminal_protocol.py core/ide-host/tests/terminal/test_local_pty.py core/ide-host/tests/terminal/test_terminal_sessions.py core/ide-host/tests/terminal/test_shell_integration.py -q
+      - name: Build the production renderer the full IDE serves
+        run: pnpm build:web
+      - name: Real Electron integration
+        env:
+          COLORIDE_TEST_SHELL: /bin/${{ matrix.shell }}
+          COLORIDE_TEST_PYTHON: python
+          COLORIDE_PYTHON: python
+        run: pnpm test:electron
+      - name: Full IDE terminal layout
+        env:
+          COLORIDE_TEST_SHELL: /bin/${{ matrix.shell }}
+          COLORIDE_PYTHON: python
+        run: node tests/electron/smoke/packaged-smoke.mjs --source
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: terminal-${{ matrix.shell }}
+          path: artifacts/electron

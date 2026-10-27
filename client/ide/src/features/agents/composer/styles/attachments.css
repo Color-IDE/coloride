@@ -1,0 +1,239 @@
+.agent-composer-attachments {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 16%) transparent;
+}
+
+.agent-composer-attachments::-webkit-scrollbar {
+  height: 6px;
+}
+
+.agent-composer-attachments::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgb(255 255 255 / 16%);
+}
+
+.agent-composer-attachment {
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: 14px;
+  background: rgb(255 255 255 / 4.5%);
+}
+
+.agent-composer-attachment-thumb {
+  border-radius: 10px;
+  background: rgb(0 0 0 / 25%);
+}
+
+.agent-composer-attachment-file {
+  border-radius: 10px;
+  background: linear-gradient(160deg, #3d4454 0%, #2a2f3a 100%);
+  color: #d7dbe8;
+}
+
+.agent-composer-attachment-ext {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.agent-composer-attachment-name {
+  overflow: hidden;
+  color: #e8e8ec;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-composer-attachment-size {
+  color: #8f8f98;
+  font-size: 10px;
+  line-height: 1.2;
+}
+/* Inline code-ref chips inside the composer input (Cursor-style). */
+.agent-composer-input-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+.agent-composer-input-row .agent-composer-input {
+  flex: 1 1 8rem;
+  min-width: 6rem;
+  width: auto;
+}
+.agent-composer-code-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: min(100%, 22rem);
+  margin: 0;
+  padding: 3px 9px 3px 7px;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 8%);
+  color: rgb(255 255 255 / 78%);
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 100ms ease, color 100ms ease;
+}
+.agent-composer-code-chip:hover {
+  background: rgb(255 255 255 / 12%);
+  color: rgb(255 255 255 / 92%);
+}
+.agent-composer-code-chip-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  opacity: 0.72;
+}
+.agent-composer-code-chip-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.agent-composer-code-chip-range {
+  opacity: 0.62;
+  font-weight: 450;
+  font-variant-numeric: tabular-nums;
+}
+.agent-user-attachment.is-code .agent-user-attachment-range {
+  margin-left: 6px;
+  color: inherit;
+  opacity: 0.62;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+body[data-theme="light"] .agent-composer-code-chip {
+  background: rgb(24 24 27 / 6%);
+  color: rgb(24 24 27 / 78%);
+}
+body[data-theme="light"] .agent-composer-code-chip:hover {
+  background: rgb(24 24 27 / 10%);
+  color: rgb(24 24 27 / 92%);
+}
+
+
+.agent-composer-attachment-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 45%);
+  color: #f2f2f5;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.agent-composer-attachment-remove:hover {
+  background: rgb(0 0 0 / 68%);
+  color: #fff;
+}
+
+body[data-theme="light"] .agent-composer-queue {
+  background: #f0f0f2;
+}
+
+body[data-theme="light"] .agent-composer-queue-layer {
+  background: #e8e8eb;
+}
+
+body[data-theme="light"] .agent-composer-queue-layer.is-back {
+  background: #e0e0e4;
+}
+
+body[data-theme="light"] .agent-composer-queue-stack.is-stackable:not(.is-expanded) .agent-composer-queue.is-front {
+  box-shadow: 0 6px 16px rgb(24 24 27 / 8%);
+}
+
+body[data-theme="light"] .agent-composer-queue-text {
+  color: var(--agent-text);
+}
+
+body[data-theme="light"] .agent-composer-queue-count {
+  background: rgb(24 24 27 / 6%);
+  color: #52525b;
+}
+
+body[data-theme="light"] .agent-composer-queue-restore,
+body[data-theme="light"] .agent-composer-queue-delete {
+  color: #71717a;
+}
+
+body[data-theme="light"] .agent-composer-queue-restore:hover {
+  background: rgb(24 24 27 / 6%);
+  color: #171717;
+}
+
+body[data-theme="light"] .agent-composer-queue-delete:hover {
+  background: rgb(220 38 38 / 10%);
+  color: #dc2626;
+}
+
+body[data-theme="light"] .agent-composer-queue-collapsed.is-clickable:focus-visible .agent-composer-queue.is-front {
+  box-shadow: 0 0 0 1px rgb(59 130 246 / 35%);
+}
+
+body[data-theme="light"] .agent-composer.is-drag-over {
+  border-color: rgb(59 130 246 / 45%);
+  box-shadow:
+    0 0 0 1px rgb(59 130 246 / 18%),
+    0 18px 42px rgb(24 24 27 / 12%);
+}
+
+body[data-theme="light"] .agent-composer-drop-overlay {
+  background: rgb(255 255 255 / 72%);
+}
+
+body[data-theme="light"] .agent-composer-drop-overlay-card {
+  border-color: rgb(59 130 246 / 35%);
+  background: rgb(255 255 255 / 92%);
+  color: #1f2937;
+}
+
+body[data-theme="light"] .agent-composer-attachments {
+  scrollbar-color: rgb(24 24 27 / 16%) transparent;
+}
+
+body[data-theme="light"] .agent-composer-attachments::-webkit-scrollbar-thumb {
+  background: rgb(24 24 27 / 16%);
+}
+
+body[data-theme="light"] .agent-composer-attachment {
+  border-color: rgb(24 24 27 / 8%);
+  background: rgb(24 24 27 / 3.5%);
+}
+
+body[data-theme="light"] .agent-composer-attachment-file {
+  background: linear-gradient(160deg, #eef0f4 0%, #e2e5eb 100%);
+  color: #3f4654;
+}
+
+body[data-theme="light"] .agent-composer-attachment-name {
+  color: #18181b;
+}
+
+body[data-theme="light"] .agent-composer-attachment-size {
+  color: #71717a;
+}
+
+body[data-theme="light"] .agent-composer-attachment-remove {
+  background: rgb(24 24 27 / 55%);
+  color: #fff;
+}
+
+body[data-theme="light"] .agent-composer-attachment-remove:hover {
+  background: rgb(24 24 27 / 72%);
+}

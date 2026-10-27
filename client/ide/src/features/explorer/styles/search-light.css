@@ -1,0 +1,6 @@
+body[data-theme="light"] .filetree-search-panel { color:#27272a; }
+body[data-theme="light"] .filetree-search-panel input { color:#27272a !important; -webkit-text-fill-color:#27272a; }
+body[data-theme="light"] .filetree-search-panel > div:first-child { border-color:#e4e4e6; }
+body[data-theme="light"] .filetree-search-panel button,
+body[data-theme="light"] .filetree-search-panel button span { color:#52525b; }
+body[data-theme="light"] .filetree-search-panel button:hover { background:#f1f2f3; }

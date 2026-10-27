@@ -1,0 +1,309 @@
+/*
+ * Pointer cursors preference (Appearance → Pointer cursors).
+ * Applied via class + data-attr on html AND body (boot script + App.tsx).
+ * ON  → hand on interactive controls (and their children/icons).
+ * OFF → arrow on those same controls.
+ * Specialized cursors (text / grab / resize / wait) always win when set.
+ */
+:is(html, body).pointer-cursors-on :is(
+  button,
+  [role="button"],
+  [role="menuitem"],
+  [role="menuitemcheckbox"],
+  [role="menuitemradio"],
+  [role="tab"],
+  [role="option"],
+  [role="switch"],
+  [role="checkbox"],
+  [role="radio"],
+  [role="link"],
+  a[href],
+  summary,
+  select,
+  label[for],
+  [data-clickable="true"],
+  .cursor-pointer
+):not(:disabled):not([disabled]):not([aria-disabled="true"]),
+:is(html, body)[data-pointer-cursors="true"] :is(
+  button,
+  [role="button"],
+  [role="menuitem"],
+  [role="menuitemcheckbox"],
+  [role="menuitemradio"],
+  [role="tab"],
+  [role="option"],
+  [role="switch"],
+  [role="checkbox"],
+  [role="radio"],
+  [role="link"],
+  a[href],
+  summary,
+  select,
+  label[for],
+  [data-clickable="true"],
+  .cursor-pointer
+):not(:disabled):not([disabled]):not([aria-disabled="true"]) {
+  cursor: pointer !important;
+}
+
+/* Icons/spans inside controls inherit the hand (overrides nested cursor-default). */
+:is(html, body).pointer-cursors-on :is(
+  button,
+  [role="button"],
+  [role="menuitem"],
+  [role="tab"],
+  [role="option"],
+  [role="switch"],
+  [role="checkbox"],
+  [role="radio"],
+  a[href],
+  summary,
+  label[for],
+  [data-clickable="true"],
+  .cursor-pointer
+):not(:disabled):not([disabled]):not([aria-disabled="true"]) :where(:not(input):not(textarea):not(select)),
+:is(html, body)[data-pointer-cursors="true"] :is(
+  button,
+  [role="button"],
+  [role="menuitem"],
+  [role="tab"],
+  [role="option"],
+  [role="switch"],
+  [role="checkbox"],
+  [role="radio"],
+  a[href],
+  summary,
+  label[for],
+  [data-clickable="true"],
+  .cursor-pointer
+):not(:disabled):not([disabled]):not([aria-disabled="true"]) :where(:not(input):not(textarea):not(select)) {
+  cursor: inherit !important;
+}
+
+:is(html, body).pointer-cursors-off :is(
+  button,
+  [role="button"],
+  [role="menuitem"],
+  [role="menuitemcheckbox"],
+  [role="menuitemradio"],
+  [role="tab"],
+  [role="option"],
+  [role="switch"],
+  [role="checkbox"],
+  [role="radio"],
+  [role="link"],
+  a,
+  summary,
+  select,
+  label[for],
+  [data-clickable="true"],
+  .cursor-pointer
+),
+:is(html, body)[data-pointer-cursors="false"] :is(
+  button,
+  [role="button"],
+  [role="menuitem"],
+  [role="menuitemcheckbox"],
+  [role="menuitemradio"],
+  [role="tab"],
+  [role="option"],
+  [role="switch"],
+  [role="checkbox"],
+  [role="radio"],
+  [role="link"],
+  a,
+  summary,
+  select,
+  label[for],
+  [data-clickable="true"],
+  .cursor-pointer
+) {
+  cursor: default !important;
+}
+
+:is(html, body).pointer-cursors-off :is(
+  button,
+  [role="button"],
+  [role="menuitem"],
+  [role="tab"],
+  [role="option"],
+  [role="switch"],
+  a,
+  summary,
+  label[for],
+  [data-clickable="true"],
+  .cursor-pointer
+) :where(:not(input):not(textarea):not(select)),
+:is(html, body)[data-pointer-cursors="false"] :is(
+  button,
+  [role="button"],
+  [role="menuitem"],
+  [role="tab"],
+  [role="option"],
+  [role="switch"],
+  a,
+  summary,
+  label[for],
+  [data-clickable="true"],
+  .cursor-pointer
+) :where(:not(input):not(textarea):not(select)) {
+  cursor: inherit !important;
+}
+
+/* Specialized cursors beat the pointer preference. */
+:is(html, body).pointer-cursors-on .cursor-text,
+:is(html, body).pointer-cursors-off .cursor-text,
+:is(html, body)[data-pointer-cursors] .cursor-text,
+:is(html, body).pointer-cursors-on .agent-composer-input,
+:is(html, body).pointer-cursors-off .agent-composer-input,
+:is(html, body)[data-pointer-cursors] .agent-composer-input,
+:is(html, body).pointer-cursors-on textarea.agent-composer-input,
+:is(html, body).pointer-cursors-off textarea.agent-composer-input,
+:is(html, body)[data-pointer-cursors] textarea.agent-composer-input {
+  cursor: text !important;
+}
+:is(html, body).pointer-cursors-on .cursor-grab,
+:is(html, body).pointer-cursors-off .cursor-grab,
+:is(html, body)[data-pointer-cursors] .cursor-grab {
+  cursor: grab !important;
+}
+:is(html, body).pointer-cursors-on .cursor-grabbing,
+:is(html, body).pointer-cursors-on .cursor-grab:active,
+:is(html, body).pointer-cursors-off .cursor-grabbing,
+:is(html, body).pointer-cursors-off .cursor-grab:active,
+:is(html, body)[data-pointer-cursors] .cursor-grabbing,
+:is(html, body)[data-pointer-cursors] .cursor-grab:active {
+  cursor: grabbing !important;
+}
+:is(html, body).pointer-cursors-on .cursor-ew-resize,
+:is(html, body).pointer-cursors-off .cursor-ew-resize,
+:is(html, body)[data-pointer-cursors] .cursor-ew-resize {
+  cursor: ew-resize !important;
+}
+:is(html, body).pointer-cursors-on .cursor-ns-resize,
+:is(html, body).pointer-cursors-off .cursor-ns-resize,
+:is(html, body)[data-pointer-cursors] .cursor-ns-resize {
+  cursor: ns-resize !important;
+}
+:is(html, body).pointer-cursors-on .cursor-col-resize,
+:is(html, body).pointer-cursors-off .cursor-col-resize,
+:is(html, body)[data-pointer-cursors] .cursor-col-resize {
+  cursor: col-resize !important;
+}
+:is(html, body).pointer-cursors-on .cursor-row-resize,
+:is(html, body).pointer-cursors-off .cursor-row-resize,
+:is(html, body)[data-pointer-cursors] .cursor-row-resize {
+  cursor: row-resize !important;
+}
+:is(html, body).pointer-cursors-on .cursor-wait,
+:is(html, body).pointer-cursors-off .cursor-wait,
+:is(html, body)[data-pointer-cursors] .cursor-wait,
+:is(html, body).pointer-cursors-on :disabled.cursor-wait,
+:is(html, body)[data-pointer-cursors] :disabled.cursor-wait {
+  cursor: wait !important;
+}
+:is(html, body).pointer-cursors-on .cursor-crosshair,
+:is(html, body).pointer-cursors-off .cursor-crosshair,
+:is(html, body)[data-pointer-cursors] .cursor-crosshair {
+  cursor: crosshair !important;
+}
+:is(html, body).pointer-cursors-on .cursor-help,
+:is(html, body).pointer-cursors-off .cursor-help,
+:is(html, body)[data-pointer-cursors] .cursor-help {
+  cursor: help !important;
+}
+:is(html, body).pointer-cursors-on .cursor-not-allowed,
+:is(html, body).pointer-cursors-off .cursor-not-allowed,
+:is(html, body)[data-pointer-cursors] .cursor-not-allowed,
+:is(html, body).pointer-cursors-on :disabled,
+:is(html, body).pointer-cursors-off :disabled,
+:is(html, body)[data-pointer-cursors] :disabled,
+:is(html, body).pointer-cursors-on [disabled],
+:is(html, body).pointer-cursors-off [disabled],
+:is(html, body)[data-pointer-cursors] [disabled],
+:is(html, body).pointer-cursors-on [aria-disabled="true"],
+:is(html, body).pointer-cursors-off [aria-disabled="true"],
+:is(html, body)[data-pointer-cursors] [aria-disabled="true"],
+:is(html, body).pointer-cursors-on button:disabled,
+:is(html, body).pointer-cursors-off button:disabled,
+:is(html, body)[data-pointer-cursors] button:disabled {
+  cursor: default !important;
+}
+
+/* While dragging a panel/terminal split, force the resize cursor everywhere. */
+body.is-resizing-panel,
+body.is-resizing-panel * {
+  cursor: ew-resize !important;
+  user-select: none !important;
+}
+body.is-resizing-panel .transition-\[width\,opacity\],
+body.is-resizing-panel .transition-\[width\],
+body.is-resizing-panel .transition-opacity {
+  transition: none !important;
+}
+body.is-resizing-terminal,
+body.is-resizing-terminal * {
+  cursor: ns-resize !important;
+  user-select: none !important;
+}
+
+body[data-font-smoothing="false"] {
+  -webkit-font-smoothing: auto;
+}
+
+body[data-motion="reduce"] *,
+body[data-motion="reduce"] *::before,
+body[data-motion="reduce"] *::after {
+  scroll-behavior: auto !important;
+  animation-delay: 0ms !important;
+  animation-duration: 1ms !important;
+  transition-duration: 1ms !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-motion="system"] *,
+  body[data-motion="system"] *::before,
+  body[data-motion="system"] *::after {
+    scroll-behavior: auto !important;
+    animation-delay: 0ms !important;
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+.settings-menu-scroll,
+.server-menu-scroll {
+  scrollbar-color: #555 transparent;
+  scrollbar-width: thin;
+}
+
+.settings-menu-scroll::-webkit-scrollbar,
+.server-menu-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.settings-menu-scroll::-webkit-scrollbar-track,
+.server-menu-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.settings-menu-scroll::-webkit-scrollbar-thumb,
+.server-menu-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #555;
+}
+
+.settings-search-input::-webkit-search-cancel-button {
+  display: none;
+  -webkit-appearance: none;
+}
+
+.settings-activity-scroll {
+  /* The heatmap uses fixed GitHub-like cells and fits its natural width.
+     Hide browser scroll chrome as a safety net on narrow settings panes. */
+  scrollbar-width: none;
+}
+
+.settings-activity-scroll::-webkit-scrollbar {
+  display: none;
+}

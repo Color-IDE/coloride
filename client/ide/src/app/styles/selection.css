@@ -1,0 +1,21 @@
+/* Desktop chrome is not document content. Keep selection in editable surfaces
+   and the agent's existing selectable message/code regions. */
+body {
+  -webkit-user-select:none;
+  user-select:none;
+}
+input,
+textarea,
+[contenteditable="true"],
+[contenteditable="plaintext-only"],
+.monaco-editor {
+  -webkit-user-select:text;
+  user-select:text;
+}
+button,
+[role="button"],
+[role="menuitem"],
+[role="tab"] {
+  -webkit-user-select:none;
+  user-select:none;
+}

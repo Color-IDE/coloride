@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Coloride</title>
+    <script>
+      document.documentElement.dataset.theme = new URLSearchParams(location.search).get("theme")
+        || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.dataset.startup = "loading";
+    </script>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: transparent;
+        color: #9a9a9f;
+        color-scheme: dark;
+        -webkit-user-select: none;
+        user-select: none;
+        font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      body {
+        background: rgb(23 23 23 / 20%);
+        backdrop-filter: blur(18px);
+        opacity: 1;
+        will-change: opacity;
+        transition: opacity 160ms cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      html[data-startup="leaving"] body,
+      html[data-startup="finished"] body { opacity: 0; }
+      @media (prefers-reduced-motion: reduce) { body { transition: none; } }
+      html[data-theme="light"] body {
+        background: rgb(247 248 249 / 20%);
+        color-scheme: light;
+        color: #71717a;
+      }
+      .chrome {
+        height: 40px;
+        -webkit-app-region: drag;
+        app-region: drag;
+        display: flex;
+        align-items: stretch;
+        justify-content: flex-end;
+      }
+      .win-controls {
+        display: none;
+        height: 100%;
+        -webkit-app-region: no-drag;
+        app-region: no-drag;
+      }
+      body.is-win .win-controls { display: flex; }
+      .win-btn {
+        width: 46px;
+        border: 0;
+        background: transparent;
+        color: #c8c8cc;
+        cursor: default;
+      }
+      .win-btn:hover { background: rgb(255 255 255 / 8%); }
+      .win-btn.is-close:hover { background: #e81123; color: #fff; }
+      .stage {
+        position: absolute;
+        inset: 40px 0 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-app-region: no-drag;
+        app-region: no-drag;
+      }
+      .mark {
+        width: 76px;
+        height: 76px;
+        color: #9a9a9f;
+      }
+      .mark img { width: 100%; height: 100%; display: block; object-fit: contain; }
+    </style>
+  </head>
+  <body>
+    <div class="chrome">
+      <div class="win-controls" role="group" aria-label="Window controls">
+        <button class="win-btn" id="win-min" type="button" aria-label="Minimize" title="Minimize">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+            <path d="M1.5 6h9" stroke="currentColor" stroke-width="1.15" stroke-linecap="square" />
+          </svg>
+        </button>
+        <button class="win-btn" id="win-max" type="button" aria-label="Maximize" title="Maximize">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+            <rect x="1.75" y="1.75" width="8.5" height="8.5" stroke="currentColor" stroke-width="1.15" />
+          </svg>
+        </button>
+        <button class="win-btn is-close" id="win-close" type="button" aria-label="Close" title="Close">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+            <path d="M1.8 1.8l8.4 8.4M10.2 1.8l-8.4 8.4" stroke="currentColor" stroke-width="1.35" stroke-linecap="square" />
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="stage" aria-busy="true" aria-label="Loading Coloride">
+      <div class="mark">
+        <img src="../resources/branding/coloride-loading.svg" alt="" aria-hidden="true" />
+      </div>
+    </div>
+    <script>
+      (() => {
+        const mark = document.querySelector(".mark img");
+        const animatedMark = mark.getAttribute("src");
+        const reducedMark = animatedMark.replace(/coloride-loading\.svg(?:#.*)?$/, "coloride-loading-reduced.svg");
+        const motionPreference = matchMedia("(prefers-reduced-motion: reduce)");
+        const applyMotionPreference = () => {
+          // File-backed SVG images ignore a fragment-selected static view.
+          // Reduced motion loads the gray artwork directly.
+          const source = motionPreference.matches ? reducedMark : animatedMark;
+          if (mark.getAttribute("src") !== source) mark.setAttribute("src", source);
+        };
+        motionPreference.addEventListener("change", applyMotionPreference);
+        applyMotionPreference();
+        let finishing;
+        window.finishColorideSplash = () => {
+          if (finishing) return finishing;
+          finishing = new Promise((resolve) => {
+            let finished = false;
+            const finish = () => {
+              if (finished) return;
+              finished = true;
+              document.body.removeEventListener("transitionend", onTransitionEnd);
+              clearTimeout(timeout);
+              // Keep the transparent child alive until the editor and the
+              // final fade frame have both reached the compositor.
+              requestAnimationFrame(() => requestAnimationFrame(() => {
+                document.documentElement.dataset.startup = "finished";
+                resolve();
+              }));
+            };
+            const onTransitionEnd = (event) => {
+              if (event.target === document.body && event.propertyName === "opacity") finish();
+            };
+            const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+            const timeout = setTimeout(finish, reduced ? 0 : 300);
+            document.body.addEventListener("transitionend", onTransitionEnd);
+            document.documentElement.dataset.startup = "leaving";
+          });
+          return finishing;
+        };
+        const win = /Win/i.test(navigator.platform || "") || /Windows/i.test(navigator.userAgent || "");
+        if (win) document.body.classList.add("is-win");
+        const api = window.colorideDesktop && window.colorideDesktop.windowControls;
+        if (!api) return;
+        document.getElementById("win-min")?.addEventListener("click", () => void api.minimize());
+        document.getElementById("win-max")?.addEventListener("click", () => void api.toggleMaximize());
+        document.getElementById("win-close")?.addEventListener("click", () => void api.close());
+      })();
+    </script>
+  </body>
+</html>

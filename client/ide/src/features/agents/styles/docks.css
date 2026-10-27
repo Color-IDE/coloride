@@ -1,0 +1,976 @@
+/*
+ * The approval/checkpoint dock is a sibling at z-index 32. Lift the slot only
+ * while the attach menu is mounted so it always opens over Keep All / approval
+ * docks without changing the normal composer order.
+ */
+.agent-composer-card-slot:has(.agent-composer-attach-menu),
+.agent-composer-card-slot:has(.agent-slash-menu),
+.agent-composer-card-slot:has(.agent-plugin-confirm) {
+  z-index: 40;
+}
+
+/* Slash menu owns the space above the input — hide Allow / workspace until it closes. */
+.agent-composer-wrap:has(.agent-slash-menu) .agent-docks-stack,
+.agent-composer-wrap:has(.agent-slash-menu) .agent-newtask-workspace,
+.agent-composer-wrap:has(.agent-slash-menu) .agent-scroll-to-bottom-wrap,
+.agent-composer-wrap:has(.agent-command-approval) .agent-scroll-to-bottom-wrap,
+.agent-composer-wrap:has(.agent-guard-card) .agent-scroll-to-bottom-wrap {
+  display: none;
+}
+
+/* Floating jump-to-bottom: above input card; lifts over approval/Keep-all dock. */
+.agent-scroll-to-bottom-wrap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 10px);
+  z-index: 40;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  transition: bottom 140ms ease;
+}
+
+/* Sit above the inset Keep-all bar pegada al input. */
+.agent-composer-stack.has-approval-dock .agent-scroll-to-bottom-wrap {
+  bottom: calc(100% + 40px);
+}
+
+/* Review list expands the dock — clear extra room. */
+.agent-composer-stack.has-approval-dock.has-checkpoint-review .agent-scroll-to-bottom-wrap {
+  bottom: calc(100% + 200px);
+}
+
+.agent-scroll-to-bottom {
+  display: flex;
+  width: 36px;
+  height: 28px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #454545;
+  border-radius: 999px;
+  background: #2c2c2c;
+  color: #e8e8ea;
+  box-shadow:
+    0 8px 24px rgb(0 0 0 / 28%),
+    0 1px 0 rgb(255 255 255 / 4%);
+  cursor: pointer;
+  pointer-events: auto;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.agent-scroll-to-bottom:hover {
+  border-color: #555;
+  background: #343434;
+  color: #f4f4f5;
+  box-shadow:
+    0 10px 28px rgb(0 0 0 / 34%),
+    0 1px 0 rgb(255 255 255 / 5%);
+}
+
+.agent-scroll-to-bottom:active {
+  background: #303030;
+}
+
+.agent-scroll-to-bottom:focus-visible {
+  outline: 2px solid rgb(255 255 255 / 28%);
+  outline-offset: 2px;
+}
+
+body[data-theme="light"] .agent-scroll-to-bottom {
+  border-color: #d4d4d8;
+  background: #ffffff;
+  color: #18181b;
+  box-shadow:
+    0 8px 24px rgb(24 24 27 / 10%),
+    0 1px 0 rgb(24 24 27 / 4%);
+}
+
+body[data-theme="light"] .agent-scroll-to-bottom:hover {
+  border-color: #c4c4cc;
+  background: #fafafa;
+  color: #09090b;
+  box-shadow:
+    0 10px 28px rgb(24 24 27 / 12%),
+    0 1px 0 rgb(24 24 27 / 5%);
+}
+
+.agent-approval-dock-wrap {
+  display: flex;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  z-index: 32;
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 0;
+  pointer-events: none;
+}
+
+.agent-approval-dock-wrap > * {
+  pointer-events: auto;
+}
+
+/*
+ * Agents tab (full): dock inset (narrower than composer), flush on top.
+ * Sidebar has its own width under .agent-view-sidebar.
+ */
+.agent-docks-stack {
+  display: flex;
+  position: absolute;
+  left: 50%;
+  right: auto;
+  bottom: 100%;
+  z-index: 32;
+  box-sizing: border-box;
+  width: calc(100% - 48px);
+  max-width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  margin: 0;
+  transform: translateX(-50%);
+  overflow: visible;
+  pointer-events: none;
+}
+
+/* Full Agents tab only — keep inset; sidebar sets its own width below */
+.agent-view:not(.agent-view-sidebar) .agent-docks-stack {
+  width: calc(100% - 48px);
+}
+
+.agent-docks-stack > .agent-dock-slot {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  /* Slot itself must not steal clicks over the composer; only the dock chrome is interactive. */
+  pointer-events: none;
+}
+
+.agent-docks-stack .agent-approval-dock,
+.agent-docks-stack .agent-checkpoint-dock,
+.agent-docks-stack .agent-plan-dock {
+  pointer-events: auto;
+}
+
+.agent-docks-stack > .agent-dock-slot:first-child .agent-approval-dock,
+.agent-docks-stack > .agent-dock-slot:first-child .agent-checkpoint-dock {
+  border-radius: 8px 8px 0 0;
+}
+
+.agent-docks-stack:has(.agent-dock-slot + .agent-checkpoint-dock-slot) {
+  gap: 0;
+}
+
+.agent-docks-stack:has(.agent-dock-slot + .agent-checkpoint-dock-slot) > .agent-dock-slot:first-child .agent-approval-dock {
+  border-radius: 8px 8px 0 0;
+}
+
+.agent-docks-stack:has(.agent-dock-slot + .agent-checkpoint-dock-slot) > .agent-checkpoint-dock-slot .agent-checkpoint-dock {
+  border-radius: 0;
+  border-top: 1px solid rgb(255 255 255 / 8%);
+}
+
+.agent-approval-dock {
+  display: flex;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 10px;
+  margin: 0;
+  border: 1px solid #3f3f42;
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  background: #323234;
+  padding: 8px 12px;
+  color: #ececee;
+  overflow: hidden;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Command allow bar: side-by-side when room; stack only when the composer is narrow. */
+.agent-approval-dock.agent-command-approval {
+  flex-direction: row;
+  flex-wrap: nowrap;
+  min-height: 34px;
+  height: 34px;
+  max-height: 34px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 14px;
+  padding: 0 12px;
+  overflow: visible;
+}
+
+/* Composer card becomes the allow prompt, then the input returns. */
+.agent-view .agent-approval-dock.agent-command-approval.is-card {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 8px;
+  min-height: 0;
+  height: auto;
+  max-height: none;
+  margin: 0;
+  padding: 10px 10px 8px;
+  overflow: visible;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.agent-view .agent-composer-card-slot:has(.agent-command-approval.is-card) {
+  overflow: visible;
+  border: 1px solid rgb(255 255 255 / 4%);
+  border-radius: 8px;
+  background: #2c2c2c;
+  box-shadow: none;
+}
+
+body[data-theme="light"] .agent-view .agent-composer-card-slot:has(.agent-command-approval.is-card) {
+  border-color: rgb(24 24 27 / 7%);
+  background: #f6f6f7;
+  box-shadow: none;
+}
+
+.agent-command-approval-title {
+  min-width: 0;
+  color: #ececee;
+  font-size: 13.5px;
+  font-weight: 560;
+  letter-spacing: -0.01em;
+  line-height: 18px;
+}
+
+.agent-command-approval.is-card .agent-command-approval-cmd {
+  margin: 0;
+  max-height: 7.5rem;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+}
+
+.agent-command-approval-term {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #1b1b1b;
+}
+
+.agent-command-approval-term .agent-command-source-fade,
+.agent-command-approval-term .agent-terminal-source {
+  background: #1b1b1b;
+}
+
+.agent-command-approval-term .agent-command-source-fade .agent-terminal-source {
+  max-height: calc(5 * 1.6em + 20px);
+}
+
+.agent-command-approval-file {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 2px 4px;
+}
+
+.agent-command-approval-file-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: #b0b0b8;
+}
+
+.agent-command-approval-file-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.agent-command-approval-file-path {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #d4d4d8;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 450;
+  letter-spacing: -0.01em;
+}
+
+.agent-command-approval-diff {
+  overflow: hidden;
+  border-radius: 8px;
+  background: #1e1e20;
+}
+
+.agent-command-approval-diff .agent-diff-viewer {
+  margin: 0;
+  background: transparent;
+}
+
+.agent-command-approval-diff .agent-diff-viewer.is-headerless .agent-diff-lines,
+.agent-command-approval-diff .agent-diff-lines {
+  max-height: 8.5rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: transparent;
+  scrollbar-width: none;
+}
+
+.agent-command-approval-diff .agent-diff-lines::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+body[data-theme="light"] .agent-command-approval-diff {
+  background: #ececee;
+}
+
+body[data-theme="light"] .agent-command-approval-title {
+  color: #18181b;
+}
+
+body[data-theme="light"] .agent-command-approval-file-icon {
+  color: #71717a;
+}
+
+body[data-theme="light"] .agent-command-approval-file-path {
+  color: #3f3f46;
+}
+
+.agent-command-approval-footer {
+  display: flex;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.agent-command-approval-split {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+  overflow: visible;
+  border-radius: 6px;
+  background: #ececee;
+}
+
+.agent-command-approval-accept,
+.agent-command-approval-caret {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: #171717;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 550;
+  line-height: 1;
+}
+
+.agent-command-approval-accept {
+  min-height: 24px;
+  padding: 0 10px 0 12px;
+  border-radius: 6px 0 0 6px;
+}
+
+.agent-command-approval-caret {
+  width: 24px;
+  min-height: 24px;
+  padding: 0;
+  border-left: 1px solid rgb(23 23 23 / 12%);
+  border-radius: 0 6px 6px 0;
+}
+
+.agent-command-approval-caret svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+  transition: transform 140ms ease;
+}
+
+.agent-command-approval-caret.is-open svg {
+  transform: rotate(180deg);
+}
+
+.agent-command-approval-accept:hover:not(:disabled),
+.agent-command-approval-caret:hover:not(:disabled) {
+  background: rgb(23 23 23 / 6%);
+}
+
+.agent-command-approval-accept:disabled,
+.agent-command-approval-caret:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.agent-command-approval-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 4px);
+  z-index: 40;
+  display: flex;
+  width: max-content;
+  min-width: 280px;
+  flex-direction: column;
+  padding: 4px;
+  border: 1px solid rgb(255 255 255 / 3%);
+  border-radius: 6px;
+  background: #303030;
+  box-shadow: none;
+}
+
+.agent-command-approval-menu-item {
+  display: flex;
+  width: 100%;
+  min-height: 24px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #e8e8ea;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.agent-command-approval-menu-item:hover:not(:disabled) {
+  background: rgb(255 255 255 / 6%);
+  color: #f0f0f2;
+}
+
+.agent-command-approval-menu-item:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.agent-command-approval-shortcut {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 18px;
+  margin-left: auto;
+  padding: 0 7px;
+  border-radius: 4px;
+  background: #3a3a3a;
+  color: #8f8f94;
+  font-size: 11px;
+  font-weight: 550;
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+
+.agent-command-approval-menu-item:hover:not(:disabled) .agent-command-approval-shortcut {
+  background: #424242;
+  color: #8f8f94;
+}
+
+body[data-theme="light"] .agent-view .agent-approval-dock.agent-command-approval.is-card {
+  background: #f6f6f7;
+}
+
+body[data-theme="light"] .agent-command-approval-split {
+  background: #171717;
+}
+
+body[data-theme="light"] .agent-command-approval-accept,
+body[data-theme="light"] .agent-command-approval-caret {
+  color: #f5f5f5;
+}
+
+body[data-theme="light"] .agent-command-approval-caret {
+  border-left-color: rgb(255 255 255 / 14%);
+}
+
+body[data-theme="light"] .agent-command-approval-accept:hover:not(:disabled),
+body[data-theme="light"] .agent-command-approval-caret:hover:not(:disabled) {
+  background: rgb(255 255 255 / 8%);
+}
+
+body[data-theme="light"] .agent-command-approval-menu {
+  border-color: rgb(24 24 27 / 5%);
+  background: #ffffff;
+  box-shadow: none;
+}
+
+body[data-theme="light"] .agent-command-approval-menu-item {
+  color: #27272a;
+}
+
+body[data-theme="light"] .agent-command-approval-menu-item:hover:not(:disabled) {
+  background: #f1f2f3;
+  color: #171717;
+}
+
+body[data-theme="light"] .agent-command-approval-shortcut {
+  background: #ececee;
+  color: #71717a;
+}
+
+body[data-theme="light"] .agent-command-approval-menu-item:hover:not(:disabled) .agent-command-approval-shortcut {
+  background: #e4e4e7;
+  color: #52525b;
+}
+
+.agent-approval-dock.agent-command-approval .agent-approval-label {
+  flex: 1 1 auto;
+  width: auto;
+  max-width: 100%;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.agent-command-approval-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+}
+
+.agent-command-approval-cmd {
+  margin: 0;
+  max-width: 100%;
+  max-height: 5.5rem;
+  overflow: auto;
+  border-radius: 8px;
+  border: 1px solid rgb(255 255 255 / 10%);
+  background: #1e1e20;
+  padding: 8px 10px;
+  color: #e8e8ec;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  scrollbar-width: thin;
+}
+
+.agent-command-approval-cmd code {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+  padding: 0;
+  white-space: inherit;
+}
+
+.agent-command-approval-cwd {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 6px;
+  color: #9a9aa2;
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+.agent-command-approval-cwd-label {
+  flex: 0 0 auto;
+  color: #7a7a82;
+  font-weight: 500;
+  text-transform: lowercase;
+}
+
+.agent-command-approval-cwd-path {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  color: #b0b0b8;
+}
+
+body[data-theme="light"] .agent-command-approval-cmd {
+  border: 0;
+  background: #e4e4e7;
+  color: #1f1f23;
+}
+
+body[data-theme="light"] .agent-command-approval.is-card .agent-command-approval-cmd {
+  background: #e4e4e7;
+}
+
+body[data-theme="light"] .agent-command-approval-term,
+body[data-theme="light"] .agent-command-approval-term .agent-command-source-fade,
+body[data-theme="light"] .agent-command-approval-term .agent-terminal-source {
+  background: #f4f4f5;
+}
+
+body[data-theme="light"] .agent-command-approval-cwd {
+  color: #6b6b73;
+}
+
+body[data-theme="light"] .agent-command-approval-cwd-label {
+  color: #8a8a92;
+}
+
+body[data-theme="light"] .agent-command-approval-cwd-path {
+  color: #3a3a42;
+}
+
+.agent-approval-dock.agent-command-approval .agent-approval-actions {
+  flex: 0 0 auto;
+  width: auto;
+  max-width: 100%;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  row-gap: 0;
+  column-gap: 0;
+  margin-left: auto;
+}
+
+.agent-approval-dock.agent-command-approval .agent-approval-actions > button {
+  flex: 0 0 auto;
+  min-height: 32px;
+  height: 32px;
+  padding: 0 10px;
+  font-size: 12.5px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.agent-approval-dock.agent-command-approval .agent-approval-actions > button + button {
+  border-left: 1px solid rgb(255 255 255 / 16%);
+}
+
+.agent-approval-dock.agent-command-approval .agent-approval-actions > button:first-child {
+  padding-left: 2px;
+}
+
+.agent-command-approval-plugin {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgb(0 0 0 / 22%);
+}
+
+.agent-command-approval-plugin-mark {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  color: #ececee;
+}
+
+.agent-command-approval-plugin-mark img,
+.agent-command-approval-plugin-mark svg {
+  display: block;
+  width: 32px;
+  height: 32px;
+  border-radius: 0;
+  object-fit: contain;
+}
+
+.agent-command-approval-plugin-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.agent-command-approval-plugin-name {
+  font-size: 13.5px;
+  font-weight: 550;
+  color: #f2f2f4;
+}
+
+.agent-command-approval-plugin-tool {
+  font-size: 12px;
+  font-weight: 400;
+  color: #8b8b90;
+  text-transform: none;
+}
+
+.agent-mcp-tool {
+  margin-bottom: 8px;
+}
+
+.agent-mcp-tool-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.agent-mcp-tool-mark {
+  display: block;
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.agent-mcp-tool-plugin {
+  margin-left: 6px;
+  color: #8b8b90;
+  font-size: 12px;
+  font-weight: 450;
+}
+
+body[data-theme="light"] .agent-command-approval-plugin {
+  background: rgb(24 24 27 / 5%);
+}
+
+body[data-theme="light"] .agent-command-approval-plugin-mark {
+  color: #18181b;
+}
+
+body[data-theme="light"] .agent-command-approval-plugin-name {
+  color: #18181b;
+}
+
+body[data-theme="light"] .agent-command-approval-plugin-tool,
+body[data-theme="light"] .agent-mcp-tool-plugin {
+  color: #71717a;
+}
+
+.agent-approval-dock.agent-command-approval .agent-approval-actions > button:last-child {
+  padding-right: 2px;
+}
+
+/* Narrow composer (sidebar): label on top, actions below, full width. */
+@container agent-composer (max-width: 420px) {
+  .agent-approval-dock.agent-command-approval {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    min-height: 0;
+    height: auto;
+    max-height: none;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .agent-approval-dock.agent-command-approval .agent-approval-label {
+    flex: 0 0 auto;
+    width: 100%;
+  }
+
+  .agent-approval-dock.agent-command-approval .agent-approval-actions {
+    flex: 0 0 auto;
+    width: 100%;
+    margin-left: 0;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+}
+
+/* Very narrow: spread action buttons evenly */
+@container agent-composer (max-width: 320px) {
+  .agent-approval-dock.agent-command-approval .agent-approval-actions {
+    justify-content: space-between;
+  }
+
+  .agent-approval-dock.agent-command-approval .agent-approval-actions > button {
+    flex: 1 1 auto;
+    text-align: center;
+    padding: 6px 6px;
+  }
+}
+
+
+/* Agents tab checkpoint bar — full width on composer */
+.agent-approval-dock.agent-checkpoint-dock,
+.agent-checkpoint-dock {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0;
+  padding: 0;
+  min-height: 0;
+  border: 1px solid #3f3f42;
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  background: #323234;
+  box-shadow: none;
+}
+
+/* ——— Explorer sidebar only: inset Cursor-style chip ——— */
+.agent-view-sidebar .agent-docks-stack {
+  left: 50%;
+  right: auto;
+  width: calc(100% - 24px);
+  transform: translateX(-50%);
+}
+
+body[data-theme="light"] .agent-view:not(.agent-view-sidebar) .agent-docks-stack {
+  width: calc(100% - 48px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.agent-view-sidebar .agent-docks-stack > .agent-dock-slot:first-child .agent-approval-dock,
+.agent-view-sidebar .agent-docks-stack > .agent-dock-slot:first-child .agent-checkpoint-dock {
+  border-radius: 8px 8px 0 0;
+}
+
+.agent-view-sidebar .agent-approval-dock.agent-checkpoint-dock,
+.agent-view-sidebar .agent-checkpoint-dock,
+.agent-view-sidebar .agent-checkpoint-dock-sidebar {
+  border: none;
+  border-bottom: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.agent-view-sidebar .agent-checkpoint-dock-main {
+  padding-right: 4px;
+}
+
+.agent-view-sidebar .agent-checkpoint-dock-right {
+  padding-right: 0;
+  margin-right: 0;
+}
+
+.agent-plan-dock {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  max-height: min(42vh, 360px);
+  padding: 10px 12px 10px;
+  overflow: hidden;
+}
+
+.agent-plan-dock-main {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.agent-plan-dock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.agent-plan-dock-toggle {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.agent-plan-dock-toggle:hover {
+  opacity: 0.85;
+}
+
+.agent-plan-dock-toggle .agent-approval-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-plan-dock-toggle .agent-thinking-chevron {
+  opacity: 0.55;
+}
+
+.agent-plan-dock-toggle:hover .agent-thinking-chevron,
+.agent-plan-dock-toggle:focus-visible .agent-thinking-chevron,
+.agent-plan-dock-toggle .agent-thinking-chevron.is-open {
+  opacity: 1;
+}
+
+.agent-plan-dock-body {
+  min-height: 0;
+  margin: 2px 0 0;
+  overflow: auto;
+}
+
+.agent-plan-dock-actions {
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  padding-top: 0;
+}
+
+.agent-plan-dock-progress-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: rgb(236 236 238 / 55%);
+  font-size: 11.5px;
+  font-weight: 450;
+}
+
+.agent-plan-step-spin {
+  animation: agent-plan-spin 0.9s linear infinite;
+}
+
+@keyframes agent-plan-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.account-auth-spin {
+  animation: agent-plan-spin 0.9s linear infinite;
+}
+
+.agent-status {
+  opacity: 0.55;
+  letter-spacing: 0.01em;
+}

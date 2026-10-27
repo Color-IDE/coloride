@@ -1,0 +1,750 @@
+/* === Electron frameless / native-chrome fixes === */
+body.electron-frameless,
+body.electron-frameless #root,
+body.electron-frameless main,
+body.electron-frameless main > section[aria-label="Coloride desktop app"] {
+  background: #171717 !important;
+  background-color: #171717 !important;
+  border-top: none !important;
+  box-shadow: none !important;
+}
+
+body.electron-frameless nav[aria-label="Primary"] {
+  background: #171717 !important;
+  background-color: #171717 !important;
+}
+
+/*
+ * Login chrome follows the saved theme. Dark stays #171717; light uses the app plate.
+ */
+html.login-gate-active,
+html.login-gate-active body,
+html.login-gate-active body #root,
+html.login-gate-active #root,
+body.login-gate-active,
+body.login-gate-active #root,
+body.electron-frameless.login-gate-active,
+body.electron-frameless.login-gate-active #root,
+body.electron-frameless.login-gate-active main {
+  background: #171717 !important;
+  background-color: #171717 !important;
+}
+
+html[data-theme="light"].login-gate-active,
+html[data-theme="light"].login-gate-active body,
+html[data-theme="light"].login-gate-active body #root,
+html[data-theme="light"].login-gate-active #root,
+body[data-theme="light"].login-gate-active,
+body[data-theme="light"].login-gate-active #root,
+body[data-theme="light"].electron-frameless.login-gate-active,
+body[data-theme="light"].electron-frameless.login-gate-active #root,
+body[data-theme="light"].electron-frameless.login-gate-active main {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+}
+
+/*
+ * Login panel follows the saved theme.
+ * Root hosts crossfade between app shell and login (mode="wait").
+ */
+.login-gate-root {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  overflow: hidden;
+  background: #171717;
+}
+
+.login-gate-app {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+  background: #171717;
+}
+
+.login-gate {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  color-scheme: dark;
+  background: #171717;
+}
+
+.login-gate-boot {
+  background: #171717;
+}
+
+html[data-theme="light"] .login-gate-root,
+html[data-theme="light"] .login-gate-app,
+body[data-theme="light"] .login-gate-root,
+body[data-theme="light"] .login-gate-app,
+body[data-theme="light"] .login-gate,
+html[data-theme="light"] .login-gate,
+body[data-theme="light"] .login-gate-boot,
+html[data-theme="light"] .login-gate-boot {
+  background: #ffffff;
+  color-scheme: light;
+}
+
+.login-gate-boot-mark {
+  /* Keep the transient boot mark quiet; the app chrome takes prominence once
+     the workspace has loaded. */
+  width: 76px;
+  height: 76px;
+  color: #9a9a9f;
+}
+
+/* The persistent startup surface owns the animated mark until the app is ready. */
+html[data-startup] .login-gate-boot-mark {
+  visibility: hidden;
+}
+
+.login-gate-login-mark {
+  width: 50px;
+  height: 50px;
+  flex: 0 0 50px;
+}
+
+.login-gate-login-mark .coloride-brand,
+.login-gate-login-mark .coloride-brand-svg {
+  width: 50px !important;
+  height: 50px !important;
+}
+
+.login-gate-content {
+  max-width: 340px;
+}
+
+.login-gate-title {
+  margin: 0;
+  color: #e9e9eb;
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+
+.login-gate-boot-mark svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Same height as DesktopTitleBar (h-10) so window move works before sign-in. */
+.login-gate-drag {
+  height: 40px;
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+/* Optical align: native traffic lights + custom controls share one 40px row. */
+.desktop-titlebar {
+  height: 40px;
+  min-height: 40px;
+}
+
+/* Windows title bar: text app menu + caption buttons */
+.desktop-titlebar--windows {
+  padding-left: 0;
+}
+
+.desktop-titlebar--windows .desktop-titlebar-left--menu {
+  /* Logo owns the rail column; no extra left pad that shifts File off-grid */
+  padding-left: 0;
+  gap: 2px;
+}
+
+.app-menu-bar {
+  display: flex;
+  height: 100%;
+  align-items: center; /* vertical center with title bar / File buttons */
+  gap: 0;
+  cursor: default !important;
+}
+
+/* Title-bar chrome always uses arrow (not hand), even if pointer-cursors is on. */
+.desktop-titlebar :is(
+  .app-menu-trigger,
+  .app-menu-item,
+  .app-menu-logo,
+  .titlebar-button,
+  .windows-caption-btn,
+  [role="menuitem"]
+) {
+  cursor: default !important;
+}
+
+/*
+ * Logo sits in the same 52px column as PrimaryRail (w-13).
+ * Flex center = same X as Explorer glyph; same Y as File/Edit triggers.
+ */
+.app-menu-logo {
+  display: inline-flex;
+  width: 3.25rem; /* = Tailwind w-13 / PrimaryRail */
+  height: 100%;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  /* Pull File a bit closer to the mark without breaking rail alignment */
+  padding: 0;
+  margin-right: -2px;
+  color: #e8e8ea;
+  cursor: default;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+  pointer-events: none;
+  user-select: none;
+}
+
+.app-menu-logo-mark {
+  /* The persistent app mark is intentionally clearer than the boot splash. */
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.app-menu-root {
+  display: flex;
+  height: 100%;
+  align-items: center;
+}
+
+.app-menu-trigger {
+  display: inline-flex;
+  height: 26px;
+  align-items: center;
+  /* Horizontal padding inside each File/Edit chip — text not cramped */
+  padding: 0 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #c4c4c8;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  cursor: default;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.app-menu-trigger:hover {
+  background: rgb(255 255 255 / 7%);
+  color: #f4f4f5;
+  cursor: default;
+}
+
+.app-menu-trigger.is-open {
+  background: rgb(255 255 255 / 10%);
+  color: #fafafa;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 6%);
+  cursor: default;
+}
+
+/*
+ * Match titlebar-account-menu / agent menus:
+ * rounded-2xl surface, #242424, border #333, soft white hover (no system blue).
+ */
+.app-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 1000;
+  min-width: 232px;
+  padding: 6px;
+  border: 1px solid #333333;
+  border-radius: 16px;
+  background: #242424;
+  box-shadow: 0 18px 48px rgb(0 0 0 / 50%);
+  transform-origin: top left;
+  will-change: opacity, transform;
+  cursor: default;
+}
+
+.app-menu-dropdown[data-closing="true"] {
+  pointer-events: none;
+}
+
+.app-menu-item {
+  display: flex;
+  width: 100%;
+  min-height: 32px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #e8e8ea;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-align: left;
+  cursor: default !important;
+  transition:
+    background-color 100ms ease,
+    color 100ms ease;
+}
+
+.app-menu-item:hover {
+  background: rgb(255 255 255 / 6%);
+  color: #f0f0f2;
+  cursor: default !important;
+}
+
+.app-menu-item:hover .app-menu-item-shortcut {
+  color: #a1a1aa;
+}
+
+.app-menu-item:active {
+  background: rgb(255 255 255 / 9%);
+}
+
+.app-menu-item-label {
+  min-width: 0;
+}
+
+.app-menu-item-shortcut {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: #8b8b90;
+  font-variant-numeric: tabular-nums;
+  transition: color 100ms ease;
+}
+
+.app-menu-separator {
+  height: 1px;
+  margin: 4px 8px;
+  background: #333333;
+}
+
+.app-menu-submenu {
+  position: relative;
+}
+
+.app-menu-submenu-panel {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: calc(100% - 4px);
+  min-width: 180px;
+  padding: 4px;
+  border-radius: 10px;
+  background: #2a2a2a;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 35%);
+}
+
+.app-menu-submenu:hover .app-menu-submenu-panel,
+.app-menu-submenu:focus-within .app-menu-submenu-panel {
+  display: block;
+}
+
+body[data-theme="light"] .app-menu-trigger {
+  color: #52525b;
+}
+
+body[data-theme="light"] .app-menu-trigger:hover {
+  background: rgb(0 0 0 / 5%);
+  color: #18181b;
+}
+
+body[data-theme="light"] .app-menu-trigger.is-open {
+  background: rgb(0 0 0 / 7%);
+  color: #18181b;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 5%);
+}
+
+body[data-theme="light"] .app-menu-dropdown {
+  border-color: #e4e4e6;
+  background: #ffffff;
+  box-shadow: 0 18px 42px rgb(24 24 27 / 14%);
+}
+
+body[data-theme="light"] .app-menu-item {
+  color: #27272a;
+}
+
+body[data-theme="light"] .app-menu-item:hover {
+  background: #f1f2f3;
+  color: #171717;
+}
+
+body[data-theme="light"] .app-menu-item:active {
+  background: #e8e9eb;
+}
+
+body[data-theme="light"] .app-menu-item-shortcut {
+  color: #a1a1aa;
+}
+
+body[data-theme="light"] .app-menu-item:hover .app-menu-item-shortcut {
+  color: #71717a;
+}
+
+body[data-theme="light"] .app-menu-separator {
+  background: #ececef;
+}
+
+/* Windows frameless caption buttons — match native Win11 hit targets */
+.windows-window-controls {
+  height: 100%;
+  margin: 0;
+  margin-left: 2px;
+  align-self: stretch;
+}
+
+.windows-caption-btn {
+  display: inline-flex;
+  width: 46px;
+  height: 100%;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #a6a6a6;
+  cursor: default;
+  transition: background-color 60ms linear, color 60ms linear;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.windows-caption-btn svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+/* Close X reads larger than min/max (native Win11 feel) */
+.windows-caption-btn.is-close svg {
+  width: 14px;
+  height: 14px;
+}
+
+.windows-caption-btn:hover {
+  background: rgb(255 255 255 / 6%);
+  color: #ffffff;
+}
+
+.windows-caption-btn:active {
+  background: rgb(255 255 255 / 4%);
+  color: #ffffff;
+}
+
+/* Close button — square corners on full-bleed Windows chrome */
+.windows-caption-btn.is-close {
+  width: 48px;
+  border-top-right-radius: var(--win-chrome-radius, 0px);
+  border-bottom-right-radius: 0;
+}
+
+html.is-window-maximized .windows-caption-btn.is-close,
+body.is-window-maximized .windows-caption-btn.is-close {
+  border-top-right-radius: 0;
+}
+
+.windows-caption-btn.is-close:hover {
+  background: #c42b1c;
+  color: #ffffff;
+}
+
+.windows-caption-btn.is-close:active {
+  background: #b22a1b;
+  color: #ffffff;
+}
+
+/* When maximized, corners are square */
+html.is-window-maximized .windows-caption-btn.is-close,
+body.is-window-maximized .windows-caption-btn.is-close {
+  border-top-right-radius: 0;
+}
+
+body[data-theme="light"] .windows-caption-btn {
+  color: #5a5a5a;
+}
+
+body[data-theme="light"] .windows-caption-btn:hover {
+  background: rgb(0 0 0 / 5%);
+  color: #1a1a1a;
+}
+
+body[data-theme="light"] .windows-caption-btn:active {
+  background: rgb(0 0 0 / 3%);
+}
+
+body[data-theme="light"] .windows-caption-btn.is-close:hover {
+  background: #c42b1c;
+  color: #fff;
+}
+
+body[data-theme="light"] .windows-caption-btn.is-close:active {
+  background: #b22a1b;
+  color: #fff;
+}
+
+/* Top-right action chips (Restart to Update, Upgrade Pro, …) */
+.titlebar-pills {
+  -webkit-app-region: no-drag;
+}
+
+.titlebar-pill {
+  display: inline-flex;
+  height: 26px;
+  max-width: 220px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  /* line-height: 1 clips the descenders of g and p once the label hides overflow. */
+  line-height: 18px;
+  white-space: nowrap;
+  cursor: default;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.titlebar-pill.is-interactive {
+  cursor: pointer;
+}
+
+.titlebar-pill.is-busy {
+  opacity: 0.92;
+}
+
+.titlebar-pill-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* 11.5px text with line-height 1 is shorter than g/p descenders, so the
+     hidden overflow was clipping the bottom of “Upgrade Pro”. */
+  line-height: 16px;
+  padding-bottom: 1px;
+}
+
+.titlebar-pill-leading,
+.titlebar-pill-trailing {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Cursor-like soft blue “Restart to Update” */
+.titlebar-pill--accent {
+  background: #5b8def;
+  color: #f4f7ff;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 6%) inset;
+}
+
+.titlebar-pill--accent.is-interactive:hover {
+  background: #6b9af5;
+  color: #fff;
+}
+
+.titlebar-pill--neutral {
+  background: rgb(255 255 255 / 8%);
+  color: #c8c8cc;
+}
+
+.titlebar-pill--neutral.is-interactive:hover {
+  background: rgb(255 255 255 / 12%);
+  color: #eeeef0;
+}
+
+.titlebar-pill--success {
+  background: rgb(52 199 89 / 16%);
+  color: #7ddea0;
+}
+
+.titlebar-pill--warning {
+  background: rgb(255 159 10 / 16%);
+  color: #ffc46b;
+}
+
+.titlebar-pill--warning.is-interactive:hover {
+  background: rgb(255 159 10 / 24%);
+}
+
+.titlebar-pill--pro {
+  background: rgb(139 92 246 / 15%);
+  color: #c4b5fd;
+}
+
+.titlebar-pill--pro.is-interactive:hover {
+  background: rgb(139 92 246 / 25%);
+  color: #ddd6fe;
+}
+
+body[data-theme="light"] .titlebar-pill--accent {
+  background: #4f7fe8;
+  color: #fff;
+  box-shadow: 0 1px 2px rgb(24 24 27 / 12%);
+}
+
+body[data-theme="light"] .titlebar-pill--accent.is-interactive:hover {
+  background: #3f6fd4;
+}
+
+body[data-theme="light"] .titlebar-pill--neutral {
+  background: #e8eaed;
+  color: #3f3f46;
+}
+
+body[data-theme="light"] .titlebar-pill--pro {
+  background: rgb(124 58 237 / 12%);
+  color: #6d28d9;
+}
+
+body[data-theme="light"] .titlebar-pill--pro.is-interactive:hover {
+  background: rgb(124 58 237 / 18%);
+  color: #5b21b6;
+}
+
+body[data-theme="light"] .titlebar-pill--warning {
+  background: rgb(245 158 11 / 16%);
+  color: #b45309;
+}
+
+.login-gate-subtitle {
+  color: #a1a1a6 !important;
+  max-width: 300px;
+}
+
+.login-gate-footnote {
+  margin: 18px 0 0;
+  color: #737378;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.login-gate-primary,
+.login-gate-secondary {
+  height: 32px;
+  border-radius: 10px;
+}
+
+.login-gate-primary {
+  width: min(100%, 260px) !important;
+  align-self: center;
+  height: 32px;
+  border: 0.5px solid rgb(255 255 255 / 0.11);
+  border-radius: 10px;
+  background: transparent;
+  box-shadow: inset 0 1px rgb(255 255 255 / 0.018);
+  color: #eeeeef;
+}
+
+.login-gate-primary:hover:not(:disabled) {
+  border-color: rgb(255 255 255 / 0.18);
+  background: rgb(255 255 255 / 0.018);
+  box-shadow: inset 0 1px rgb(255 255 255 / 0.035);
+}
+
+.login-gate-primary:focus-visible {
+  outline: 2px solid #a9a9ae;
+  outline-offset: 3px;
+}
+
+.login-gate-secondary {
+  background: #3a3a3c;
+  color: #e5e5ea !important;
+}
+
+.login-gate-secondary:hover:not(:disabled) {
+  background: #454548;
+}
+
+body[data-theme="light"] .login-gate,
+html[data-theme="light"] .login-gate {
+  background: #ffffff;
+  color-scheme: light;
+}
+
+body[data-theme="light"] .login-gate-title,
+html[data-theme="light"] .login-gate-title {
+  color: #18181b;
+}
+
+body[data-theme="light"] .login-gate-primary,
+html[data-theme="light"] .login-gate-primary {
+  border-color: rgb(0 0 0 / 0.12);
+  background: #ffffff;
+  box-shadow: none;
+  color: #18181b;
+}
+
+body[data-theme="light"] .login-gate-primary:hover:not(:disabled),
+html[data-theme="light"] .login-gate-primary:hover:not(:disabled) {
+  border-color: rgb(0 0 0 / 0.18);
+  background: #f4f4f5;
+}
+
+body[data-theme="light"] .login-gate-footnote,
+html[data-theme="light"] .login-gate-footnote {
+  color: #71717a;
+}
+
+body[data-theme="light"] .login-gate-subtitle,
+html[data-theme="light"] .login-gate-subtitle {
+  color: #52525b !important;
+}
+
+body[data-theme="light"] .login-gate-secondary,
+html[data-theme="light"] .login-gate-secondary {
+  background: #3a3a3c;
+  color: #e5e5ea !important;
+}
+
+body[data-theme="light"] .login-gate-secondary:hover:not(:disabled),
+html[data-theme="light"] .login-gate-secondary:hover:not(:disabled) {
+  background: #454548;
+}
+
+/* Make sure nothing creates a light seam at the very top edge */
+body.electron-frameless main {
+  padding-top: 0 !important;
+}
+
+/* Ensure the top spacer area can be used for dragging */
+body.electron-frameless .top-spacer {
+  -webkit-app-region: drag;
+  border-radius: inherit;
+}
+
+/* top-spacer background is controlled via inline style in App.tsx */
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* Application menus share the agent header dropdown surface. */
+.app-menu-dropdown, .app-menu-submenu-panel {
+  padding:4px; border:1px solid rgb(255 255 255 / 3%);
+  border-radius: var(--ui-radius-menu); background:var(--ui-surface-raised); box-shadow:none;
+}
+.app-menu-item { border-radius: var(--ui-radius-control); }
+body[data-theme="light"] .app-menu-dropdown,
+body[data-theme="light"] .app-menu-submenu-panel {
+  border-color:rgb(24 24 27 / 5%); background:var(--ui-surface-raised); box-shadow:none;
+}
+@media (max-width:1100px) { .app-menu-trigger { padding-inline:6px; } }

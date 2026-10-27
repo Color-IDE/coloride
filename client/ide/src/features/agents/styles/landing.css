@@ -1,0 +1,86 @@
+/* Full Agents landing: project above a centered composer, environment below. */
+.agent-newtask-home { overflow-y: auto; }
+.agent-newtask-home > .agent-timeline-shell {
+  display: none;
+}
+.agent-view:not(.agent-view-sidebar) .agent-newtask-home > .agent-composer-wrap.is-new-task {
+  width: 100%;
+  margin-block: auto;
+  padding: 48px 24px !important;
+}
+.agent-newtask-home .agent-composer-stack {
+  max-width: 48rem;
+  padding-top: 36px;
+}
+.agent-newtask-home .agent-composer-wrap.is-new-task .agent-newtask-workspace {
+  top: 0;
+  bottom: auto;
+  left: 0;
+  width: 100%;
+  transform: none;
+}
+.agent-newtask-home .agent-composer-wrap.is-new-task .agent-newtask-workspace-bar {
+  padding: 0 10px;
+  border-radius: 0;
+  background: transparent;
+}
+.agent-newtask-home .agent-composer-wrap.is-new-task .agent-newtask-workspace-trigger {
+  color: var(--agent-muted, #a5a5aa);
+  border-radius: 6px;
+}
+.agent-newtask-environment {
+  position: relative;
+  z-index: 0;
+  margin-top: -8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 13px 8px 5px;
+  border: 1px solid var(--agent-border, #333333);
+  border-top: 0;
+  border-radius: 0 0 8px 8px;
+  background: var(--agent-surface, #212121);
+  color: #929298;
+  font-size: 11px;
+}
+.agent-newtask-environment svg { width: 15px; height: 15px; flex-shrink: 0; }
+.agent-newtask-home .agent-newtask-workspace-menu {
+  top: 34px !important;
+  bottom: auto !important;
+  max-height: min(320px, 45vh);
+  overflow: hidden;
+}
+body[data-theme="light"] .agent-newtask-home .agent-composer-wrap.is-new-task .agent-newtask-workspace-bar { background: transparent; }
+body[data-theme="light"] .agent-newtask-environment { background: #f1f1f3; border-color: #dedee2; color: #71717a; }
+@media (max-width: 700px) {
+  .agent-view:not(.agent-view-sidebar) .agent-newtask-home > .agent-composer-wrap.is-new-task { padding-inline: 16px !important; }
+}
+
+.agent-newtask-workspace-menu .agent-newtask-workspace-item {
+  width: 100%; min-height: 24px; margin: 1px 0; padding: 3px 8px;
+  border-radius: 4px; font-size: 12px;
+}
+.agent-newtask-workspace-menu .agent-newtask-workspace-item:hover,
+.agent-newtask-workspace-menu .agent-newtask-workspace-item.is-selected { background: #414141; }
+body[data-theme="light"] .agent-newtask-workspace-menu .agent-newtask-workspace-item:hover,
+body[data-theme="light"] .agent-newtask-workspace-menu .agent-newtask-workspace-item.is-selected { background: #f1f2f3; }
+
+/* Same 2px overlay as Explorer; its track sits against the menu's right edge. */
+.agent-workspace-scroll-surface {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-right: -4px;
+}
+.agent-newtask-workspace-menu .agent-workspace-scroll-surface .agent-newchat-workspace-menu-list {
+  padding-right: 4px;
+  scrollbar-width: none;
+}
+.agent-workspace-scroll-surface .agent-newchat-workspace-menu-list::-webkit-scrollbar {
+  display: none;
+  width: 0;
+}
+.agent-workspace-scroll-surface > .vertical-scroll-hairline { top: 2px; bottom: 2px; right: 0; }

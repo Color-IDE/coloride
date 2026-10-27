@@ -1,0 +1,7 @@
+.agent-history-row > .agent-history-rename {
+  position:absolute; top:8px; left:8px; width:calc(100% - 74px);
+  height:18px; margin:0; padding:0; border:0; border-radius:0;
+  background:transparent; color:inherit; font:inherit; font-size:13px;
+  font-weight:500; line-height:18px; outline:none;
+}
+body[data-theme="light"] .agent-history-row > .agent-history-rename { background:transparent; }

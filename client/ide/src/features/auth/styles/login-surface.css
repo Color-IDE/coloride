@@ -1,0 +1,42 @@
+/* === Native login surface (ordered after the application canvas) ===
+ * Keep the plate opaque so we never re-open a transparent compositor path.
+ * Light mode uses the app plate instead of forcing #171717.
+ */
+html.login-gate-active,
+html.login-gate-active body,
+html.login-gate-active #root,
+html.login-gate-active body #root,
+body.login-gate-active,
+body.login-gate-active #root,
+body.electron-frameless.login-gate-active,
+body.electron-frameless.login-gate-active #root,
+body.electron-frameless.login-gate-active main,
+body.electron-frameless.login-gate-active .app-canvas,
+html[data-theme="dark"].login-gate-active,
+html[data-theme="dark"].login-gate-active body,
+html[data-theme="dark"].login-gate-active #root,
+body[data-theme="dark"].login-gate-active,
+body[data-theme="dark"].login-gate-active #root,
+body[data-theme="dark"].electron-frameless.login-gate-active,
+body[data-theme="dark"].electron-frameless.login-gate-active #root,
+body[data-theme="dark"].electron-frameless.login-gate-active main,
+body[data-theme="dark"].electron-frameless.login-gate-active .app-canvas {
+  background: #171717 !important;
+  background-color: #171717 !important;
+  background-image: none !important;
+}
+
+html[data-theme="light"].login-gate-active,
+html[data-theme="light"].login-gate-active body,
+html[data-theme="light"].login-gate-active #root,
+html[data-theme="light"].login-gate-active body #root,
+body[data-theme="light"].login-gate-active,
+body[data-theme="light"].login-gate-active #root,
+body[data-theme="light"].electron-frameless.login-gate-active,
+body[data-theme="light"].electron-frameless.login-gate-active #root,
+body[data-theme="light"].electron-frameless.login-gate-active main,
+body[data-theme="light"].electron-frameless.login-gate-active .app-canvas {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+}

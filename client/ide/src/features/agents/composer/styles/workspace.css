@@ -1,0 +1,427 @@
+/* New Task only — workspace cap matches Allow / Keep all: inset, flush on the input. */
+.agent-composer-wrap.is-new-task .agent-newtask-workspace {
+  display: block;
+  position: absolute;
+  left: 50%;
+  right: auto;
+  bottom: 100%;
+  z-index: 32;
+  box-sizing: border-box;
+  width: calc(100% - 48px);
+  max-width: 100%;
+  min-width: 0;
+  margin: 0;
+  overflow: visible;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* New-task workspace sits in the same slot as the slash menu — hide it while `/` is open. */
+.agent-composer-wrap.is-new-task .agent-scroll-to-bottom-wrap,
+.agent-composer-wrap.is-new-task:has(.agent-slash-menu) .agent-newtask-workspace,
+.agent-composer-wrap.is-new-task:has(.agent-slash-menu) .agent-newtask-workspace-bar,
+.agent-composer-wrap:has(.agent-slash-menu) .agent-docks-stack,
+.agent-composer-wrap:has(.agent-slash-menu) .agent-scroll-to-bottom-wrap,
+.agent-composer-wrap:has(.agent-command-approval) .agent-scroll-to-bottom-wrap,
+.agent-composer-wrap:has(.agent-guard-card) .agent-scroll-to-bottom-wrap {
+  display: none;
+}
+.agent-composer-wrap.is-new-task .agent-newtask-workspace-bar {
+  display: flex;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 34px;
+  height: 34px;
+  align-items: center;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 14px 14px 0 0;
+  background: #323234;
+  pointer-events: none;
+  box-shadow: none;
+}
+.agent-composer-wrap.is-new-task .agent-newtask-workspace-trigger {
+  display: inline-flex;
+  max-width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  margin-left: -8px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #ececee;
+  pointer-events: auto;
+  transition: background 120ms ease, color 120ms ease;
+}
+.agent-composer-wrap.is-new-task .agent-newtask-workspace-trigger:hover,
+.agent-composer-wrap.is-new-task .agent-newtask-workspace-trigger[aria-expanded="true"] {
+  background: rgb(255 255 255 / 8%);
+  color: #f4f4f5;
+}
+.agent-composer-wrap.is-new-task .agent-newtask-workspace-trigger .agent-newchat-workspace-folder {
+  color: #c8c8ce;
+}
+.agent-composer-wrap.is-new-task .agent-newtask-workspace .agent-newchat-workspace-menu,
+.agent-newtask-workspace-menu {
+  position: absolute;
+  top: auto;
+  right: auto;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 40;
+  display: flex;
+  width: min(17rem, 100%);
+  min-width: 14rem;
+  max-width: min(17rem, 100%);
+  flex-direction: column;
+  margin: 0;
+  overflow: hidden;
+  padding: 4px;
+  border: 1px solid rgb(255 255 255 / 3%);
+  border-radius: 6px;
+  background: #303030;
+  color: #ececee;
+  box-shadow: none;
+  pointer-events: auto;
+}
+
+.agent-newtask-workspace-search {
+  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 6px 8px;
+  border-bottom: 0;
+}
+
+.agent-newtask-workspace-search::after {
+  content: "";
+  position: absolute;
+  right: 8px;
+  bottom: 0;
+  left: 8px;
+  height: 1px;
+  background: rgb(255 255 255 / 10%);
+}
+
+.agent-newtask-workspace-search-input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: 18px;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  border: 0;
+  background: transparent;
+  color: #ececee;
+  font-size: 12px;
+  line-height: 18px;
+  outline: none;
+}
+
+.agent-newtask-workspace-search-input::placeholder {
+  color: #8a8a90;
+}
+
+.agent-newtask-workspace-heading {
+  padding: 6px 8px 3px;
+  color: #b4b4ba;
+  font-size: 11px;
+  line-height: 18px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.agent-newtask-workspace-menu .agent-newchat-workspace-menu-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: min(272px, calc(45vh - 44px));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 2px 0 4px;
+}
+
+.agent-newtask-workspace-item {
+  width: 100%;
+  min-height: 24px;
+  margin: 1px 0;
+  padding: 3px 8px;
+  border-radius: 4px;
+  color: #e8e8ea;
+  font-size: 12px;
+}
+
+.agent-newtask-workspace-item:hover,
+.agent-newtask-workspace-item.is-selected {
+  background: #414141;
+}
+
+.agent-newtask-workspace-check {
+  width: 16px;
+  height: 16px;
+  opacity: 0.9;
+}
+
+.agent-newtask-workspace-glyph {
+  width: 14px;
+  height: 14px;
+  color: #8a8a90;
+}
+
+.agent-newtask-workspace-chevron-right {
+  width: 15px;
+  height: 15px;
+  color: #8a8a90;
+  opacity: 0.8;
+}
+
+.agent-newtask-workspace-item:hover .agent-newtask-workspace-glyph,
+.agent-newtask-workspace-item.is-selected .agent-newtask-workspace-glyph {
+  color: #d0d0d4;
+}
+
+body[data-theme="light"] .agent-newtask-workspace-glyph,
+body[data-theme="light"] .agent-newtask-workspace-chevron-right {
+  color: #71717a;
+}
+
+body[data-theme="light"] .agent-newtask-workspace-item:hover .agent-newtask-workspace-glyph,
+body[data-theme="light"] .agent-newtask-workspace-item.is-selected .agent-newtask-workspace-glyph {
+  color: #3f3f46;
+}
+
+.agent-newtask-workspace-footer {
+  display: none;
+}
+
+body[data-theme="light"] .agent-newtask-workspace-menu,
+body[data-theme="light"] .agent-composer-wrap.is-new-task .agent-newtask-workspace .agent-newchat-workspace-menu,
+body[data-theme="light"] .agent-composer-wrap.is-new-task .agent-newtask-workspace-menu,
+body[data-theme="light"] .agent-composer-wrap.is-new-task .agent-newchat-workspace-menu {
+  border: 1px solid rgb(24 24 27 / 5%);
+  background: #ffffff;
+  color: #171717;
+  box-shadow: none;
+}
+
+body[data-theme="light"] .agent-newtask-workspace-search::after {
+  background: rgb(24 24 27 / 12%);
+}
+
+body[data-theme="light"] .agent-newtask-workspace-search-input {
+  color: #18181b;
+}
+
+body[data-theme="light"] .agent-newtask-workspace-search-input::placeholder {
+  color: #8b8b92;
+}
+
+body[data-theme="light"] .agent-newtask-workspace-heading {
+  color: #71717a;
+}
+
+body[data-theme="light"] .agent-newtask-workspace-item,
+body[data-theme="light"] .agent-newtask-workspace-menu .agent-newchat-workspace-item {
+  color: #27272a;
+  border-radius: 4px;
+}
+
+body[data-theme="light"] .agent-newtask-workspace-item:hover,
+body[data-theme="light"] .agent-newtask-workspace-item.is-selected,
+body[data-theme="light"] .agent-newtask-workspace-menu .agent-newchat-workspace-item:hover,
+body[data-theme="light"] .agent-newtask-workspace-menu .agent-newchat-workspace-item.is-selected {
+  background: #f1f2f3;
+  color: #171717;
+}
+
+body[data-theme="light"] .agent-newtask-workspace-menu .agent-newchat-workspace-item-folder,
+body[data-theme="light"] .agent-newtask-workspace-check {
+  color: #71717a;
+}
+
+body[data-theme="light"] .agent-newtask-workspace-item:hover .agent-newchat-workspace-item-folder,
+body[data-theme="light"] .agent-newtask-workspace-item.is-selected .agent-newchat-workspace-item-folder {
+  color: #3f3f46;
+}
+.agent-composer-wrap.is-new-task .agent-composer-card-slot {
+  position: relative;
+  z-index: 2;
+}
+.agent-composer-wrap.is-new-task .agent-composer-card-slot:has(.agent-composer-attach-menu),
+.agent-composer-wrap.is-new-task .agent-composer-card-slot:has(.agent-slash-menu) {
+  z-index: 50;
+}
+.agent-composer-wrap.is-new-task .agent-composer-docked,
+.agent-composer.is-new-task {
+  box-shadow: none !important;
+}
+body[data-theme="light"] .agent-composer-wrap.is-new-task .agent-composer-docked,
+body[data-theme="light"] .agent-composer.is-new-task {
+  box-shadow: none !important;
+}
+body[data-theme="light"] .agent-composer-wrap.is-new-task .agent-newtask-workspace-bar {
+  background: #ececee;
+}
+body[data-theme="light"] .agent-composer-wrap.is-new-task .agent-newtask-workspace-trigger {
+  color: #3f3f46;
+}
+body[data-theme="light"] .agent-composer-wrap.is-new-task .agent-newtask-workspace-trigger:hover,
+body[data-theme="light"] .agent-composer-wrap.is-new-task .agent-newtask-workspace-trigger[aria-expanded="true"] {
+  background: rgb(24 24 27 / 7%);
+  color: #18181b;
+}
+body[data-theme="light"] .agent-composer-wrap.is-new-task .agent-newtask-workspace-trigger .agent-newchat-workspace-folder {
+  color: #52525b;
+}
+
+.agent-newchat-workspace-trigger {
+  border: 0;
+  background: rgb(255 255 255 / 6%);
+  color: #b4b4ba;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.agent-newchat-workspace-trigger:hover,
+.agent-newchat-workspace-trigger[aria-expanded="true"] {
+  background: rgb(255 255 255 / 9%);
+  color: #e8e8ea;
+}
+
+.agent-newchat-workspace-folder {
+  color: #a1a1a8;
+}
+
+.agent-newchat-workspace-trigger:hover .agent-newchat-workspace-folder,
+.agent-newchat-workspace-trigger[aria-expanded="true"] .agent-newchat-workspace-folder {
+  color: #d0d0d4;
+}
+
+.agent-newchat-workspace-chevron {
+  color: #8a8a90;
+  transition: transform 140ms ease, color 120ms ease;
+}
+
+.agent-newchat-workspace-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.agent-newchat-workspace-menu {
+  border: 1px solid rgb(255 255 255 / 8%);
+  background: #303030;
+  color: #e8e8ea;
+  box-shadow: 0 16px 40px rgb(0 0 0 / 40%);
+}
+
+/* ~6 rows visible; scroll the rest so 10+ workspaces stay compact. */
+.agent-newchat-workspace-menu-list {
+  max-height: 11.5rem; /* ~6 × 30px rows */
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 16%) transparent;
+}
+
+.agent-newchat-workspace-menu-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.agent-newchat-workspace-menu-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgb(255 255 255 / 16%);
+}
+
+.agent-newchat-workspace-menu-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+body[data-theme="light"] .agent-newchat-workspace-menu-list {
+  scrollbar-color: rgb(24 24 27 / 16%) transparent;
+}
+
+body[data-theme="light"] .agent-newchat-workspace-menu-list::-webkit-scrollbar-thumb {
+  background: rgb(24 24 27 / 16%);
+}
+
+.agent-newchat-workspace-item {
+  border: 0;
+  background: transparent;
+  color: #c8c8ce;
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.agent-newchat-workspace-item:hover {
+  background: rgb(255 255 255 / 7%);
+  color: #f0f0f3;
+}
+
+.agent-newchat-workspace-item.is-selected {
+  color: #f0f0f3;
+}
+
+.agent-newchat-workspace-item-folder {
+  color: #8a8a90;
+}
+
+.agent-newchat-workspace-item:hover .agent-newchat-workspace-item-folder,
+.agent-newchat-workspace-item.is-selected .agent-newchat-workspace-item-folder {
+  color: #b4b4ba;
+}
+
+.agent-newchat-workspace-divider {
+  background: rgb(255 255 255 / 8%);
+}
+
+body[data-theme="light"] .agent-newchat-workspace-trigger {
+  background: rgb(24 24 27 / 5%);
+  color: #52525b;
+}
+
+body[data-theme="light"] .agent-newchat-workspace-trigger:hover,
+body[data-theme="light"] .agent-newchat-workspace-trigger[aria-expanded="true"] {
+  background: rgb(24 24 27 / 8%);
+  color: #18181b;
+}
+
+body[data-theme="light"] .agent-newchat-workspace-folder {
+  color: #71717a;
+}
+
+body[data-theme="light"] .agent-newchat-workspace-trigger:hover .agent-newchat-workspace-folder,
+body[data-theme="light"] .agent-newchat-workspace-trigger[aria-expanded="true"] .agent-newchat-workspace-folder {
+  color: #3f3f46;
+}
+
+body[data-theme="light"] .agent-newchat-workspace-menu {
+  border-color: rgb(24 24 27 / 10%);
+  background: #ffffff;
+  color: #18181b;
+  box-shadow: 0 16px 40px rgb(24 24 27 / 14%);
+}
+
+body[data-theme="light"] .agent-newchat-workspace-item {
+  color: #3f3f46;
+}
+
+body[data-theme="light"] .agent-newchat-workspace-item:hover {
+  background: rgb(24 24 27 / 5%);
+  color: #18181b;
+}
+
+body[data-theme="light"] .agent-newchat-workspace-item.is-selected {
+  color: #18181b;
+}
+
+body[data-theme="light"] .agent-newchat-workspace-item-folder {
+  color: #71717a;
+}
+
+body[data-theme="light"] .agent-newchat-workspace-divider {
+  background: rgb(24 24 27 / 8%);
+}
+
+.agent-project-row {
+  min-height: 28px;
+}

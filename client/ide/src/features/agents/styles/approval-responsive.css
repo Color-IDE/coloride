@@ -1,0 +1,360 @@
+/*
+ * Narrow composer (sidebar / split): label on its own row, actions below.
+ * Threshold is generous — "Allow for session" + siblings need room.
+ */
+@container agent-composer (max-width: 640px) {
+  .agent-approval-dock:not(.agent-command-approval):not(.agent-checkpoint-dock) {
+    align-items: stretch;
+    gap: 6px;
+    padding: 8px 10px;
+  }
+
+  .agent-approval-dock:not(.agent-command-approval) .agent-approval-label {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+
+  .agent-approval-dock:not(.agent-command-approval) .agent-approval-actions {
+    flex: 1 1 100%;
+    justify-content: flex-end;
+    row-gap: 2px;
+    column-gap: 0;
+  }
+
+  .agent-approval-dock:not(.agent-command-approval) .agent-approval-actions > button {
+    padding: 2px 8px;
+    font-size: 13px;
+  }
+
+  .agent-approval-dock:not(.agent-command-approval) .agent-approval-actions > button:first-child {
+    padding-left: 0;
+  }
+
+  /* Command allow: stay side-by-side down to 420px (see rule above). */
+  .agent-approval-dock.agent-command-approval {
+    gap: 10px 12px;
+    padding: 8px 12px;
+  }
+
+  .agent-approval-dock.agent-command-approval .agent-approval-actions {
+    justify-content: flex-end;
+  }
+
+  .agent-checkpoint-dock-main {
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px 12px;
+    min-height: 34px;
+    height: auto;
+    max-height: none;
+  }
+
+  .agent-view-sidebar .agent-checkpoint-dock-main {
+    padding: 0 4px 0 10px;
+    min-height: 32px;
+    height: 32px;
+    max-height: 32px;
+  }
+
+  .agent-checkpoint-dock-left {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .agent-checkpoint-dock-right {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    margin-left: auto;
+    gap: 4px;
+  }
+
+  .agent-checkpoint-dock-right button {
+    font-size: 11.5px;
+  }
+
+  .agent-plan-dock {
+    padding: 8px 10px;
+  }
+}
+
+@container agent-composer (max-width: 400px) {
+  .agent-approval-label,
+  .agent-approval-actions > button,
+  .agent-checkpoint-dock-right button {
+    font-size: 12px;
+  }
+
+  .agent-approval-actions > button {
+    padding: 2px 6px;
+  }
+
+  /* Drop vertical rules when buttons wrap tightly. */
+  .agent-approval-actions > button + button {
+    border-left-color: rgb(255 255 255 / 10%);
+  }
+}
+
+/* Fallback when container queries are unavailable (rare). */
+@supports not (container-type: inline-size) {
+  @media (max-width: 720px) {
+    .agent-approval-dock {
+      flex-wrap: wrap;
+    }
+
+    .agent-approval-label,
+    .agent-approval-actions {
+      flex: 1 1 100%;
+    }
+
+    .agent-approval-actions {
+      justify-content: flex-start;
+    }
+
+    .agent-checkpoint-dock-main {
+      flex-wrap: wrap;
+    }
+
+    .agent-checkpoint-dock-left,
+    .agent-checkpoint-dock-right {
+      flex: 1 1 100%;
+    }
+  }
+}
+
+.agent-checkpoint-review-wrap {
+  overflow: hidden;
+}
+
+.agent-checkpoint-review {
+  max-height: 160px;
+  overflow-y: auto;
+  border-top: 0;
+  padding: 2px 10px 8px;
+}
+
+.agent-checkpoint-review-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  min-height: 24px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #e4e4e8;
+}
+
+.agent-checkpoint-review-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: #b0b0b8;
+}
+
+.agent-checkpoint-review-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.agent-checkpoint-review-path {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  color: #e4e4e8;
+}
+
+.agent-approval-label {
+  min-width: 0;
+  flex: 1 1 12rem;
+  overflow: hidden;
+  color: #ececee;
+  font-size: 14px;
+  font-weight: 450;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-approval-label .agent-tool-verb {
+  color: #f2f2f4;
+  font-weight: 450;
+}
+
+.agent-approval-label .agent-tool-rest {
+  color: #c4c4cc;
+  font-weight: 400;
+}
+
+.agent-approval-actions {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.agent-event-output {
+  border-radius: 8px;
+  background: #1b1b1b;
+  color: #c8c8cc;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.agent-status {
+  color: var(--agent-muted);
+}
+
+.agent-checkpoint {
+  border: 0;
+  background: #323234;
+  color: #ececee;
+}
+
+.agent-checkpoint > svg {
+  color: #75bd94;
+}
+
+.agent-approval-diff {
+  border-top: 1px solid var(--agent-border-soft);
+  padding-top: 8px;
+  color: inherit;
+}
+
+/* Text actions only — no pill backgrounds; split by a vertical rule. */
+.agent-approval-actions > button {
+  min-height: auto;
+  flex: 0 1 auto;
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 0 10px;
+  background: transparent;
+  color: #e4e4e8;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  transform: none;
+  box-shadow: none;
+  filter: none;
+  transition: color 120ms ease;
+}
+
+.agent-approval-actions > button + button {
+  border-left: 1px solid rgb(255 255 255 / 16%);
+}
+
+.agent-approval-actions > button:first-child {
+  padding-left: 0;
+}
+
+.agent-approval-actions > button:last-child {
+  padding-right: 0;
+}
+
+.agent-approval-actions > button:hover:not(:disabled) {
+  background: transparent;
+  color: #ffffff;
+  transform: none;
+  filter: none;
+}
+
+.agent-approval-actions > button:active:not(:disabled) {
+  background: transparent;
+  transform: none;
+}
+
+/* Skip / Allow once / Allow for session — text buttons (not Keep/Undo pills). */
+.agent-approval-actions > button,
+.agent-approval-actions > button.primary,
+.agent-approval-actions > button.agent-approval-skip {
+  background: transparent;
+  color: #e4e4e8;
+  font-weight: 500;
+  font-size: 12.5px;
+  line-height: 1.25;
+  min-height: 0;
+  height: auto;
+  filter: none;
+}
+
+/* Default horizontal padding for text actions (command dock sets its own). */
+.agent-approval-actions > button:not(:only-child) {
+  padding: 4px 10px;
+}
+
+.agent-approval-dock:not(.agent-command-approval) .agent-approval-actions > button {
+  padding: 0 10px;
+}
+
+.agent-approval-dock:not(.agent-command-approval) .agent-approval-actions > button:first-child {
+  padding-left: 0;
+}
+
+.agent-approval-dock:not(.agent-command-approval) .agent-approval-actions > button:last-child {
+  padding-right: 0;
+}
+
+.agent-approval-actions > button:hover:not(:disabled),
+.agent-approval-actions > button.primary:hover:not(:disabled),
+.agent-approval-actions > button.agent-approval-skip:hover:not(:disabled) {
+  background: transparent;
+  color: #ffffff;
+  filter: none;
+}
+
+.agent-view-sidebar .agent-checkpoint-dock-right .agent-checkpoint-card-btn {
+  min-height: 26px;
+  height: 26px;
+  filter: none;
+  background: transparent;
+  color: #c8c8d0;
+}
+
+.agent-view-sidebar .agent-checkpoint-dock-right .agent-checkpoint-card-btn:hover:not(:disabled) {
+  background: transparent;
+  color: #f4f4f6;
+}
+
+.agent-view-sidebar .agent-checkpoint-dock-right .agent-checkpoint-card-btn.is-review {
+  background: transparent;
+  color: #ececee;
+}
+
+.agent-view-sidebar .agent-checkpoint-dock-right .agent-checkpoint-card-btn.is-review:hover:not(:disabled) {
+  background: transparent;
+  color: #ffffff;
+}
+
+.agent-approval-dock.agent-checkpoint-dock,
+.agent-checkpoint-dock {
+  background: #323234;
+  color: #ececee;
+  padding: 0;
+  min-height: 0;
+}
+
+.agent-checkpoint-dock-main {
+  color: #ececee;
+}
+
+.agent-send-button:not(:disabled) {
+  background: #f2f2f3;
+  color: #171717;
+}

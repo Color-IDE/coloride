@@ -1,0 +1,25 @@
+/* Shared card split: 1px seam matches outer border; header rules align across it */
+.app-split-seam {
+  background-color: #333333;
+}
+body[data-theme="light"] .app-split-seam {
+  background-color: #e4e4e6;
+}
+
+/*
+ * Main workspace card: flush to the app’s right edge.
+ * Left corners are rounded; right edge stays square against the window.
+ */
+.app-main-card {
+  --app-main-card-radius: 8px;
+  border-radius: var(--app-main-card-radius) 0 0 var(--app-main-card-radius);
+  border-right-width: 0 !important;
+  border-bottom-width: 1px !important;
+}
+
+/* Vertical breathing room belongs to the status bar so its content stays centered. */
+.app-workspace-region {
+  min-height: 0;
+  overflow: hidden;
+  padding-bottom: 0;
+}

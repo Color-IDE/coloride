@@ -1,0 +1,248 @@
+/*
+ * Workspace root selected / drop: one ring around the tree.
+ * Surface, content and selection share the card's inner curve. Clip the tree
+ * background to that curve too, rather than stacking square layers underneath.
+ */
+.filetree-surface {
+  border-top-left-radius: calc(var(--app-main-card-radius, 8px) - 1px);
+  border-bottom-left-radius: calc(var(--app-main-card-radius, 8px) - 1px);
+}
+
+.filetree-body {
+  border-top-left-radius: inherit;
+  border-bottom-left-radius: inherit;
+}
+
+.filetree-body.filetree-root-selected,
+.filetree-body.filetree-root-drop-active {
+  position: relative;
+  isolation: isolate;
+}
+
+.filetree-body.filetree-root-selected::after,
+.filetree-body.filetree-root-drop-active::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 80;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(88, 166, 255, 0.7);
+  background: transparent;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+body[data-theme="light"] .tree-row-drop-target {
+  background: rgba(37, 99, 235, 0.1) !important;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.35);
+  color: #171717 !important;
+}
+
+
+
+body[data-theme="light"] .filetree-body.filetree-root-selected::after,
+body[data-theme="light"] .filetree-body.filetree-root-drop-active::after {
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.6);
+}
+
+@keyframes skeleton-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #242424 20%, #343434 50%, #242424 80%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.3s ease-in-out infinite;
+}
+
+@keyframes report-step-forward {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes report-step-back {
+  from {
+    opacity: 0;
+    transform: translateX(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.report-step-forward,
+.report-step-back {
+  animation-duration: 200ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: both;
+}
+
+.report-step-forward {
+  animation-name: report-step-forward;
+}
+
+.report-step-back {
+  animation-name: report-step-back;
+}
+
+.report-category-option {
+  border: 1px solid transparent;
+}
+
+.report-category-option[data-selected="true"] {
+  border: 1px dashed #5b5b58 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .report-step-forward,
+  .report-step-back {
+    animation-duration: 1ms;
+  }
+}
+
+.coloride-terminal .xterm { height: 100%; padding: 0; }
+.coloride-terminal .xterm-viewport { outline: none; scrollbar-width: auto; cursor: default !important; }
+.coloride-terminal .xterm-viewport::-webkit-scrollbar { width: 6px; }
+.coloride-terminal .xterm-viewport::-webkit-scrollbar-track { background: transparent; }
+.coloride-terminal .xterm-viewport::-webkit-scrollbar-thumb {
+  background: #666; border-radius: 3px; cursor: default;
+}
+.coloride-terminal .xterm-viewport::-webkit-scrollbar-thumb:hover { background: #888; }
+
+/*
+ * Stable caret cursor over the PTY surface.
+ * xterm.css sets `text` on .xterm-screen and `default` on .xterm-viewport / mouse-mode;
+ * moving between those layers (and helper textarea) flickers the OS cursor.
+ * Force one cursor on the whole host; links keep pointer via .xterm-cursor-pointer.
+ */
+.terminal-xterm-host,
+.terminal-xterm-host .coloride-terminal,
+.coloride-terminal,
+.coloride-terminal .xterm,
+.coloride-terminal .xterm-screen,
+.coloride-terminal .xterm-helpers,
+.coloride-terminal .xterm-helper-textarea,
+.coloride-terminal .xterm-char-measure-element,
+.coloride-terminal canvas {
+  cursor: text !important;
+}
+
+.coloride-terminal .xterm-cursor-pointer,
+.coloride-terminal.xterm-cursor-pointer,
+.coloride-terminal .xterm.xterm-cursor-pointer {
+  cursor: pointer !important;
+}
+
+/* Shell Integration: status and actions stay attached to the command line. */
+.coloride-terminal-command-decoration {
+  overflow: visible !important;
+  pointer-events: none !important;
+  z-index: 7 !important;
+}
+
+.coloride-terminal-command-pill {
+  align-items: center;
+  background: transparent !important;
+  border: 0;
+  border-radius: 999px;
+  color: inherit;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  /* TerminalPanel reserves 1.25rem on the left: keep the marker centered in
+     that gutter with a deliberate gap before the first prompt character. */
+  left: -15px;
+  margin: 0;
+  padding: 0;
+  pointer-events: auto;
+  position: absolute;
+  top: 0;
+  width: 10px;
+}
+
+.coloride-terminal-command-status {
+  background: transparent;
+  border: 1.25px solid #70737a;
+  border-radius: 999px;
+  box-sizing: border-box;
+  display: block;
+  height: 8px;
+  transition: background-color 100ms ease, border-color 100ms ease, transform 100ms ease;
+  width: 8px;
+}
+
+.coloride-terminal-command-decoration.is-running .coloride-terminal-command-status {
+  /* Some remote Bash prompts emit their completion OSC a frame late. Keep the
+     command marker visually settled instead of leaving an outlined blue dot
+     next to a prompt that is already ready for input. */
+  background: #3794ff;
+  border-color: #3794ff;
+}
+
+.coloride-terminal-command-decoration.is-success .coloride-terminal-command-status {
+  background: #3794ff;
+  border-color: #3794ff;
+}
+
+.coloride-terminal-command-decoration.is-error .coloride-terminal-command-status {
+  /* A shell-hook status must never make a successfully rendered command look
+     broken. Errors remain available to the terminal/session state, while the
+     gutter uses the single completed-command color. */
+  background: #3794ff;
+  border-color: #3794ff;
+}
+
+.coloride-terminal-command-pill:is(:hover, :focus-visible) .coloride-terminal-command-status {
+  background: #3794ff;
+  border-color: #3794ff;
+  transform: scale(1.08);
+}
+
+.terminal-xterm-host .coloride-terminal-command-pill {
+  cursor: pointer !important;
+}
+
+body[data-theme="light"] .coloride-terminal-command-status {
+  border-color: #74777d;
+}
+
+body[data-theme="light"] .coloride-terminal-command-decoration.is-error .coloride-terminal-command-status {
+  background: #3794ff;
+  border-color: #3794ff;
+}
+
+/* Beat global pointer-cursors preference inside the PTY (tabs/header stay separate). */
+:is(html, body).pointer-cursors-on .terminal-xterm-host,
+:is(html, body).pointer-cursors-on .terminal-xterm-host *,
+:is(html, body).pointer-cursors-off .terminal-xterm-host,
+:is(html, body).pointer-cursors-off .terminal-xterm-host *,
+:is(html, body)[data-pointer-cursors] .terminal-xterm-host,
+:is(html, body)[data-pointer-cursors] .terminal-xterm-host * {
+  cursor: text !important;
+}
+
+:is(html, body).pointer-cursors-on .terminal-xterm-host .xterm-cursor-pointer,
+:is(html, body).pointer-cursors-off .terminal-xterm-host .xterm-cursor-pointer,
+:is(html, body)[data-pointer-cursors] .terminal-xterm-host .xterm-cursor-pointer,
+:is(html, body).pointer-cursors-on .terminal-xterm-host .xterm.xterm-cursor-pointer,
+:is(html, body).pointer-cursors-off .terminal-xterm-host .xterm.xterm-cursor-pointer,
+:is(html, body)[data-pointer-cursors] .terminal-xterm-host .xterm.xterm-cursor-pointer {
+  cursor: pointer !important;
+}
+
+/* The native scrollbar remains an arrow even with global cursor preferences. */
+:is(html, body) .terminal-xterm-host .coloride-terminal .xterm-viewport {
+  cursor: default !important;
+}

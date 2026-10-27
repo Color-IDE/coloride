@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://coloride.local/schemas/events.schema.json",
+  "title": "Coloride EventEnvelope",
+  "type": "object",
+  "required": ["event", "payload"],
+  "properties": {
+    "event": {
+      "type": "string",
+      "examples": ["conn:state", "conn:stats", "agent:event"]
+    },
+    "payload": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": false
+}
+

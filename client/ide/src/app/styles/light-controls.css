@@ -1,0 +1,223 @@
+/* filetree / monaco: keep hover-only thumbs (do not force always-visible color) */
+
+body[data-theme="light"] .settings-shortcut-search,
+body[data-theme="light"] .settings-shortcut-binding {
+  border: 0 !important;
+  background: #f1f2f3 !important;
+  color: #27272a !important;
+}
+
+body[data-theme="light"] .settings-shortcut-search {
+  color: #71717a !important;
+}
+
+body[data-theme="light"] .settings-shortcut-search:focus-within {
+  background: #eaebed !important;
+  color: #171717 !important;
+}
+
+body[data-theme="light"] .settings-shortcut-search input {
+  color: #171717 !important;
+}
+
+body[data-theme="light"] .settings-shortcut-search input::placeholder {
+  color: #71717a !important;
+}
+
+body[data-theme="light"] .settings-shortcut-binding:hover {
+  background: #eaebed !important;
+  color: #171717 !important;
+}
+
+body[data-theme="light"] .settings-shortcut-binding[data-recording="true"] {
+  background: var(--accent-color) !important;
+  color: #10202b !important;
+}
+
+body[data-theme="light"] .settings-shortcut-group {
+  border-color: #e4e4e6;
+}
+
+body[data-theme="light"] .remote-browser-scroll {
+  scrollbar-color: #b6b6b6 var(--app-editor);
+}
+
+body[data-theme="light"] .remote-browser-locations {
+  background: #f1f2f3 !important;
+}
+
+body[data-theme="light"] .remote-browser-location {
+  background: transparent !important;
+  color: #71717a !important;
+}
+
+body[data-theme="light"] .remote-browser-location:hover {
+  background: #e4e6e8 !important;
+  color: #171717 !important;
+}
+
+body[data-theme="light"] .remote-browser-location[data-active="true"] {
+  background: #eaebed !important;
+  color: #171717 !important;
+}
+
+body[data-theme="light"] .remote-browser-location svg {
+  color: #71717a !important;
+  fill: currentColor;
+}
+
+body[data-theme="light"] .remote-browser-location svg[stroke] {
+  stroke: currentColor !important;
+  fill: none;
+}
+
+body[data-theme="light"] .remote-browser-locations-thumb {
+  background: #a3a3aa !important;
+}
+
+body[data-theme="light"] .remote-browser-scroll::-webkit-scrollbar-track {
+  background: #ffffff !important;
+}
+
+body[data-theme="light"] .remote-browser-scroll::-webkit-scrollbar-thumb {
+  border-color: #ffffff !important;
+  background: #b6b6b6 !important;
+}
+
+body[data-theme="light"] .skeleton-shimmer {
+  background: linear-gradient(90deg, #ececec 20%, #f7f7f7 50%, #ececec 80%);
+  background-size: 200% 100%;
+}
+
+body[data-theme="light"] .status-bar-button,
+body[data-theme="light"] .status-bar-button-icon {
+  color: #71717a !important;
+}
+
+body[data-theme="light"] .status-bar-button:hover,
+body[data-theme="light"] .status-bar-button:focus-visible,
+body[data-theme="light"] .status-bar-button:active,
+body[data-theme="light"] .status-bar-button[data-active="true"],
+body[data-theme="light"] .status-bar-button:hover .status-bar-button-icon,
+body[data-theme="light"] .status-bar-button:focus-visible .status-bar-button-icon,
+body[data-theme="light"] .status-bar-button:active .status-bar-button-icon,
+body[data-theme="light"] .status-bar-button[data-active="true"] .status-bar-button-icon {
+  color: #171717 !important;
+}
+
+body[data-theme="light"] .status-bar-button svg {
+  color: inherit !important;
+  stroke: currentColor !important;
+}
+
+.settings-update-status[data-tone="current"] {
+  background: #26352e;
+  color: #76c99b;
+}
+
+.settings-update-status[data-tone="available"] {
+  background: #293848;
+  color: #79c9f7;
+}
+
+.settings-update-status[data-tone="error"] {
+  background: #3b292b;
+  color: #e69a9f;
+}
+
+body[data-theme="light"] .settings-update-value {
+  color: #27272a !important;
+}
+
+body[data-theme="light"] .settings-update-status[data-tone="neutral"] {
+  background: #f1f2f3 !important;
+  color: #71717a !important;
+}
+
+body[data-theme="light"] .settings-update-status[data-tone="current"] {
+  background: #e8f5ed !important;
+  color: #287449 !important;
+}
+
+body[data-theme="light"] .settings-update-status[data-tone="available"] {
+  background: #e7f4fc !important;
+  color: #176b9b !important;
+}
+
+body[data-theme="light"] .settings-update-status[data-tone="error"],
+body[data-theme="light"] .settings-update-error {
+  background: #fff0f0 !important;
+  color: #a83f46 !important;
+}
+
+body[data-theme="light"] .settings-update-notes {
+  background: #f1f2f3 !important;
+}
+
+body[data-theme="light"] .settings-update-notes > div {
+  color: #27272a !important;
+}
+
+body[data-theme="light"] .settings-update-notes p,
+body[data-theme="light"] .settings-update-meta {
+  color: #71717a !important;
+}
+
+.diagnostics-status[data-status="checking"] {
+  color: #a7a7ac;
+}
+
+.diagnostics-status[data-status="ok"] {
+  background: #26352e;
+  color: #76c99b;
+}
+
+.diagnostics-status[data-status="warning"] {
+  background: #3a3427;
+  color: #d9b66f;
+}
+
+.diagnostics-status[data-status="error"] {
+  background: #3b292b;
+  color: #e69a9f;
+}
+
+body[data-theme="light"] .diagnostics-value,
+body[data-theme="light"] .about-value {
+  background: transparent !important;
+  color: #171717 !important;
+}
+
+body[data-theme="light"] .about-product-name {
+  color: #27272a !important;
+}
+
+body[data-theme="light"] .diagnostics-status[data-status="checking"] {
+  background: #f1f2f3 !important;
+  color: #71717a !important;
+}
+
+body[data-theme="light"] .diagnostics-status[data-status="ok"] {
+  background: #e8f5ed !important;
+  color: #287449 !important;
+}
+
+body[data-theme="light"] .diagnostics-status[data-status="warning"] {
+  background: #fff6df !important;
+  color: #8a611b !important;
+}
+
+body[data-theme="light"] .diagnostics-status[data-status="error"],
+body[data-theme="light"] .about-link-error {
+  background: #fff0f0 !important;
+  color: #a83f46 !important;
+}
+
+body[data-theme="light"] .diagnostics-last-run,
+body[data-theme="light"] .about-product-copy {
+  color: #71717a !important;
+}
+
+body[data-theme="light"] .diagnostics-copy-success {
+  color: #287449 !important;
+}

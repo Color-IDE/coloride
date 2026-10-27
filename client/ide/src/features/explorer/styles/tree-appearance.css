@@ -1,0 +1,80 @@
+.filetree-mode-switch {
+  background: rgb(255 255 255 / 12%);
+}
+
+.filetree-mode-thumb {
+  background: #212121;
+}
+
+.filetree-mode-button svg {
+  stroke: currentColor;
+}
+
+.filetree-mode-active {
+  color: #f0f4f8;
+}
+
+.filetree-mode-inactive {
+  color: #878888;
+}
+
+.filetree-mode-inactive:hover {
+  color: #fff;
+}
+
+body[data-theme="light"] .filetree-toolbar {
+  background: #ffffff !important;
+  border-bottom-color: #e4e4e6 !important;
+}
+
+.filetree-context-shortcut {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 18px;
+  margin-left: auto;
+  padding: 0 7px;
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-keycap);
+  color: var(--ui-keycap-text);
+  font-size: 11px;
+  font-weight: 550;
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+
+.filetree-context-key-icon {
+  display: block;
+  width: 12px;
+  height: 12px;
+}
+
+
+body[data-theme="light"] .filetree-context-shortcut {
+  background: #ececee;
+  color: #71717a;
+}
+
+
+.filetree-folder-color { color: #c4c7cc; }
+.filetree-color-cyan { color: #67cce5; }
+.filetree-color-blue { color: #78aff0; }
+.filetree-color-yellow { color: #e4cc79; }
+.filetree-color-green { color: #8bc99a; }
+.filetree-color-orange { color: #eaa078; }
+.filetree-color-pink { color: #dc91b7; }
+.filetree-color-purple { color: #bb9ce5; }
+.filetree-color-image { color: #6ec9b0; }
+.filetree-color-muted { color: #8a8a8a; }
+body[data-theme="light"] .filetree-folder-color { color: #686c73; }
+body[data-theme="light"] .filetree-color-cyan { color: #087d98; }
+body[data-theme="light"] .filetree-color-blue { color: #286ac0; }
+body[data-theme="light"] .filetree-color-yellow { color: #896a0c; }
+body[data-theme="light"] .filetree-color-green { color: #347e47; }
+body[data-theme="light"] .filetree-color-orange { color: #b75224; }
+body[data-theme="light"] .filetree-color-pink { color: #ae407d; }
+body[data-theme="light"] .filetree-color-purple { color: #7e4eb9; }
+body[data-theme="light"] .filetree-color-image { color: #1f8a72; }
+body[data-theme="light"] .filetree-color-muted { color: #6b6b6b; }

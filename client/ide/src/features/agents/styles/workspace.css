@@ -1,0 +1,70 @@
+/* Agent workspace */
+.agent-view {
+  --agent-surface: var(--app-window-background);
+  --agent-surface-raised: #272727;
+  --agent-control: #2c2c2c;
+  --agent-control-hover: #353535;
+  --agent-border: #363636;
+  --agent-border-soft: #303030;
+  --agent-text: #f2f2f3;
+  --agent-activity-icon: #fff;
+  --agent-muted: #8f8f94;
+  /* Compact Browser/Terminal rail (narrow chat) */
+  --agent-rail-compact-bg: color-mix(in srgb, var(--agent-surface-raised) 92%, transparent);
+  --agent-rail-compact-border: var(--agent-border);
+  color: var(--agent-text);
+}
+
+.agent-main-split,
+.agent-workspace-card {
+  min-width: 0;
+}
+
+.agent-workspace-card[aria-hidden="true"] {
+  /* Fully collapse so no residual strip at the app edge. */
+  display: none;
+  width: 0 !important;
+  min-width: 0;
+  flex-grow: 0;
+  flex-basis: 0 !important;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+}
+
+/* Browser full-screen inside the agent view: chat column collapses, workspace fills. */
+.agent-main-split.is-browser-expanded > .agent-main[aria-hidden="true"] {
+  display: none;
+  width: 0;
+  min-width: 0;
+  flex-grow: 0;
+  flex-basis: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+}
+
+.agent-workspace-card.is-browser-expanded {
+  flex: 1 1 100% !important;
+  width: auto !important;
+  min-width: 0;
+}
+
+/* Nested inside the unified app-main-card — no second chrome / radius. */
+.agent-workspace-panel {
+  border-radius: 0;
+  border: 0;
+  overflow: hidden;
+}
+
+.agent-workspace-panel .browser-pane,
+.agent-workspace-panel .browser-surface {
+  border-radius: 0;
+}
+
+/* Workspace header lines up with chat; seam continues the split look */
+.agent-main-split.has-workspace .agent-workspace-card {
+  border-left: 0;
+}

@@ -1,0 +1,265 @@
+/* Match mode badge hues: Act default, Ask teal, Plan violet, Debug amber */
+.agent-send-button.is-act:not(:disabled) {
+  background: #f2f2f3;
+  color: #171717;
+}
+
+.agent-send-button.is-ask:not(:disabled) {
+  background: #3eb8a8;
+  color: #0a1f1c;
+}
+
+.agent-send-button.is-plan:not(:disabled) {
+  background: #9b7ad8;
+  color: #1a1228;
+}
+
+.agent-send-button.is-debug:not(:disabled) {
+  background: #e0a84a;
+  color: #1f1608;
+}
+
+.agent-send-button:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.agent-send-button.agent-send-button-centered {
+  width: 30px;
+  height: 30px;
+  border-radius: 9999px;
+}
+
+/* Stop control while the agent is generating: rounded square with inner stop mark. */
+.agent-send-button.is-stop,
+.agent-send-button.agent-send-button-centered.is-stop {
+  border-radius: 9px;
+}
+
+.agent-send-button.is-stop:not(:disabled) {
+  cursor: pointer;
+}
+
+.agent-send-stop-mark {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2.5px;
+  background: currentColor;
+}
+
+.agent-approval-actions > button:disabled {
+  cursor: default;
+  opacity: 0.42;
+}
+
+.agent-send-button:disabled {
+  cursor: default;
+  opacity: 1;
+  background: #9a9a9e;
+  color: #1a1a1a;
+  filter: none;
+}
+
+.agent-send-button.is-stop:disabled {
+  opacity: 0.72;
+}
+
+.agent-error {
+  background: #3a2729;
+  color: #e69a9f;
+}
+
+.agent-composer-wrap {
+  position: relative;
+  z-index: 25;
+  min-width: 0;
+  background: var(--agent-surface);
+}
+
+.agent-composer textarea {
+  color: var(--agent-text);
+}
+
+.agent-composer textarea::placeholder {
+  color: var(--agent-muted);
+}
+
+.agent-composer-queue-stack {
+  position: relative;
+  width: 100%;
+}
+
+.agent-composer-queue-collapsed {
+  position: relative;
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+}
+
+.agent-composer-queue-collapsed.is-clickable {
+  cursor: pointer;
+}
+
+.agent-composer-queue-collapsed.is-clickable:focus-visible {
+  outline: none;
+}
+
+.agent-composer-queue-collapsed.is-clickable:focus-visible .agent-composer-queue.is-front {
+  box-shadow: 0 0 0 1px rgb(120 170 255 / 35%);
+}
+
+.agent-composer-queue-layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 34px;
+  border-radius: 12px;
+  background: #383838;
+  pointer-events: none;
+}
+
+.agent-composer-queue-layer.is-mid {
+  transform: translateY(-5px) scaleX(0.97);
+  opacity: 1;
+  z-index: 0;
+}
+
+.agent-composer-queue-layer.is-back {
+  transform: translateY(-10px) scaleX(0.94);
+  opacity: 1;
+  z-index: 0;
+  background: #323232;
+}
+
+.agent-composer-queue {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 0.5rem;
+  border: 0;
+  border-radius: 12px;
+  background: #3a3a3a;
+  padding: 0.375rem 0.625rem;
+}
+
+.agent-composer-queue-stack.is-stackable:not(.is-expanded) .agent-composer-queue.is-front {
+  box-shadow: 0 6px 16px rgb(0 0 0 / 14%);
+}
+
+.agent-composer-queue-text {
+  color: var(--agent-text);
+  font-size: 0.875rem; /* text-sm — same as composer input */
+  font-weight: 400;
+  line-height: 1.5rem; /* leading-6 */
+}
+
+.agent-composer-queue-count {
+  display: inline-flex;
+  min-width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 8%);
+  color: #b8b8c0;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 0 6px;
+}
+
+.agent-composer-queue-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.agent-composer-queue-restore,
+.agent-composer-queue-delete {
+  display: inline-flex;
+  width: 26px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #8b8b93;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.agent-composer-queue-restore:hover {
+  background: rgb(255 255 255 / 6%);
+  color: #fff;
+}
+
+.agent-composer-queue-delete:hover {
+  background: rgb(255 80 80 / 12%);
+  color: #ff8e8e;
+}
+
+.agent-composer-queue-expanded {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-top: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 16%) transparent;
+}
+
+.agent-composer-queue-expanded .agent-composer-queue {
+  animation: agent-queue-card-in 160ms ease-out both;
+}
+
+@keyframes agent-queue-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.agent-composer.is-drag-over {
+  border-color: rgb(120 170 255 / 55%);
+  box-shadow:
+    0 0 0 1px rgb(120 170 255 / 25%),
+    0 14px 36px rgb(0 0 0 / 22%);
+}
+
+.agent-composer-drop-overlay {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: inherit;
+  background: rgb(28 30 36 / 72%);
+  backdrop-filter: blur(2px);
+}
+
+.agent-composer-drop-overlay-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px dashed rgb(170 190 255 / 45%);
+  border-radius: 16px;
+  background: rgb(42 44 52 / 88%);
+  padding: 12px 16px;
+  color: #e8ebf5;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}

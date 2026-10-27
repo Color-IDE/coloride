@@ -1,0 +1,116 @@
+/* Safe Git Source Control panel (agent workspace right pane) */
+.agent-git-sc-header {
+  min-height: 2.25rem;
+}
+.agent-git-sc-tabs {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 1.75rem;
+  padding: 2px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  width: 100%;
+  max-width: 22rem;
+}
+.agent-git-sc-tab {
+  position: relative;
+  flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #8b8b93;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0 0.75rem;
+  white-space: nowrap;
+}
+.agent-git-sc-tab:hover:not(.is-active) {
+  color: #c8c8ce;
+}
+.agent-git-sc-tab.is-active {
+  color: #f0f4f8;
+}
+.agent-git-sc-tab-pill {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  z-index: 0;
+}
+.agent-git-sc-tab-stats {
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+  opacity: 0.9;
+}
+.agent-git-sc-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 1.5rem;
+  padding: 0 0.55rem;
+  border-radius: 0.4rem;
+  border: 0;
+  background: rgba(255, 255, 255, 0.05);
+  color: #c8c8ce;
+  font-size: 11px;
+  cursor: pointer;
+}
+.agent-git-sc-chip:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.09);
+  color: #f0f4f8;
+}
+.agent-git-sc-chip:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.agent-git-sc-chip-primary {
+  background: rgba(78, 189, 255, 0.14);
+  color: #9ad8ff;
+}
+.agent-git-sc-chip-primary:hover:not(:disabled) {
+  background: rgba(78, 189, 255, 0.22);
+  color: #c5e9ff;
+}
+.agent-git-sc-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2rem;
+  padding: 0 0.9rem;
+  border-radius: 0.5rem;
+  border: 0;
+  background: #3d8bfd;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.agent-git-sc-primary:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+.agent-git-sc-primary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.agent-production-approval-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0 0.85rem 0.55rem;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #9a9aa2;
+}
+.agent-git-sc-compose {
+  background: #1a1a1a;
+}
+
+.agent-composer-context { opacity: 0.78; }
+.agent-composer-context.is-warn,
+.agent-composer-context.is-high { opacity: 1; }

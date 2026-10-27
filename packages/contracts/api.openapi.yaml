@@ -1,0 +1,1291 @@
+openapi: 3.1.0
+info:
+  title: Coloride Local API
+  version: 2.2.0
+  description: REST and WebSocket contract between the React UI and local FastAPI backend.
+servers:
+  - url: http://127.0.0.1:{port}
+    variables:
+      port:
+        default: "8788"
+security:
+  - bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    ErrorPayload:
+      type: object
+      required: [code, message, retryable]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        retryable:
+          type: boolean
+    ConnStats:
+      type: object
+      required: [rttMs, upBps, downBps, certTtlSec]
+      properties:
+        rttMs:
+          type: integer
+        upBps:
+          type: integer
+        downBps:
+          type: integer
+        certTtlSec:
+          type: integer
+        server:
+          type: object
+          properties:
+            cpu:
+              type: number
+            memPct:
+              type: number
+            diskPct:
+              type: number
+    AgentInfo:
+      type: object
+      required: [id, name, version, installed, needsKey, supported]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        version:
+          type: string
+        installed:
+          type: boolean
+        needsKey:
+          type: boolean
+        supported:
+          type: boolean
+    AgentProviderConfig:
+      type: object
+      required: [provider, model, baseUrl, configured, credentialSource, capabilities]
+      properties:
+        provider:
+          type: string
+          enum: [openai, xai, fireworks, gemini]
+        model:
+          type: string
+        baseUrl:
+          type: string
+          format: uri
+        configured:
+          type: boolean
+        credentialSource:
+          type: string
+          enum: [environment, keychain, none]
+        capabilities:
+          type: object
+          required: [streaming, encryptedReasoning, maxContextCharacters, maxContextTokens, maxRetries]
+          properties:
+            streaming:
+              type: boolean
+            encryptedReasoning:
+              type: boolean
+            maxContextCharacters:
+              type: integer
+            maxContextTokens:
+              type: integer
+            maxRetries:
+              type: integer
+    AgentMode:
+      type: string
+      enum: [ask, plan, debug, act]
+    AgentSessionSummary:
+      type: object
+      required: [sessionId, agent, task, cwd, mode, accessLevel, state, spentUsd, startedAt, updatedAt]
+      properties:
+        sessionId:
+          type: string
+        agent:
+          type: string
+        task:
+          type: string
+        cwd:
+          type: string
+        mode:
+          $ref: "#/components/schemas/AgentMode"
+        accessLevel:
+          type: string
+          enum: [request, agent, full]
+        state:
+          type: string
+          enum: [starting, idle, running, waiting-approval, stopped, failed]
+        model:
+          type: [string, "null"]
+        spentUsd:
+          type: number
+        budgetUsd:
+          type: [number, "null"]
+        startedAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        lastError:
+          type: [string, "null"]
+    AgentEvent:
+      type: object
+      required: [id, sessionId, sequence, type, data, createdAt]
+      properties:
+        id:
+          type: string
+        sessionId:
+          type: string
+        sequence:
+          type: integer
+        type:
+          type: string
+          enum: [user_message, activity, text, text_delta, text_replace, reasoning_delta, plan_delta, plan_updated, tool_call, tool_output, tool_result, diff, diff_preview, context_compacted, context_snapshot, checkpoint_created, checkpoint_restored, approval_required, approval_resolved, mode_changed, reasoning_changed, cloud_session_refreshing, workspace_changed, status, usage, error, done]
+        data:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+    AgentApproval:
+      type: object
+      required: [id, sessionId, kind, title, details, state, createdAt]
+      properties:
+        id:
+          type: string
+        sessionId:
+          type: string
+        kind:
+          type: string
+        title:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+        state:
+          type: string
+          enum: [pending, approved, declined, cancelled, expired]
+        createdAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: [string, "null"]
+          format: date-time
+    AgentTool:
+      type: object
+      required: [id, name, description, risk, modes]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        risk:
+          type: string
+          enum: [read, write, execute]
+        modes:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentMode"
+    AgentMCPServer:
+      type: object
+      required: [id, name, url, enabled, headerEnv, status, error]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        url:
+          type: string
+          format: uri
+        enabled:
+          type: boolean
+        headerEnv:
+          type: object
+          additionalProperties:
+            type: string
+        status:
+          type: string
+          enum: [configured, ready, disabled, error]
+        error:
+          type: string
+    AgentMetrics:
+      type: object
+      required: [private, records, turns, completedTurns, failedTurns, toolCalls, toolFailures, checkpoints, compactions, inputTokens, outputTokens, averageTurnMs, topTools]
+      properties:
+        private:
+          type: boolean
+          const: true
+        records:
+          type: integer
+        turns:
+          type: integer
+        completedTurns:
+          type: integer
+        failedTurns:
+          type: integer
+        toolCalls:
+          type: integer
+        toolFailures:
+          type: integer
+        checkpoints:
+          type: integer
+        compactions:
+          type: integer
+        inputTokens:
+          type: integer
+        outputTokens:
+          type: integer
+        averageTurnMs:
+          type: integer
+        topTools:
+          type: array
+          items:
+            type: object
+            required: [name, calls]
+            properties:
+              name:
+                type: string
+              calls:
+                type: integer
+    AgentCheckpoint:
+      type: object
+      required: [id, sessionId, tool, callId, cwd, createdAt, paths]
+      properties:
+        id:
+          type: string
+        sessionId:
+          type: string
+        tool:
+          type: string
+        callId:
+          type: string
+        cwd:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        paths:
+          type: array
+          items:
+            type: object
+            required: [path, kind]
+            properties:
+              path:
+                type: string
+              kind:
+                type: string
+    AgentEvaluationCheck:
+      type: object
+      required: [id, label, passed, detail]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        passed:
+          type: boolean
+        detail:
+          type: string
+    AgentEvaluation:
+      type: object
+      required: [sessionId, state, completed, toolCalls, toolFailures, unresolvedTools, approvalsRequested, approvalsResolved, checkpoints, compactions, diffs, errors, mutationCalls, protectedMutations, passedChecks, totalChecks, checks]
+      properties:
+        sessionId:
+          type: string
+        state:
+          type: string
+          enum: [starting, idle, running, waiting-approval, stopped, failed]
+        completed:
+          type: boolean
+        toolCalls:
+          type: integer
+        toolFailures:
+          type: integer
+        unresolvedTools:
+          type: integer
+        approvalsRequested:
+          type: integer
+        approvalsResolved:
+          type: integer
+        checkpoints:
+          type: integer
+        compactions:
+          type: integer
+        diffs:
+          type: integer
+        errors:
+          type: integer
+        mutationCalls:
+          type: integer
+        protectedMutations:
+          type: integer
+        passedChecks:
+          type: integer
+        totalChecks:
+          type: integer
+        checks:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentEvaluationCheck"
+    Entry:
+      type: object
+      required: [name, path, kind, size, mtime]
+      properties:
+        name:
+          type: string
+        path:
+          type: string
+        kind:
+          type: string
+          enum: [file, dir, link]
+        size:
+          type: integer
+        mtime:
+          type: string
+          format: date-time
+    Profile:
+      type: object
+      required: [id, name, host, port, provider, deviceId, createdAt, accessMode, allowedRoots]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        host:
+          type: string
+        port:
+          type: integer
+        provider:
+          type: string
+          enum: [do, hetzner, aws, other]
+        deviceId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        defaultWorkspace:
+          type: string
+          nullable: true
+        defaultShell:
+          type: string
+          enum: [default, bash, zsh, fish]
+        terminalPersistence:
+          type: boolean
+        monitorInterval:
+          type: integer
+          enum: [2, 5, 10, 30]
+        accessMode:
+          type: string
+          enum: [restricted]
+        allowedRoots:
+          type: array
+          items:
+            type: string
+    ProfileUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 60
+        defaultWorkspace:
+          type: string
+        defaultShell:
+          type: string
+          enum: [default, bash, zsh, fish]
+        terminalPersistence:
+          type: boolean
+        monitorInterval:
+          type: integer
+          enum: [2, 5, 10, 30]
+    PairStartRequest:
+      type: object
+      required: [host, phrase]
+      properties:
+        host:
+          type: string
+        port:
+          type: integer
+          default: 22
+        phrase:
+          type: string
+    PairStartResponse:
+      type: object
+      required: [profileId, certExpiresAt]
+      properties:
+        profileId:
+          type: string
+        certExpiresAt:
+          type: string
+          format: date-time
+    HostKeyInfo:
+      type: object
+      required: [host, port, algorithm, fingerprint, publicKey, status]
+      properties:
+        host:
+          type: string
+        port:
+          type: integer
+        algorithm:
+          type: string
+        fingerprint:
+          type: string
+        publicKey:
+          type: string
+        status:
+          type: string
+          enum: [unknown, trusted, changed]
+        trustedFingerprint:
+          type: [string, "null"]
+    HostKeyTrustRequest:
+      type: object
+      required: [host, port, fingerprint, publicKey]
+      properties:
+        host:
+          type: string
+        port:
+          type: integer
+        fingerprint:
+          type: string
+        publicKey:
+          type: string
+    FileListRequest:
+      type: object
+      required: [path]
+      properties:
+        path:
+          type: string
+        offset:
+          type: integer
+          default: 0
+        limit:
+          type: integer
+          default: 500
+    FileReadRequest:
+      type: object
+      required: [path]
+      properties:
+        path:
+          type: string
+    FileReadResponse:
+      type: object
+      required: [content, etag]
+      properties:
+        content:
+          type: string
+        etag:
+          type: string
+        truncated:
+          type: boolean
+          default: false
+    FileWriteRequest:
+      type: object
+      required: [path, content]
+      properties:
+        path:
+          type: string
+        content:
+          type: string
+        etag:
+          type: string
+          nullable: true
+    FileWriteResponse:
+      type: object
+      required: [etag]
+      properties:
+        etag:
+          type: string
+    FileMkdirRequest:
+      type: object
+      required: [path]
+      properties:
+        path:
+          type: string
+    FileDeleteRequest:
+      type: object
+      required: [path]
+      properties:
+        path:
+          type: string
+    FileRenameRequest:
+      type: object
+      required: [oldPath, newPath]
+      properties:
+        oldPath:
+          type: string
+        newPath:
+          type: string
+    BugReportRequest:
+      type: object
+      required: [categories, description, includeDiagnostics]
+      properties:
+        categories:
+          type: array
+          minItems: 1
+          maxItems: 6
+          items:
+            type: string
+            enum: [editor, terminal, connection, files, agent, other]
+        description:
+          type: string
+          minLength: 10
+          maxLength: 4000
+        includeDiagnostics:
+          type: boolean
+    BugReportResponse:
+      type: object
+      required: [reportId, createdAt, storedLocally]
+      properties:
+        reportId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        storedLocally:
+          type: boolean
+    DashboardResource:
+      type: object
+      required: [usedBytes, totalBytes, pct]
+      properties:
+        usedBytes: { type: integer }
+        totalBytes: { type: integer }
+        pct: { type: number }
+    ServerDashboard:
+      type: object
+      required: [capturedAt, cpuPct, load1m, memory, disk, upBps, downBps, processes, services, ports, logs]
+      properties:
+        capturedAt: { type: string, format: date-time }
+        cpuPct: { type: number }
+        load1m: { type: number }
+        memory: { $ref: "#/components/schemas/DashboardResource" }
+        disk: { $ref: "#/components/schemas/DashboardResource" }
+        upBps: { type: integer }
+        downBps: { type: integer }
+        processes: { type: array, items: { type: object } }
+        services: { type: array, items: { type: object } }
+        ports: { type: array, items: { type: object } }
+        logs: { type: array, items: { type: object } }
+    ServerSettings:
+      type: object
+      required: [profileId, authenticationMethod, hostKeyStatus, hostname, operatingSystem, architecture, kernel, uptimeSeconds]
+      properties:
+        profileId: { type: string }
+        authenticationMethod:
+          type: string
+          enum: [password, private-key, certificate, ssh-agent]
+        hostKeyStatus:
+          type: string
+          enum: [trusted, unknown]
+        hostKeyAlgorithm: { type: string, nullable: true }
+        hostKeyFingerprint: { type: string, nullable: true }
+        hostname: { type: string }
+        operatingSystem: { type: string }
+        architecture: { type: string }
+        kernel: { type: string }
+        uptimeSeconds: { type: integer }
+    AuthorizedKey:
+      type: object
+      required: [id, algorithm, fingerprint, comment]
+      properties:
+        id: { type: string }
+        algorithm: { type: string }
+        fingerprint: { type: string }
+        comment: { type: string }
+paths:
+  /api/health:
+    get:
+      operationId: health
+      responses:
+        "200":
+          description: Service health.
+  /api/reports:
+    post:
+      operationId: reportsCreate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BugReportRequest"
+      responses:
+        "200":
+          description: Report saved securely on the local device.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BugReportResponse"
+  /api/profiles:
+    get:
+      operationId: profilesList
+      responses:
+        "200":
+          description: Saved connection profiles.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Profile"
+  /api/profiles/{profileId}:
+    parameters:
+      - in: path
+        name: profileId
+        required: true
+        schema:
+          type: string
+    patch:
+      operationId: profilesUpdate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileUpdateRequest"
+      responses:
+        "200":
+          description: Updated connection profile.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+    delete:
+      operationId: profilesDelete
+      responses:
+        "200":
+          description: Connection profile deleted.
+  /api/pair/start:
+    post:
+      operationId: pairStart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PairStartRequest"
+      responses:
+        "200":
+          description: Pairing started and profile created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PairStartResponse"
+  /api/pair/start-cert:
+    post:
+      operationId: pairStartCert
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PairStartRequest"
+      responses:
+        "200":
+          description: Dev-only certificate profile created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PairStartResponse"
+  /api/conn/connect:
+    post:
+      operationId: connConnect
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [profileId]
+              properties:
+                profileId:
+                  type: string
+      responses:
+        "200":
+          description: Connected.
+  /api/conn/stats:
+    get:
+      operationId: connStats
+      responses:
+        "200":
+          description: Current telemetry.
+          content:
+            application/json:
+                schema:
+                  $ref: "#/components/schemas/ConnStats"
+  /api/conn/reconnect:
+    post:
+      operationId: connReconnect
+      responses:
+        "200":
+          description: Reconnected using the active profile.
+  /api/server/dashboard:
+    get:
+      operationId: serverDashboard
+      responses:
+        "200":
+          description: Live SSH-collected server telemetry.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerDashboard"
+  /api/server/settings:
+    get:
+      operationId: serverSettings
+      responses:
+        "200":
+          description: Connection security and operating system details for the active server.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerSettings"
+  /api/server/authorized-keys:
+    get:
+      operationId: authorizedKeysList
+      responses:
+        "200":
+          description: Authorized SSH key fingerprints for the connected user.
+    post:
+      operationId: authorizedKeysAdd
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [publicKey]
+              properties:
+                publicKey: { type: string }
+      responses:
+        "200":
+          description: Key added.
+  /api/server/authorized-keys/{keyId}:
+    delete:
+      operationId: authorizedKeysDelete
+      parameters:
+        - name: keyId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Key removed.
+  /api/conn/host-key/inspect:
+    post:
+      operationId: hostKeyInspect
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [host, port]
+              properties:
+                host:
+                  type: string
+                port:
+                  type: integer
+      responses:
+        "200":
+          description: Current SSH host identity and local trust status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HostKeyInfo"
+  /api/conn/host-key/trust:
+    post:
+      operationId: hostKeyTrust
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HostKeyTrustRequest"
+      responses:
+        "200":
+          description: SSH host identity pinned locally after a fresh verification.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HostKeyInfo"
+  /api/conn/host-key/forget:
+    post:
+      operationId: hostKeyForget
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [host, port]
+              properties:
+                host: { type: string }
+                port: { type: integer }
+      responses:
+        "200":
+          description: Local SSH host identity pin removed.
+  /api/agents/config:
+    get:
+      operationId: agentConfig
+      responses:
+        "200":
+          description: Active Coloride Agent provider configuration without secret material.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentProviderConfig"
+    put:
+      operationId: agentConfigUpdate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [provider, model]
+              properties:
+                provider:
+                  type: string
+                  enum: [openai, xai, fireworks]
+                model:
+                  type: string
+                apiKey:
+                  type: string
+                  writeOnly: true
+                baseUrl:
+                  type: string
+                  format: uri
+      responses:
+        "200":
+          description: Provider configuration saved; credentials are stored in the OS Keychain.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentProviderConfig"
+  /api/agents/available:
+    get:
+      operationId: agentsAvailable
+      responses:
+        "200":
+          description: Coloride native agent provider status.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AgentInfo"
+  /api/agents/tools:
+    get:
+      operationId: agentTools
+      responses:
+        "200":
+          description: Provider-neutral tools and the modes which allow them.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AgentTool"
+  /api/agents/integrations:
+    get:
+      operationId: agentIntegrations
+      responses:
+        "200":
+          description: Configured MCP servers and their discovery state.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AgentMCPServer"
+    put:
+      operationId: agentIntegrationsUpdate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mcpServers]
+              properties:
+                mcpServers:
+                  type: array
+                  items:
+                    type: object
+                    required: [id, name, url, enabled, headerEnv]
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      url:
+                        type: string
+                        format: uri
+                      enabled:
+                        type: boolean
+                      headerEnv:
+                        type: object
+                        additionalProperties:
+                          type: string
+      responses:
+        "200":
+          description: Updated MCP server configuration.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AgentMCPServer"
+  /api/agents/metrics:
+    get:
+      operationId: agentMetrics
+      responses:
+        "200":
+          description: Private local operational metrics without prompts or file contents.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentMetrics"
+  /api/agents/session/start:
+    post:
+      operationId: agentSessionStart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [agent, cwd, mode]
+              properties:
+                agent:
+                  type: string
+                  enum: [coloride]
+                task:
+                  type: string
+                cwd:
+                  type: string
+                budgetUsd:
+                  type: number
+                mode:
+                  $ref: "#/components/schemas/AgentMode"
+      responses:
+        "200":
+          description: Session started.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [sessionId]
+                properties:
+                  sessionId:
+                    type: string
+  /api/agents/session/send:
+    post:
+      operationId: agentSessionSend
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sessionId, message]
+              properties:
+                sessionId:
+                  type: string
+                message:
+                  type: string
+      responses:
+        "200":
+          description: Message accepted.
+  /api/agents/session/stop:
+    post:
+      operationId: agentSessionStop
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sessionId]
+              properties:
+                sessionId:
+                  type: string
+      responses:
+        "200":
+          description: Stop requested.
+  /api/agents/session/mode:
+    post:
+      operationId: agentSessionMode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sessionId, mode]
+              properties:
+                sessionId:
+                  type: string
+                mode:
+                  $ref: "#/components/schemas/AgentMode"
+      responses:
+        "200":
+          description: Session mode updated while preserving the provider thread.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentSessionSummary"
+  /api/agents/sessions:
+    get:
+      operationId: agentSessions
+      responses:
+        "200":
+          description: Known agent sessions.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AgentSessionSummary"
+  /api/agents/sessions/{sessionId}:
+    get:
+      operationId: agentSession
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Agent session metadata.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentSessionSummary"
+  /api/agents/sessions/{sessionId}/events:
+    get:
+      operationId: agentSessionEvents
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 5000
+            default: 500
+      responses:
+        "200":
+          description: Persisted normalized events for the session.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AgentEvent"
+  /api/agents/sessions/{sessionId}/approvals:
+    get:
+      operationId: agentSessionApprovals
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Approval history for the session.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AgentApproval"
+  /api/agents/sessions/{sessionId}/checkpoints:
+    get:
+      operationId: agentSessionCheckpoints
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Restorable workspace checkpoints created before mutations.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AgentCheckpoint"
+  /api/agents/sessions/{sessionId}/evaluation:
+    get:
+      operationId: agentSessionEvaluation
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deterministic checks derived from the persisted session event stream.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentEvaluation"
+  /api/agents/session/approval:
+    post:
+      operationId: agentSessionApproval
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [approvalId, decision]
+              properties:
+                approvalId:
+                  type: string
+                decision:
+                  type: string
+                  enum: [approve, approve-session, decline, cancel]
+      responses:
+        "200":
+          description: Approval decision delivered to the active Coloride agent turn.
+  /api/agents/session/checkpoint/restore:
+    post:
+      operationId: agentCheckpointRestore
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sessionId, checkpointId]
+              properties:
+                sessionId:
+                  type: string
+                checkpointId:
+                  type: string
+      responses:
+        "200":
+          description: Checkpoint restored after first creating a rollback checkpoint.
+  /api/files/list:
+    post:
+      operationId: filesList
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FileListRequest"
+      responses:
+        "200":
+          description: Directory listing.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Entry"
+  /api/files/read:
+    post:
+      operationId: filesRead
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FileReadRequest"
+      responses:
+        "200":
+          description: File content.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileReadResponse"
+        "404":
+          description: Not found.
+  /api/files/write:
+    post:
+      operationId: filesWrite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FileWriteRequest"
+      responses:
+        "200":
+          description: Write successful.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileWriteResponse"
+        "409":
+          description: Etag mismatch.
+  /api/files/mkdir:
+    post:
+      operationId: filesMkdir
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FileMkdirRequest"
+      responses:
+        "200":
+          description: Directory created.
+  /api/files/delete:
+    post:
+      operationId: filesDelete
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FileDeleteRequest"
+      responses:
+        "200":
+          description: File or empty directory deleted.
+        "409":
+          description: Directory is not empty.
+  /api/files/rename:
+    post:
+      operationId: filesRename
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FileRenameRequest"
+      responses:
+        "200":
+          description: Path renamed.
+  /api/term/create:
+    post:
+      operationId: termCreate
+      responses:
+        "200":
+          description: Terminal session created.
+  webhooks: {}
+  x-websockets:
+  /ws/events:
+    auth: "Authorization bearer header or token query parameter; query token is required for browser WebSocket clients."
+    frames: "JSON EventEnvelope"
+  /ws/term/{termId}:
+    auth: "Authorization bearer header or token query parameter; query token is required for browser WebSocket clients."
+    frames: "Binary PTY bytes in both directions."

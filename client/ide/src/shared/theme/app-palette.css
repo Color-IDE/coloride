@@ -1,0 +1,22 @@
+/* Light theme. The selectors map the existing neutral utility palette so every
+   current surface participates while the app is migrated to semantic tokens. */
+:root[data-theme="light"] {
+  --app-window-background: #ffffff;
+  --app-canvas: #ffffff;
+  --app-editor: #ffffff;
+  --app-surface: #ffffff;
+  --app-surface-muted: #f4f4f5;
+  --app-control: #ffffff;
+  --app-control-hover: #f4f4f5;
+  --app-border: #e4e4e6;
+  --app-border-strong: #e2e2e4;
+  --text-primary: #171717;
+  --text-muted: #a3a3aa;
+  --sidebar-active-border: #e2e2e4;
+  --scrollbar-thumb: #b6b6b6;
+  background: var(--app-canvas);
+}
+
+:root:not([data-theme="light"]) {
+  --scrollbar-thumb: #555;
+}

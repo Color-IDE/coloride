@@ -1,0 +1,540 @@
+/* Agent chat docked as Explorer right sidebar — instant open/close (no slide). */
+.explorer-agent-dock {
+  flex-shrink: 0;
+}
+.explorer-agent-dock.is-open {
+  opacity: 1;
+}
+.explorer-agent-dock.is-closed {
+  opacity: 0;
+}
+.explorer-agent-dock-inner {
+  height: 100%;
+}
+.explorer-agent-dock.is-closed .explorer-agent-dock-inner {
+  /* keep clip clean when width is 0 */
+}
+.explorer-agent-dock-seam {
+}
+.explorer-agent-dock.is-closed .explorer-agent-dock-seam {
+  opacity: 0;
+}
+.explorer-agent-dock.is-open .explorer-agent-dock-seam {
+  opacity: 1;
+}
+
+.agent-view-sidebar {
+  min-width: 0;
+  overflow-x: hidden;
+  background: #212121;
+  /* Match the editor frame above and along the bottom status-bar edge. */
+  border-top: 1px solid #333333;
+  border-bottom: 1px solid #333333;
+  box-sizing: border-box;
+}
+.agent-view-sidebar .agent-main-split,
+.agent-view-sidebar .agent-main,
+.agent-view-sidebar .agent-chat-column,
+.agent-view-sidebar .agent-timeline-shell,
+.agent-view-sidebar .agent-timeline,
+.agent-view-sidebar .agent-chat-measure,
+.agent-view-sidebar .agent-composer-wrap,
+.agent-view-sidebar .agent-composer-stack {
+  min-width: 0;
+  max-width: 100%;
+}
+.agent-view-sidebar .agent-timeline {
+  overflow-x: hidden;
+}
+.agent-sidebar-tab {
+  flex: 0 0 auto;
+}
+.agent-sidebar-header-title {
+  letter-spacing: 0.01em;
+}
+body[data-theme="light"] .agent-view-sidebar {
+  background: #ffffff;
+  border-top-color: #e4e4e6;
+  border-bottom-color: #e4e4e6;
+}
+body[data-theme="light"] .agent-sidebar-header {
+  background: #ffffff !important;
+}
+/* Compact docked composer — single-line empty height in the narrow panel */
+/* Start an empty sidebar chat at the top; active conversations keep the footer. */
+.agent-view-sidebar .agent-chat-column.is-empty-chat > .agent-composer-wrap {
+  order: -1;
+}
+
+.agent-view-sidebar .is-empty-chat .agent-composer-input,
+.agent-view-sidebar .is-empty-chat .agent-composer-input:placeholder-shown {
+  max-height: 132px !important;
+}
+
+.agent-view-sidebar .agent-composer-wrap {
+  padding: 8px 6px 6px !important;
+}
+.agent-view-sidebar .agent-chat-column.is-empty-chat > .agent-composer-wrap {
+  padding-top: 2px !important;
+}
+.agent-view-sidebar .agent-newtask-workspace {
+  display: none !important;
+}
+.agent-view-sidebar .agent-composer,
+.agent-composer-compact {
+  padding: 6px 8px 6px !important;
+  border-radius: 4px !important;
+  gap: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  flex: 0 0 auto !important;
+}
+/* Full Agents tab footer composer — same density as explorer dock */
+.agent-view:not(.agent-view-sidebar) .agent-composer-wrap {
+  padding-left: var(--agent-chat-inline-pad, 10px) !important;
+  padding-right: var(--agent-chat-inline-pad, 10px) !important;
+  padding-bottom: 10px !important;
+}
+/* New task (centered) + docked footer — same card density */
+.agent-composer-docked:not(.agent-composer-compact),
+.agent-composer-centered:not(.agent-composer-compact) {
+  padding: 10px 12px 10px !important;
+  border-radius: 4px !important;
+  gap: 0 !important;
+}
+.agent-composer-docked:not(.agent-composer-compact) .agent-composer-input-row,
+.agent-composer-centered:not(.agent-composer-compact) .agent-composer-input-row {
+  align-items: center;
+  gap: 6px;
+}
+.agent-composer-docked:not(.agent-composer-compact) .agent-composer-input-row:has(.agent-composer-plugin-chip),
+.agent-composer-centered:not(.agent-composer-compact) .agent-composer-input-row:has(.agent-composer-plugin-chip),
+.agent-composer-input-row:has(.agent-composer-plugin-chip) {
+  flex-wrap: nowrap;
+  align-items: center;
+}
+.agent-composer-docked:not(.agent-composer-compact) .agent-composer-input,
+.agent-composer-centered:not(.agent-composer-compact) .agent-composer-input {
+  padding-top: 1px !important;
+  padding-bottom: 1px !important;
+  padding-left: 2px !important;
+  padding-right: 2px !important;
+  font-size: 13.5px !important;
+  line-height: 22px !important;
+  min-height: 24px !important;
+  max-height: calc(14 * 22px) !important;
+}
+.agent-composer-docked:not(.agent-composer-compact) .agent-composer-input:placeholder-shown,
+.agent-composer-centered:not(.agent-composer-compact) .agent-composer-input:placeholder-shown {
+  min-height: 24px !important;
+  height: 24px !important;
+  max-height: 24px !important;
+}
+/* New Task only — slightly taller empty input. Open chats keep the compact dock. */
+.agent-composer-wrap.is-new-task .agent-composer-input,
+.agent-composer.is-new-task .agent-composer-input {
+  min-height: 36px !important;
+}
+.agent-composer-wrap.is-new-task .agent-composer-input:placeholder-shown,
+.agent-composer.is-new-task .agent-composer-input:placeholder-shown {
+  min-height: 36px !important;
+  height: 36px !important;
+  max-height: 36px !important;
+}
+.agent-composer-docked:not(.agent-composer-compact) .agent-centered-composer-actions,
+.agent-composer-centered:not(.agent-composer-compact) .agent-centered-composer-actions {
+  margin-top: 8px !important;
+  height: 30px;
+  min-height: 30px;
+}
+/* Full-width multi-line input; empty state is one line (JS + :placeholder-shown). */
+.agent-composer-input-compact,
+.agent-view-sidebar .agent-composer-input {
+  field-sizing: fixed !important;
+  display: block !important;
+  flex: 1 1 auto !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  min-height: 22px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  margin: 0 !important;
+  font-size: 13px !important;
+  line-height: 22px !important;
+  letter-spacing: normal !important;
+  word-spacing: normal !important;
+  resize: none !important;
+  white-space: pre-wrap !important;
+  overflow-wrap: break-word !important;
+  word-break: normal !important;
+}
+.agent-composer-input-compact::placeholder,
+.agent-view-sidebar .agent-composer-input::placeholder {
+  line-height: 22px;
+}
+/* Empty only — lock to a single line so the placeholder cannot inflate the box */
+.agent-composer-input-compact:placeholder-shown,
+.agent-view-sidebar .agent-composer-input:placeholder-shown {
+  height: 22px !important;
+  max-height: 22px !important;
+  overflow-x: hidden !important;
+  overflow-y: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+}
+/* Grow while typing — JS sets height; keep wrap + full width */
+.agent-composer-input-compact:not(:placeholder-shown),
+.agent-view-sidebar .agent-composer-input:not(:placeholder-shown) {
+  min-height: 22px !important;
+  max-height: calc(6 * 22px) !important;
+  white-space: pre-wrap !important;
+  text-overflow: clip !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+.agent-view-sidebar .agent-composer-input-row,
+.agent-composer-compact .agent-composer-input-row {
+  align-items: flex-start !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 36px !important;
+}
+.agent-view-sidebar .agent-composer .agent-centered-composer-actions,
+.agent-composer-compact .agent-centered-composer-actions {
+  margin-top: 5px !important;
+  height: 22px !important;
+  min-height: 22px !important;
+  max-height: 22px !important;
+  gap: 4px !important;
+}
+.agent-view-sidebar .agent-centered-composer-actions .relative,
+.agent-composer-compact .agent-centered-composer-actions .relative {
+  height: 22px !important;
+}
+.agent-view-sidebar .agent-composer-action,
+.agent-composer-compact .agent-composer-action {
+  width: 22px !important;
+  height: 22px !important;
+}
+.agent-view-sidebar .agent-composer-action svg,
+.agent-composer-compact .agent-composer-action svg {
+  width: 13px;
+  height: 13px;
+}
+.agent-view-sidebar .agent-send-button.agent-send-button-centered,
+.agent-composer-compact .agent-send-button.agent-send-button-centered {
+  width: 22px !important;
+  height: 22px !important;
+}
+.agent-view-sidebar .agent-send-button.agent-send-button-centered.is-stop,
+.agent-composer-compact .agent-send-button.agent-send-button-centered.is-stop {
+  border-radius: 6px;
+}
+.agent-view-sidebar .agent-send-button svg,
+.agent-composer-compact .agent-send-button svg {
+  width: 14px;
+  height: 14px;
+}
+.agent-view-sidebar .agent-send-stop-mark,
+.agent-composer-compact .agent-send-stop-mark {
+  width: 7px;
+  height: 7px;
+  border-radius: 1.5px;
+}
+.agent-view-sidebar .agent-composer-model-trigger,
+.agent-composer-compact .agent-composer-model-trigger {
+  height: 22px !important;
+  max-width: 168px;
+  gap: 4px;
+  padding-left: 7px;
+  padding-right: 6px;
+  font-size: 11px;
+}
+.agent-view-sidebar .agent-composer-model-trigger svg,
+.agent-composer-compact .agent-composer-model-trigger svg {
+  width: 13px;
+  height: 13px;
+}
+.agent-view-sidebar .agent-composer-model-trigger .size-4,
+.agent-view-sidebar .agent-composer-model-trigger .size-\[18px\],
+.agent-composer-compact .agent-composer-model-trigger .size-4,
+.agent-composer-compact .agent-composer-model-trigger .size-\[18px\] {
+  width: 13px !important;
+  height: 13px !important;
+}
+.agent-view-sidebar .agent-composer-mode-badge,
+.agent-composer-compact .agent-composer-mode-badge {
+  height: 22px !important;
+  min-height: 22px !important;
+  gap: 4px;
+  padding: 0 2px 0 7px;
+  font-size: 11px;
+}
+.agent-view-sidebar .agent-composer-mode-badge.is-icon-only,
+.agent-composer-compact .agent-composer-mode-badge.is-icon-only {
+  padding: 0 6px;
+}
+.agent-view-sidebar .agent-composer-mode-badge svg,
+.agent-composer-compact .agent-composer-mode-badge svg {
+  width: 12px;
+  height: 12px;
+}
+.agent-view-sidebar .agent-composer-mode-badge-clear,
+.agent-composer-compact .agent-composer-mode-badge-clear {
+  width: 16px;
+  height: 16px;
+}
+.agent-view-sidebar .agent-composer-mode-badge-clear svg,
+.agent-composer-compact .agent-composer-mode-badge-clear svg {
+  width: 11px;
+  height: 11px;
+}
+.agent-view-sidebar .agent-composer-context,
+.agent-composer-compact .agent-composer-context {
+  height: 22px !important;
+  min-height: 22px !important;
+  gap: 4px;
+  padding: 0 6px 0 5px;
+  font-size: 10px;
+}
+.agent-view-sidebar .agent-composer-context-ring,
+.agent-composer-compact .agent-composer-context-ring {
+  width: 12px;
+  height: 12px;
+}
+.agent-view-sidebar .agent-composer-context-ring svg,
+.agent-composer-compact .agent-composer-context-ring svg {
+  width: 12px;
+  height: 12px;
+}
+.agent-view-sidebar .agent-composer-attach-menu,
+.agent-composer-compact .agent-composer-attach-menu {
+  bottom: calc(100% + 4px);
+}
+.agent-view-sidebar .is-empty-chat .agent-composer-attach-menu {
+  top: calc(100% + 4px);
+  bottom: auto;
+  transform-origin: top left;
+}
+body[data-theme="light"] .agent-view-sidebar {
+  background: #ffffff;
+}
+
+/*
+ * Status bar — dark chrome, without a separator above it.
+ */
+.app-status-bar {
+  position: relative;
+  flex: 0 0 34px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 8px 0 6px;
+  overflow: hidden;
+  user-select: none;
+  background: #171717;
+  color: rgb(255 255 255 / 72%);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  letter-spacing: 0.01em;
+  margin: 0;
+  width: 100%;
+  border: 0;
+  z-index: 40;
+}
+.app-status-bar-actions {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  flex-shrink: 0;
+  gap: 1px;
+}
+.app-status-bar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: rgb(255 255 255 / 58%);
+  cursor: pointer;
+}
+.app-status-bar-btn svg {
+  display: block;
+  width: 15px;
+  height: 15px;
+}
+.app-status-bar-btn-terminal svg {
+  width: 17px;
+  height: 17px;
+}
+.app-status-bar-btn:hover {
+  color: #ffffff;
+  background: transparent;
+}
+.app-status-bar-btn.is-active {
+  color: #ffffff;
+}
+.app-status-bar-crumbs {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  min-width: 0;
+  flex: 1 1 auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: hidden;
+}
+.app-status-bar-crumb {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  flex: 0 1 auto;
+  color: rgb(166 166 173 / 78%);
+}
+.app-status-bar-crumb.is-last {
+  flex: 0 1 auto;
+  color: rgb(255 255 255 / 88%);
+}
+.app-status-bar-crumb-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.app-status-bar-icon {
+  display: block;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+.app-status-bar-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app-status-bar-sep {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  margin: 0 3px;
+  color: rgb(135 136 136 / 42%);
+}
+.app-status-bar-empty {
+  color: rgb(255 255 255 / 38%);
+}
+body[data-theme="light"] .app-status-bar {
+  background: #ffffff;
+  color: rgb(24 24 27 / 72%);
+}
+body[data-theme="light"] .app-status-bar-btn {
+  color: rgb(24 24 27 / 52%);
+}
+body[data-theme="light"] .app-status-bar-btn:hover {
+  color: rgb(24 24 27 / 88%);
+  background: transparent;
+}
+body[data-theme="light"] .app-status-bar-btn.is-active {
+  color: rgb(24 24 27 / 88%);
+}
+body[data-theme="light"] .app-status-bar-crumb {
+  color: rgb(63 63 70 / 72%);
+}
+body[data-theme="light"] .app-status-bar-crumb.is-last {
+  color: rgb(24 24 27 / 88%);
+}
+body[data-theme="light"] .app-status-bar-icon {
+  color: rgb(113 113 122 / 78%);
+}
+body[data-theme="light"] .app-status-bar-sep {
+  color: rgb(113 113 122 / 42%);
+}
+body[data-theme="light"] .app-status-bar-empty {
+  color: rgb(24 24 27 / 38%);
+}
+
+/* Rounded tip + pin (above status bar). Bubble may shift; pin stays on anchor. */
+.app-status-tooltip {
+  --tip-shift: 0px;
+  position: fixed;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 2px));
+  animation: app-status-tooltip-in 140ms ease-out both;
+}
+.app-status-tooltip.is-hiding {
+  animation: app-status-tooltip-out 120ms ease-in both;
+}
+.app-status-tooltip-label {
+  max-width: min(320px, calc(100vw - 20px));
+  padding: 5px 10px;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #171717;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: none;
+  /* Slide only when viewport clamping is required; otherwise stay centered on the pin. */
+  transform: translateX(var(--tip-shift));
+}
+.app-status-tooltip-pin {
+  width: 10px;
+  height: 10px;
+  margin-top: -5px;
+  border-radius: 2px;
+  background: #ffffff;
+  transform: rotate(45deg);
+  box-shadow: none;
+  /* Pin stays centered on the hovered item */
+}
+body[data-theme="light"] .app-status-tooltip-label {
+  background: #18181b;
+  color: #fafafa;
+  box-shadow:
+    0 1px 2px rgb(24 24 27 / 12%),
+    0 8px 20px rgb(24 24 27 / 14%);
+}
+body[data-theme="light"] .app-status-tooltip-pin {
+  background: #18181b;
+  box-shadow: none;
+}
+@keyframes app-status-tooltip-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% + 2px));
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, calc(-100% - 2px));
+  }
+}
+@keyframes app-status-tooltip-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, calc(-100% - 2px));
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% + 2px));
+  }
+}

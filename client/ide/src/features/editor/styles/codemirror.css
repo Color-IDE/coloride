@@ -1,0 +1,803 @@
+/* Coloride CodeEditor (CodeMirror 6 host) — keep minimal; theme owns chrome. */
+.coloride-code-editor-root {
+  height: 100%;
+  min-height: 0;
+  width: 100%;
+}
+.coloride-code-editor-root .cm-editor {
+  height: 100%;
+  outline: none;
+}
+/* Avoid phantom scroll: content fills the scroller without overflowing it */
+.coloride-code-editor-root .cm-scroller {
+  overscroll-behavior: none;
+}
+.coloride-code-editor-root .cm-content {
+  box-sizing: border-box;
+  min-height: 100%;
+}
+/*
+ * Autocomplete popup (often portaled outside the editor root).
+ * Scroll without a visible scrollbar. Rounded rows match Coloride buttons.
+ */
+.cm-tooltip.cm-tooltip-autocomplete {
+  max-width: 480px;
+  padding: 2px !important;
+  border-radius: 12px;
+  overflow: visible !important;
+  box-sizing: border-box;
+}
+.cm-tooltip.cm-tooltip-autocomplete > ul {
+  /* The popup lives under document.body, outside CodeMirror's theme scope. */
+  list-style: none;
+  padding: 0 !important;
+  margin: 0 !important;
+  scroll-padding: 2px;
+}
+.cm-tooltip.cm-tooltip-autocomplete > ul > li {
+  list-style: none;
+  margin: 0 2px !important;
+  padding: 2px 6px !important;
+  border: 2px solid transparent !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  background-clip: padding-box !important;
+  border-radius: 6px !important;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+}
+.cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected] {
+  border-radius: 6px !important;
+}
+.cm-tooltip.cm-tooltip-autocomplete > ul,
+.cm-completionInfo {
+  scrollbar-width: none !important;
+  scrollbar-color: transparent transparent !important;
+  -ms-overflow-style: none !important;
+}
+.cm-tooltip.cm-tooltip-autocomplete > ul::-webkit-scrollbar,
+.cm-tooltip.cm-tooltip-autocomplete > ul::-webkit-scrollbar-thumb,
+.cm-tooltip.cm-tooltip-autocomplete > ul::-webkit-scrollbar-track,
+.cm-completionInfo::-webkit-scrollbar,
+.cm-completionInfo::-webkit-scrollbar-thumb {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+.cm-tooltip.cm-completionInfo {
+  max-width: 360px;
+  padding: 8px 10px !important;
+  border-radius: 12px;
+  overflow: auto;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+.cm-completionInfo.cm-completionInfo-right {
+  left: 100% !important;
+  margin-left: 8px;
+}
+.cm-completionInfo.cm-completionInfo-left {
+  right: 100% !important;
+  margin-right: 8px;
+}
+.cm-tooltip:has(.coloride-sig-help) {
+  padding: 0 !important;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.coloride-sig-help {
+  padding: 5px 8px;
+  max-width: 480px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.coloride-sig-help-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #d4d4d4;
+}
+body[data-theme="light"] .coloride-sig-help-label {
+  color: #171717;
+}
+.coloride-sig-help-active {
+  color: #4fc1ff;
+  font-weight: 600;
+}
+body[data-theme="light"] .coloride-sig-help-active {
+  color: #0066bf;
+}
+.coloride-sig-help-doc {
+  margin-top: 4px;
+  color: #85858a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: inherit;
+}
+.coloride-sig-help-count {
+  margin-top: 2px;
+  font-size: 11px;
+  color: #6b6b6b;
+}
+.cm-tooltip:has(.coloride-refs-panel) {
+  padding: 2px !important;
+  border-radius: 12px;
+  overflow: hidden;
+  max-width: 420px;
+}
+.coloride-refs-panel {
+  min-width: 240px;
+  max-width: 420px;
+}
+.coloride-symbols-input {
+  display: block;
+  width: calc(100% - 12px);
+  margin: 6px 6px 4px;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 7px;
+  background: #2c2c2c;
+  color: #e8e8ea;
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+}
+body[data-theme="light"] .coloride-symbols-input {
+  background: #ececee;
+  color: #171717;
+}
+.coloride-refs-head {
+  padding: 4px 8px 2px;
+  font-size: 11px;
+  color: #85858a;
+}
+.coloride-refs-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.coloride-refs-list::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+.coloride-refs-item {
+  margin: 2px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.coloride-refs-item.is-active,
+.coloride-refs-item:hover {
+  background: #3a3d45;
+}
+body[data-theme="light"] .coloride-refs-item.is-active,
+body[data-theme="light"] .coloride-refs-item:hover {
+  background: #d0d0d6;
+}
+.coloride-refs-path {
+  font-size: 12px;
+  color: #e6e6e8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+body[data-theme="light"] .coloride-refs-path {
+  color: #171717;
+}
+.coloride-rename {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 1.45em;
+  padding: 0;
+  background: transparent;
+}
+.coloride-rename-input {
+  display: block;
+  width: auto;
+  min-width: 4ch;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  padding: 0 2px;
+  border-radius: 3px;
+}
+.coloride-refs-snip {
+  margin-top: 1px;
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #85858a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.coloride-completion-docs {
+  max-width: 340px;
+}
+.coloride-completion-docs-sig {
+  margin: 0 0 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #dcdcaa;
+}
+body[data-theme="light"] .coloride-completion-docs-sig {
+  color: #7c3aed;
+}
+.coloride-completion-docs-body {
+  font-size: 12px;
+  line-height: 1.45;
+  color: #c8c8ce;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+body[data-theme="light"] .coloride-completion-docs-body {
+  color: #52525b;
+}
+.coloride-completion-docs-link {
+  color: #4fc1ff;
+  text-decoration: none;
+}
+.coloride-completion-docs-link:hover {
+  text-decoration: underline;
+}
+body[data-theme="light"] .coloride-completion-docs-link {
+  color: #0066bf;
+}
+.cm-tooltip.cm-tooltip-autocomplete .cm-completionIcon {
+  display: none !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+/*
+ * Cmd/Ctrl + hover definition links — VS Code style:
+ * text + underline share the same link blue; only the identifier span.
+ */
+.coloride-code-editor-root .cm-content {
+  cursor: text;
+}
+.coloride-code-editor-root span.cm-goto-definition-candidate,
+.coloride-code-editor-root span.cm-goto-definition-underline,
+.coloride-code-editor-root span.cm-path-url-link {
+  /* Override syntax highlighting so the whole token is link-colored */
+  color: #4fc1ff !important;
+  -webkit-text-fill-color: #4fc1ff !important;
+  text-decoration-line: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+  text-decoration-color: #4fc1ff;
+  cursor: pointer !important;
+  text-decoration-skip-ink: none;
+}
+.coloride-code-editor-root span.cm-goto-definition-candidate {
+  text-decoration-style: solid;
+  opacity: 0.85;
+}
+.coloride-code-editor-root span.cm-goto-definition-underline {
+  text-decoration-style: solid;
+  opacity: 1;
+}
+body[data-theme="light"] .coloride-code-editor-root span.cm-goto-definition-candidate,
+body[data-theme="light"] .coloride-code-editor-root span.cm-goto-definition-underline,
+body[data-theme="light"] .coloride-code-editor-root span.cm-path-url-link {
+  color: #0066bf !important;
+  -webkit-text-fill-color: #0066bf !important;
+  text-decoration-color: #0066bf;
+}
+.coloride-code-editor-root .cm-editor.cm-focused {
+  outline: none;
+}
+/* Selection = solid block, not underlines */
+.coloride-code-editor-root .cm-selectionLayer .cm-selectionBackground {
+  display: none !important;
+  width: 0 !important;
+  opacity: 0 !important;
+}
+.coloride-code-editor-root .cm-textSelectionLayer .cm-selectionPath {
+  overflow: visible;
+  pointer-events: none;
+}
+/*
+ * Tailwind preflight sets img { display:block; height:auto }.
+ * CodeMirror uses zero-width <img.cm-widgetBuffer> for caret anchors.
+ */
+.coloride-code-editor-root img.cm-widgetBuffer,
+.coloride-code-editor-root .cm-widgetBuffer {
+  display: inline !important;
+  vertical-align: text-top !important;
+  height: 1em !important;
+  width: 0 !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+/* Deleted-line text is shifted in JS to match .cm-line. Don't add a fixed inset. */
+.coloride-code-editor-root .cm-agent-line-del-wrap {
+  margin-left: 0;
+  padding-left: 0;
+}
+.coloride-code-editor-root .cm-line ::selection,
+.coloride-code-editor-root .cm-line::selection,
+.coloride-code-editor-root .cm-content ::selection {
+  background: transparent !important;
+  color: inherit !important;
+  text-decoration: none !important;
+}
+/*
+ * Kill the native / website scrollbar. Only the custom overlay rail stays.
+ */
+.coloride-code-editor-root,
+.coloride-code-editor-root .cm-editor,
+.coloride-code-editor-root .cm-scroller,
+.coloride-code-editor-root .cm-minimap,
+.coloride-code-editor {
+  scrollbar-width: none !important;
+  scrollbar-color: transparent transparent !important;
+  -ms-overflow-style: none !important;
+}
+.coloride-code-editor-root::-webkit-scrollbar,
+.coloride-code-editor-root *::-webkit-scrollbar,
+.coloride-code-editor::-webkit-scrollbar,
+.coloride-code-editor *::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+.coloride-code-editor-root .cm-editor {
+  position: relative;
+}
+.cm-overlay-scrollbar {
+  position: absolute;
+  z-index: 6;
+  pointer-events: auto;
+}
+.cm-overlay-scrollbar.is-needed {
+  display: block;
+}
+.cm-overlay-scrollbar:not(.is-needed) {
+  display: none;
+}
+.cm-overlay-scrollbar.is-vert {
+  width: 10px;
+}
+.cm-overlay-scrollbar.is-horiz {
+  height: 10px;
+}
+.cm-overlay-scrollbar-marks {
+  position: absolute;
+  inset: 0;
+  display: block;
+  pointer-events: none;
+}
+.cm-overlay-scrollbar-thumb {
+  position: absolute;
+  border-radius: 0;
+  background: rgb(139 148 158 / 0%);
+  pointer-events: auto;
+  transition: background-color 0.28s ease;
+}
+.cm-overlay-scrollbar.is-vert .cm-overlay-scrollbar-thumb {
+  left: 0;
+  width: 10px;
+}
+.cm-overlay-scrollbar.is-horiz .cm-overlay-scrollbar-thumb {
+  top: 0;
+  height: 10px;
+}
+.cm-editor.is-overlay-scroll-visible .cm-overlay-scrollbar-thumb,
+.cm-overlay-scrollbar:hover .cm-overlay-scrollbar-thumb {
+  background: rgb(139 148 158 / 48%);
+}
+.cm-overlay-scrollbar-thumb:hover {
+  background: rgb(139 148 158 / 68%);
+}
+body[data-theme="light"] .cm-editor.is-overlay-scroll-visible .cm-overlay-scrollbar-thumb,
+body[data-theme="light"] .cm-overlay-scrollbar:hover .cm-overlay-scrollbar-thumb {
+  background: rgb(87 96 106 / 36%);
+}
+body[data-theme="light"] .cm-overlay-scrollbar-thumb:hover {
+  background: rgb(87 96 106 / 52%);
+}
+.coloride-code-editor-root .cm-gutters,
+.coloride-code-editor-root .cm-gutters.cm-gutters-before,
+.coloride-code-editor-root .cm-gutters.cm-gutters-after {
+  border: none !important;
+  box-shadow: none !important;
+}
+.coloride-code-editor-root .cm-gutter-lint {
+  display: none !important;
+}
+.coloride-code-editor-root .cm-gutter-coloride-change {
+  width: 3px;
+  min-width: 3px;
+}
+.coloride-code-editor-root .cm-gutter-coloride-change .coloride-change-del {
+  background: #f85149;
+}
+body[data-theme="light"] .coloride-code-editor-root .cm-gutter-coloride-change .coloride-change-del {
+  background: #cf222e;
+}
+.coloride-code-editor-root .cm-gutter-coloride-bp {
+  width: 0 !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+}
+.coloride-breakpoint-spacer {
+  display: block;
+  width: 0;
+  height: 0;
+}
+.coloride-code-editor-root .cm-gutter-coloride-bp .cm-gutterElement,
+.coloride-code-editor-root .cm-gutter-coloride-bp .cm-gutterElement.cm-activeLineGutter,
+.coloride-code-editor-root .cm-gutter-coloride-bp .cm-gutterElement.coloride-selected-line-gutter {
+  position: relative;
+  overflow: visible;
+  width: 16px;
+  cursor: pointer;
+  background: transparent !important;
+}
+.coloride-code-editor-root .cm-gutter-coloride-bp .cm-gutterElement::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  transform: translateY(-50%);
+}
+.coloride-code-editor-root .cm-gutter-coloride-bp .cm-gutterElement:hover::before {
+  border-color: rgb(180 35 24 / 45%);
+}
+.coloride-code-editor-root .cm-gutter-coloride-bp .cm-gutterElement:has(.coloride-breakpoint)::before {
+  display: none;
+}
+.coloride-code-editor-root .coloride-breakpoint {
+  position: absolute;
+  top: 50%;
+  left: 3px;
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #b42318;
+  box-shadow: none;
+  transform: translateY(-50%);
+}
+body[data-theme="light"] .coloride-code-editor-root .cm-gutter-coloride-bp .cm-gutterElement:hover::before {
+  border-color: rgb(180 35 24 / 55%);
+}
+.coloride-code-editor-root .cm-gutters.cm-gutters-before {
+  position: relative;
+}
+.coloride-code-editor-root .cm-gutter-coloride-hunk-wash {
+  width: 0;
+  min-width: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+.coloride-code-editor-root .cm-gutter-coloride-hunk-wash .cm-gutterElement.coloride-hunk-gutter-add,
+.coloride-code-editor-root .cm-gutter-coloride-hunk-wash .cm-gutterElement.coloride-hunk-gutter-del {
+  left: 0 !important;
+  width: 100% !important;
+  pointer-events: none;
+}
+.coloride-code-editor-root .cm-gutter-coloride-change .cm-gutterElement {
+  padding: 0;
+}
+.coloride-code-editor-root .cm-foldGutter {
+  width: 18px;
+  min-width: 18px;
+  position: relative;
+  z-index: 2;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.coloride-code-editor-root .cm-foldGutter .cm-gutterElement {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.coloride-code-editor-root .cm-foldGutter .cm-gutterElement.coloride-fold-wash-add,
+.coloride-code-editor-root .cm-foldGutter .cm-gutterElement.coloride-fold-wash-add.cm-activeLineGutter {
+  background-color: var(--coloride-review-add-bg) !important;
+}
+.coloride-code-editor-root .cm-foldGutter .cm-gutterElement.coloride-fold-wash-mod,
+.coloride-code-editor-root .cm-foldGutter .cm-gutterElement.coloride-fold-wash-mod.cm-activeLineGutter {
+  background-color: var(--coloride-review-mod-bg) !important;
+}
+.coloride-code-editor-root .cm-foldGutter .cm-gutterElement.coloride-fold-wash-del,
+.coloride-code-editor-root .cm-foldGutter .cm-gutterElement.coloride-fold-wash-del.cm-activeLineGutter {
+  background-color: var(--coloride-review-del-bg) !important;
+}
+body[data-theme="light"] .coloride-code-editor-root .cm-foldGutter .cm-gutterElement.coloride-fold-wash-add,
+body[data-theme="light"] .coloride-code-editor-root .cm-foldGutter .cm-gutterElement.coloride-fold-wash-add.cm-activeLineGutter {
+  background-color: var(--coloride-review-add-bg) !important;
+}
+body[data-theme="light"] .coloride-code-editor-root .cm-foldGutter .cm-gutterElement.coloride-fold-wash-mod,
+body[data-theme="light"] .coloride-code-editor-root .cm-foldGutter .cm-gutterElement.coloride-fold-wash-mod.cm-activeLineGutter {
+  background-color: var(--coloride-review-mod-bg) !important;
+}
+body[data-theme="light"] .coloride-code-editor-root .cm-foldGutter .cm-gutterElement.coloride-fold-wash-del,
+body[data-theme="light"] .coloride-code-editor-root .cm-foldGutter .cm-gutterElement.coloride-fold-wash-del.cm-activeLineGutter {
+  background-color: var(--coloride-review-del-bg) !important;
+}
+.coloride-code-editor-root .coloride-fold-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  line-height: 0;
+  opacity: 0;
+}
+.coloride-code-editor-root .cm-foldGutter:hover .coloride-fold-btn {
+  opacity: 1;
+}
+.coloride-code-editor-root .coloride-fold-btn svg {
+  display: block;
+  width: 10px;
+  height: 10px;
+}
+.coloride-code-editor-root .coloride-fold-btn.is-closed svg {
+  transform: rotate(-90deg);
+}
+/* Line numbers: space between the digit and the code — never a diagnostic wash */
+.coloride-code-editor-root .cm-gutterElement.coloride-error-gutter-num,
+.coloride-code-editor-root .cm-gutterElement.coloride-error-gutter-warn,
+.coloride-code-editor-root .cm-gutterElement.coloride-error-gutter-num.cm-activeLineGutter,
+.coloride-code-editor-root .cm-gutterElement.coloride-error-gutter-warn.cm-activeLineGutter {
+  background: none !important;
+  background-color: transparent !important;
+  color: inherit !important;
+}
+.coloride-code-editor-root .cm-line {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+.coloride-code-editor-root .cm-lineNumbers,
+.coloride-code-editor-root .cm-lineNumbers * {
+  user-select: none;
+  -webkit-user-select: none;
+}
+.coloride-code-editor-root .cm-lineNumbers .cm-gutterElement {
+  /* Tight to the digits. The change bar is the editor gutter, not padding. */
+  padding: 0 8px 0 6px !important;
+  min-width: calc(3ch + 16px) !important;
+  box-sizing: border-box !important;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  position: relative;
+}
+.coloride-code-editor-root .cm-lineNumbers .cm-gutterElement.coloride-hunk-gutter-add,
+.coloride-code-editor-root .cm-lineNumbers .cm-gutterElement.coloride-hunk-gutter-add.cm-activeLineGutter {
+  background-color: var(--coloride-review-add-bg) !important;
+  color: var(--coloride-review-add-number) !important;
+}
+.coloride-code-editor-root .cm-lineNumbers .cm-gutterElement.coloride-hunk-gutter-mod,
+.coloride-code-editor-root .cm-lineNumbers .cm-gutterElement.coloride-hunk-gutter-mod.cm-activeLineGutter {
+  background-color: var(--coloride-review-mod-bg) !important;
+  color: var(--coloride-review-mod-number) !important;
+}
+.coloride-code-editor-root .cm-lineNumbers .cm-gutterElement.coloride-hunk-gutter-del,
+.coloride-code-editor-root .cm-lineNumbers .cm-gutterElement.coloride-hunk-gutter-del.cm-activeLineGutter {
+  background-color: var(--coloride-review-del-bg) !important;
+  color: transparent !important;
+}
+body[data-theme="light"] .coloride-code-editor-root .cm-lineNumbers .cm-gutterElement.coloride-hunk-gutter-add,
+body[data-theme="light"] .coloride-code-editor-root .cm-lineNumbers .cm-gutterElement.coloride-hunk-gutter-add.cm-activeLineGutter {
+  background-color: var(--coloride-review-add-bg) !important;
+  color: var(--coloride-review-add-number) !important;
+}
+body[data-theme="light"] .coloride-code-editor-root .cm-lineNumbers .cm-gutterElement.coloride-hunk-gutter-mod,
+body[data-theme="light"] .coloride-code-editor-root .cm-lineNumbers .cm-gutterElement.coloride-hunk-gutter-mod.cm-activeLineGutter {
+  background-color: var(--coloride-review-mod-bg) !important;
+  color: var(--coloride-review-mod-number) !important;
+}
+body[data-theme="light"] .coloride-code-editor-root .cm-lineNumbers .cm-gutterElement.coloride-hunk-gutter-del,
+body[data-theme="light"] .coloride-code-editor-root .cm-lineNumbers .cm-gutterElement.coloride-hunk-gutter-del.cm-activeLineGutter {
+  background-color: var(--coloride-review-del-bg) !important;
+}
+.coloride-code-editor-root .cm-gutter-coloride-error,
+.coloride-code-editor-root .cm-gutter-lint,
+.coloride-code-editor-root .coloride-error-inline {
+  display: none !important;
+}
+.cm-tooltip.cm-tooltip-lint {
+  display: none !important;
+}
+.coloride-code-editor-root .cm-gutter-coloride-error .cm-gutterElement {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  padding: 0 2px 0 6px !important;
+  box-sizing: border-box !important;
+}
+.coloride-code-editor-root .coloride-error-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  color: #ef4444;
+  line-height: 0;
+  flex-shrink: 0;
+}
+.coloride-code-editor-root .coloride-error-marker svg {
+  display: block;
+  width: 12px;
+  height: 12px;
+}
+.coloride-code-editor-root .coloride-error-marker-warning {
+  color: #f59e0b;
+}
+.coloride-code-editor-root .coloride-error-marker-info {
+  color: #3b82f6;
+}
+.coloride-code-editor-root .coloride-error-marker-hint {
+  color: #a1a1aa;
+}
+.coloride-code-editor-root .cm-line.coloride-error-line-error,
+.coloride-code-editor-root .cm-line.cm-activeLine.coloride-error-line-error,
+.coloride-code-editor-root .cm-line.coloride-error-line-warning,
+.coloride-code-editor-root .cm-line.cm-activeLine.coloride-error-line-warning,
+.coloride-code-editor-root .cm-lintRange,
+.coloride-code-editor-root .cm-lintRange-error,
+.coloride-code-editor-root .cm-lintRange-warning,
+.coloride-code-editor-root .cm-lintRange-info,
+.coloride-code-editor-root .cm-lintRange-hint {
+  background-color: transparent !important;
+}
+
+.coloride-code-editor-root .coloride-error-inline {
+  margin-left: 1.25rem;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: inherit;
+  pointer-events: none;
+  opacity: 0.92;
+  white-space: nowrap;
+}
+.coloride-code-editor-root .coloride-error-inline-error {
+  color: #f87171;
+}
+.coloride-code-editor-root .coloride-error-inline-warning {
+  color: #fbbf24;
+}
+.coloride-code-editor-root .coloride-error-inline-info {
+  color: #60a5fa;
+}
+.coloride-code-editor-root .coloride-error-inline-hint {
+  color: #a1a1aa;
+}
+body[data-theme="light"] .coloride-code-editor-root .coloride-error-inline-error {
+  color: #dc2626;
+}
+body[data-theme="light"] .coloride-code-editor-root .coloride-error-inline-warning {
+  color: #d97706;
+}
+
+.cm-tooltip:has(.coloride-error-tooltip) {
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+.coloride-error-tooltip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: min(440px, 72vw);
+  padding: 4px 4px 4px 8px;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: #2a2a2a;
+  color: #e4e4e7;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  font-size: 12px;
+  line-height: 1.4;
+}
+body[data-theme="light"] .coloride-error-tooltip {
+  background: #ffffff;
+  color: #18181b;
+  border-color: rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+.coloride-error-tooltip-body {
+  min-width: 0;
+  flex: 1;
+}
+.coloride-error-tooltip-text {
+  white-space: pre-wrap;
+}
+.coloride-error-tooltip-text + .coloride-error-tooltip-text {
+  margin-top: 3px;
+}
+.coloride-error-tooltip-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.55;
+  cursor: pointer;
+}
+.coloride-error-tooltip-copy:hover,
+.coloride-error-tooltip-copy.is-copied {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.08);
+}
+body[data-theme="light"] .coloride-error-tooltip-copy:hover,
+body[data-theme="light"] .coloride-error-tooltip-copy.is-copied {
+  background: rgba(0, 0, 0, 0.06);
+}
+.coloride-error-tooltip-copy svg {
+  display: block;
+}
+.coloride-error-tooltip-copy-icon,
+.coloride-error-tooltip-check-icon {
+  display: flex;
+  line-height: 0;
+}
+.coloride-error-tooltip-copy .coloride-error-tooltip-check-icon {
+  display: none;
+}
+.coloride-error-tooltip-copy.is-copied .coloride-error-tooltip-copy-icon {
+  display: none;
+}
+.coloride-error-tooltip-copy.is-copied .coloride-error-tooltip-check-icon {
+  display: flex;
+}
+/* Selected-line line numbers — softer than pure white */
+.coloride-code-editor-root .cm-lineNumbers .cm-gutterElement.coloride-selected-line-gutter {
+  color: #c8c8cc !important;
+}
+body[data-theme="light"] .coloride-code-editor-root .cm-lineNumbers .cm-gutterElement.coloride-selected-line-gutter {
+  color: #52525b !important;
+}
+/* Right minimap */
+.coloride-code-editor-root .cm-minimap-gutter,
+.coloride-code-editor-root .cm-gutters-after {
+  border: none !important;
+  box-shadow: none !important;
+}
+.coloride-code-editor-root .cm-minimap-gutter {
+  border-left: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+body[data-theme="light"] .coloride-code-editor-root .cm-minimap-gutter {
+  border-left: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+.coloride-code-editor-root .coloride-minimap canvas,
+.coloride-code-editor-root .cm-minimap canvas {
+  opacity: 0.85;
+}

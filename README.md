@@ -1,0 +1,131 @@
+<div align="center">
+
+# Coloride
+
+**Your code. Your Mac. One IDE.**
+
+<img src="https://img.shields.io/badge/macOS-Apple%20Silicon-151515?style=flat-square&logo=apple&logoColor=white" alt="macOS · Apple Silicon" />
+<img src="https://img.shields.io/badge/Made%20in-Europe-003399?style=flat-square&labelColor=003399&logo=europeanunion&logoColor=FFCC00" alt="Made in Europe" />
+
+
+**English** · [中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Português](README.pt.md) · [Deutsch](README.de.md) · [Italiano](README.it.md)
+
+<img src="docs/assets/coloride-ide.png" alt="Coloride editor, terminal and agent" width="880" />
+
+</div>
+
+---
+
+Open a folder and work with your code, terminals and browser on this computer. Local editing does not call Coloride. Sign-in and the managed agent stay off until coloride.dev has an API. A model provider API key can be configured locally.
+
+Coloride is a trademark. The MIT license covers the source code, not the name, logo or domains.
+
+Coloride currently supports **macOS on Apple Silicon**. Remote SSH workspaces are optional; the local IDE is the core product. Where the product is going is in the [roadmap](./docs/roadmap.md): thirteen phases, from the local foundation through editor, performance, AI and release. It records priorities and exit criteria, not a claim that every phase is already finished.
+
+## What you can do
+
+- **Edit code:** file explorer, multiple editor tabs, CodeMirror language support, completion, diagnostics, search and image previews.
+- **Run your project:** integrated local terminals with shell job control, reconnect and persistent sessions while the local host remains alive.
+- **Preview your work:** embedded Chromium browser and pop-out windows. In a local workspace, localhost points to your computer; in an SSH workspace, browser traffic uses the remote SOCKS tunnel.
+- **Work with an agent:** project context, model selection, tool execution, approvals, streamed responses and file-change review with Keep / Undo controls.
+- **Customize the workspace:** appearance, keyboard shortcuts, split terminals and native clipboard integration.
+- **Connect remotely when needed:** SSH/SFTP workspaces and server information, without making a server a prerequisite for local development.
+
+Local file and terminal features work independently of cloud login. Model requests and enabled integrations may send selected context to their configured services.
+
+## Start developing
+
+Use Node.js 22, pnpm 9.15.4 and Python 3.12+ (CI uses 3.12). From the repository root:
+
+```sh
+python3.12 -m venv core/ide-host/.venv
+core/ide-host/.venv/bin/python -m pip install -e 'core/ide-host[dev]'
+corepack pnpm install --frozen-lockfile
+corepack pnpm dev
+```
+
+This starts Vite and Electron, which starts or reconnects to the local Python host. No server provisioning is needed. React changes use Vite HMR. Electron main/preload changes require an Electron restart; a persistent Python host may retain older code while sessions are active. Do not terminate user sessions for validation.
+
+## Architecture
+
+```text
+Electron desktop shell
+  ├─ React UI: editor, explorer, terminals, browser, agent
+  └─ Authenticated local Python host (HTTP / WebSocket)
+       ├─ Local files, PTYs, language servers and agent tools
+       ├─ Configured model providers / optional cloud services
+       └─ Optional SSH/SFTP transport to a remote workspace
+```
+
+The Python host owns execution and terminal processes. The renderer consumes API responses and events. Agent tools pass through Coloride's policy and approval layer. The model/tool decision loop uses Coloride’s bundled turn scheduler; provider integration and workspace execution belong to Coloride.
+
+| Directory | Responsibility |
+| --- | --- |
+| `client/ide` | React UI, CodeMirror editor, xterm terminals |
+| `client/desktop` | Native shell, preload bridge, browser, host lifecycle, packaging |
+| `core/ide-host` | Local FastAPI host, files, PTYs, language servers, agents, optional SSH |
+| `packages/contracts` | API definitions and TypeScript contracts |
+| `tooling/dev` | Development launch and environment setup |
+| `tooling/build` | Sidecar, remote runner and voice-runtime builds |
+| `tooling/release` | Signing, release and publishing |
+| `tooling/checks` | Structure checks, source audits and test runners |
+| `artifacts` | Generated build caches, screenshots and test results (ignored by Git) |
+| `tests/electron` | Isolated Electron integration and full-IDE smoke tests |
+
+The renderer is grouped into `src/app` (composition), `src/features` (IDE functions) and `src/shared` (reusable code). Shared renderer modules must not depend on features or app composition, and features must not depend on app composition.
+
+## Documentation
+
+| Guide | Contents |
+| --- | --- |
+| [Contributing](./CONTRIBUTING.md) | Setup, placement, checks and pull requests |
+| [Phased roadmap](./docs/roadmap.md) | Objectives, scope and exit criteria for phases 0–12 |
+| [Tests](./tests/README.md) | Suite folders, coverage and commands |
+| [Security](./SECURITY.md) | Security boundaries, threat model and reporting |
+
+## Status
+
+The project is licensed under the [MIT License](./LICENSE). The supported desktop target is macOS on Apple Silicon. Package versions are maintained in the root and Electron `package.json` files. Build configuration for other systems is not a statement of platform support.
+
+### Optional cloud services and community builds
+
+Files, editing and local terminals work without an account. Sign-in is only for
+cloud features. To run the desktop without cloud authentication, dashboard sync
+or managed AI:
+
+```sh
+COLORIDE_CLOUD_ENABLED=0 pnpm dev
+```
+
+For a community installer, set `enabled` to `false` in
+`client/desktop/src/cloud-config.json` before building the renderer and desktop.
+That file is packaged with Electron, so users do not need environment variables.
+The existing distribution defaults remain enabled.
+
+Forks operating a compatible cloud service can set `appBase` and `apiBase` in the
+same file. Runtime overrides are `COLORIDE_CLOUD_ENABLED`,
+`COLORIDE_CLOUD_APP_BASE` (browser login) and `COLORIDE_CLOUD_AUTH_BASE` (API);
+`COLORIDE_CLOUD_API_BASE` is an API alias. Endpoints must use HTTPS without embedded
+credentials, query strings or fragments. An alternate server must implement the
+existing device-login, account, product and managed-model API contracts.
+Electron passes the resolved API configuration to its Python host and exposes
+only public configuration to the renderer. A standalone Python host uses the same
+environment variables; a browser-only Vite build reads them at build/start time.
+
+Changing cloud configuration requires restarting the app. Close its terminal
+tabs first: an existing host with active sessions is preserved rather than reused
+with different cloud settings. Refresh tokens for alternate API endpoints use
+separate files so the official account token is not sent to a fork's server.
+When cloud is disabled, provider API keys can still be used directly; external
+model providers require their own credentials and network connection.
+
+This setting controls account and managed-agent access. Editing, terminals,
+search, the embedded browser and local files do not call Coloride. Sign-in and
+agent model requests are the calls that use `apiBase`.
+
+Open-source builds do not register the machine, upload workspace paths, or
+report usage to the product dashboard. They also do not download updates from
+the official feed unless `COLORIDE_OFFICIAL_UPDATE=1`, and they do not load the
+voice model until the microphone is used unless `COLORIDE_VOICE_PREWARM=1`.
+
+Crash reporting is separate (`COLORIDE_SENTRY_DISABLED=1`).

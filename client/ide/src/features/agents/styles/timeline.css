@@ -1,0 +1,682 @@
+/* Inside-scroller top fade: sits under sticky user prompts. */
+.agent-timeline-fade-top-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 11;
+  display: block;
+  width: 100%;
+  height: 12px;
+  margin-bottom: -12px;
+  pointer-events: none;
+}
+
+/* Bottom fade anchors to the input edge; docks float above it. */
+.agent-timeline-fade-bottom {
+  height: 40px;
+}
+
+.agent-timeline-with-dock {
+  /* Extra room so the last message can clear the floating dock + input gap. */
+  padding-bottom: 8rem;
+}
+
+.agent-empty-icon {
+  background: var(--agent-control);
+  color: var(--agent-muted);
+}
+
+.agent-config-field {
+  background: var(--agent-control);
+  color: var(--agent-text);
+  transition: background 120ms ease;
+}
+
+.agent-config-field:focus-within {
+  background: var(--agent-control-hover);
+}
+
+.agent-config-field input {
+  color: var(--agent-text);
+}
+
+.agent-config-field input::placeholder {
+  color: var(--agent-muted);
+}
+
+/* ——— Agent timeline enter (Cursor-like: quick fade + slight rise) ——— */
+@keyframes agent-timeline-enter {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes agent-timeline-enter-soft {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+:root {
+  --stream-gap: 16ms;
+  --stream-fade: 220ms;
+  --stream-blur: 1px;
+  --stream-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.t-stream-w {
+  opacity: 0;
+  filter: blur(var(--stream-blur));
+  transition:
+    opacity var(--stream-fade) var(--stream-ease),
+    filter var(--stream-fade) var(--stream-ease);
+}
+
+.t-stream-w.is-in {
+  opacity: 1;
+  filter: blur(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-stream-w {
+    transition: none !important;
+    filter: none !important;
+    opacity: 1 !important;
+  }
+}
+
+.agent-timeline-enter {
+  animation: agent-timeline-enter 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: opacity, transform;
+}
+
+.agent-timeline-enter-soft {
+  animation: agent-timeline-enter-soft 0.16s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Nested enters (item inside turn) — avoid double-stacking the outer turn motion. */
+.agent-timeline-enter .agent-timeline-enter {
+  animation-duration: 0.14s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.agent-assistant-message.is-streaming .agent-markdown {
+  /* Tiny ease so block replacements feel less like a hard cut */
+  transition: opacity 80ms ease-out;
+}
+
+/* Tool / thinking rows already get .agent-timeline-enter from the item wrapper */
+
+.agent-turn {
+  position: relative;
+  margin-bottom: 18px;
+}
+
+/* Keep the submitted prompt anchored; animate response items individually. */
+.agent-view-sidebar .agent-turn.has-user {
+  animation: none;
+  will-change: auto;
+}
+
+.agent-turn:has(.agent-turn-checkpoint-card) {
+  /* Next sticky prompt pulls up by --agent-content-top; keep the card clear. */
+  margin-bottom: calc(18px + var(--agent-content-top, 0.875rem));
+}
+
+.agent-turn:last-child {
+  margin-bottom: 0;
+}
+
+/* Jump buttons drawn as thin lines — one per turn. Not a scrollbar. */
+.agent-timeline-scrubber {
+  position: absolute;
+  top: 50%;
+  left: 2px;
+  z-index: 25;
+  display: flex;
+  width: 40px;
+  max-height: calc(100% - 28px);
+  align-items: flex-start;
+  justify-content: center;
+  transform: translateY(-50%);
+  pointer-events: none;
+  user-select: none;
+  opacity: 1;
+  transition: opacity 160ms ease;
+}
+
+/* Session row Orb — sits in the existing left indent (pl-7), no layout shift. */
+.agent-session-busy-orb {
+  position: absolute;
+  top: 50%;
+  left: 4px;
+  z-index: 1;
+  display: flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  /* Bright enough on dark chrome so the lattice wave reads clearly. */
+  color: #f0f0f3;
+  opacity: 0.95;
+  pointer-events: none;
+  transform: translateY(-50%);
+  filter: drop-shadow(0 0 4px rgb(255 255 255 / 18%));
+}
+
+.agent-session-busy-orb.is-waiting-approval {
+  color: #f59e0b;
+  filter: drop-shadow(0 0 5px rgb(245 158 11 / 42%));
+}
+
+.agent-session-row.is-busy .agent-session-title {
+  color: #e4e4e8;
+}
+
+body[data-theme="light"] .agent-session-busy-orb {
+  color: #27272a;
+  opacity: 1;
+  filter: drop-shadow(0 0 3px rgb(24 24 27 / 14%));
+}
+
+body[data-theme="light"] .agent-session-busy-orb.is-waiting-approval {
+  color: #ea580c;
+  filter: drop-shadow(0 0 4px rgb(234 88 12 / 28%));
+}
+
+body[data-theme="light"] .agent-session-row.is-busy .agent-session-title {
+  color: #18181b;
+}
+
+/*
+ * Hide jump rail when the chat column is too narrow for a left gutter.
+ * Content is max-w-3xl centered; below ~840px the ticks sit on messages.
+ */
+@container agent-chat (max-width: 840px) {
+  .agent-timeline-scrubber {
+    display: none !important;
+  }
+}
+
+.agent-timeline-scrubber-track {
+  display: flex;
+  width: 38px;
+  max-height: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  pointer-events: none;
+  scrollbar-width: none;
+}
+
+.agent-timeline-scrubber-track::-webkit-scrollbar {
+  display: none;
+}
+
+.agent-timeline-scrubber-tick {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  width: 12px;
+  height: 1.5px;
+  margin: 0;
+  border: 0;
+  border-radius: 999px;
+  padding: 0;
+  background: rgb(255 255 255 / 22%);
+  cursor: pointer;
+  pointer-events: auto;
+  transform-origin: left center;
+  transition:
+    background 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    width 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    height 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Invisible hit pad so thin lines are easy to click. */
+.agent-timeline-scrubber-tick::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  right: -10px;
+  bottom: -5px;
+  left: -2px;
+}
+
+/*
+ * Wave: grow right on hover peak + neighbors (length only).
+ * Color stays base gray unless .is-selected (only one white line).
+ */
+.agent-timeline-scrubber-tick.is-wave-1 {
+  width: 20px;
+  height: 1.5px;
+  transition-delay: 30ms;
+}
+
+.agent-timeline-scrubber-tick.is-wave-2 {
+  width: 28px;
+  height: 1.75px;
+  transition-delay: 15ms;
+}
+
+.agent-timeline-scrubber-tick.is-wave-3 {
+  width: 36px;
+  height: 2px;
+  transition-delay: 0ms;
+  outline: none;
+}
+
+/* Only the selected/active line turns white. */
+.agent-timeline-scrubber-tick.is-selected {
+  background: rgb(255 255 255 / 92%);
+}
+
+/* Idle selected (no hover): a bit longer so it reads as active. */
+.agent-timeline-scrubber-tick.is-selected:not([class*="is-wave-"]) {
+  width: 20px;
+  height: 2px;
+}
+
+.agent-timeline-scrubber-tick:focus-visible {
+  outline: none;
+}
+
+.agent-timeline-scrubber-card {
+  position: fixed;
+  z-index: 900;
+  width: min(280px, calc(100vw - 48px));
+  max-width: 280px;
+  border: 0;
+  border-radius: 12px;
+  background: #2a2a2c;
+  padding: 10px 12px;
+  color: #e8e8ea;
+  box-shadow:
+    0 12px 40px rgb(0 0 0 / 45%),
+    0 2px 8px rgb(0 0 0 / 28%);
+  pointer-events: none;
+}
+
+.agent-timeline-scrubber-card-user {
+  margin-bottom: 4px;
+  color: #f2f2f4;
+  font-size: 12.5px;
+  font-weight: 560;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+}
+
+.agent-timeline-scrubber-card-preview {
+  color: #9a9aa2;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.agent-timeline-scrubber-card-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.agent-timeline-scrubber-card-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #8b8b93;
+  font-size: 11.5px;
+  line-height: 1.2;
+}
+
+.agent-timeline-scrubber-card-file span[aria-hidden="true"] {
+  color: #6f6f78;
+}
+
+body[data-theme="light"] .agent-timeline-scrubber-tick {
+  background: rgb(24 24 27 / 18%);
+}
+
+body[data-theme="light"] .agent-timeline-scrubber-tick.is-selected {
+  background: rgb(24 24 27 / 88%);
+}
+
+body[data-theme="light"] .agent-timeline-scrubber-card {
+  border: 0;
+  background: #ffffff;
+  color: #18181b;
+  box-shadow:
+    0 12px 40px rgb(24 24 27 / 12%),
+    0 2px 8px rgb(24 24 27 / 8%);
+}
+
+body[data-theme="light"] .agent-timeline-scrubber-card-user {
+  color: #18181b;
+}
+
+body[data-theme="light"] .agent-timeline-scrubber-card-preview {
+  color: #71717a;
+}
+
+body[data-theme="light"] .agent-timeline-scrubber-card-file {
+  color: #71717a;
+}
+
+body[data-theme="light"] .agent-timeline-scrubber-card-file span[aria-hidden="true"] {
+  color: #a1a1aa;
+}
+
+.agent-user-message-wrap {
+  margin-bottom: 16px;
+}
+
+.agent-user-message-wrap.is-sticky {
+  position: sticky;
+  top: 0;
+  /* Above the in-scroller top fade (z-index 11). */
+  z-index: 20;
+  /* Same top inset as .agent-workspace-rail / .agent-timeline-content.
+     Negative margin cancels the padding when flowing so we don't double-space;
+     when stuck, the padding keeps the bubble aligned with the tools rail. */
+  padding: var(--agent-content-top, 1.5rem) 0 12px;
+  margin-top: calc(-1 * var(--agent-content-top, 1.5rem));
+  /* Match timeline surface so scrolled content doesn't bleed through. */
+  background: linear-gradient(
+    to bottom,
+    var(--agent-surface) 0%,
+    var(--agent-surface) 78%,
+    transparent 100%
+  );
+}
+
+/* A negative sticky margin shifts a short turn when its first response mounts.
+   The sidebar already reserves its top inset in the history header. */
+.agent-view-sidebar .agent-user-message-wrap.is-sticky {
+  top: var(--agent-content-top, 8px);
+  margin-top: 0;
+  /* The 12px sticky fade already separates the prompt from its response. */
+  margin-bottom: 4px;
+  padding-top: 0;
+}
+
+.agent-user-message {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  /* Clip the hidden measure twin so its full text height cannot inflate
+     the timeline's scrollable overflow (empty space under the chat). */
+  overflow: hidden;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  background: #2c2c2c;
+  color: var(--agent-text);
+  line-height: 1.35;
+  box-shadow: 0 1px 0 rgb(0 0 0 / 12%);
+}
+
+.agent-view-sidebar .agent-turn-body {
+  margin-inline: 8px;
+}
+
+.agent-view-sidebar .agent-user-message {
+  border-radius: 4px;
+}
+
+.agent-user-message-measure {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
+  left: 0;
+  top: 0;
+  width: 100%;
+  /* Zero box in layout/overflow; scrollHeight still reflects full content. */
+  height: 0;
+  overflow: hidden;
+  padding: 6px 10px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.agent-user-message-text {
+  padding: 6px 10px;
+  text-align: left;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+/* Long prompts: clamp to whole lines so the last row is never cut mid-glyph. */
+.agent-user-message-text.is-clamped {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+.agent-user-message-text.is-clamped.has-fade {
+  cursor: pointer;
+}
+
+.agent-user-message.is-expanded .agent-user-message-text {
+  cursor: pointer;
+}
+
+.agent-user-message.has-attachments {
+  padding: 8px;
+}
+
+.agent-user-message.has-attachments .agent-user-message-text {
+  padding: 4px 2px 2px;
+}
+
+.agent-user-message.has-plugins {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px 10px;
+}
+
+.agent-user-message.has-plugins .agent-user-message-text,
+.agent-user-message.has-plugins .agent-user-message-measure {
+  flex: 1 1 8rem;
+  min-width: 0;
+  padding: 0;
+}
+
+.agent-user-plugin-badges {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.agent-user-plugin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 8px 0 5px;
+  border-radius: 7px;
+  background: rgb(255 255 255 / 8%);
+  color: rgb(255 255 255 / 82%);
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 22px;
+  white-space: nowrap;
+}
+
+.agent-user-plugin-badge-mark {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+body[data-theme="light"] .agent-user-plugin-badge {
+  background: rgb(24 24 27 / 6%);
+  color: rgb(24 24 27 / 78%);
+}
+
+.agent-user-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 2px;
+}
+
+.agent-user-attachment.is-image {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+  max-width: min(100%, 196px);
+  align-items: center;
+  gap: 8px;
+  overflow: visible;
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: 14px;
+  background: rgb(255 255 255 / 4.5%);
+  padding: 6px 8px 6px 6px;
+  line-height: 1;
+}
+
+.agent-user-attachment-meta {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.agent-user-attachment.is-image .agent-user-attachment-name {
+  max-width: none;
+  font-size: 12px;
+}
+
+.agent-user-attachment-size {
+  overflow: hidden;
+  color: #8f8f98;
+  font-size: 10px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-user-attachment-thumb {
+  display: block;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  border-radius: 10px;
+  object-fit: cover;
+  background: rgb(0 0 0 / 25%);
+}
+
+.agent-user-attachment-thumb.is-placeholder {
+  background: rgb(255 255 255 / 8%);
+}
+
+.agent-user-attachment-preview {
+  position: fixed;
+  z-index: 12000;
+  display: block;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+.agent-user-attachment-preview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: auto;
+  background: transparent;
+}
+
+.agent-user-attachment.is-file {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 10px;
+  background: rgb(255 255 255 / 5%);
+  padding: 6px 10px 6px 6px;
+}
+
+.agent-user-attachment-ext {
+  display: inline-flex;
+  min-width: 36px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 8%);
+  color: #d0d0d6;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.agent-user-attachment-name {
+  overflow: hidden;
+  max-width: 180px;
+  color: #e8e8ec;
+  font-size: 12px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body[data-theme="light"] .agent-user-attachment.is-image,
+body[data-theme="light"] .agent-user-attachment.is-file {
+  border-color: rgb(24 24 27 / 10%);
+  background: rgb(24 24 27 / 4%);
+}
+
+body[data-theme="light"] .agent-user-attachment-size {
+  color: #71717a;
+}
+
+body[data-theme="light"] .agent-user-attachment-preview {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body[data-theme="light"] .agent-user-attachment-preview img {
+  background: transparent;
+}
+
+body[data-theme="light"] .agent-user-attachment-name {
+  color: #18181b;
+}
+
+body[data-theme="light"] .agent-user-attachment-thumb.is-placeholder {
+  background: rgb(24 24 27 / 8%);
+}

@@ -1,0 +1,35 @@
+[tool.ruff]
+cache-dir = ".cache/ruff"
+target-version = "py312"
+line-length = 110
+src = ["core/ide-host/src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[tool.mypy]
+cache_dir = ".cache/mypy"
+python_version = "3.12"
+strict = true
+namespace_packages = true
+explicit_package_bases = true
+mypy_path = [
+  "core/ide-host/src",
+]
+
+[tool.pytest.ini_options]
+cache_dir = ".cache/pytest"
+asyncio_mode = "auto"
+testpaths = [
+  "core/ide-host/tests",
+]
+pythonpath = [
+  "core/ide-host/src",
+]
+
+[tool.pyright]
+venvPath = "core/ide-host"
+venv = ".venv"
+typeCheckingMode = "standard"
+extraPaths = ["core/ide-host/src"]
+reportUnusedFunction = false

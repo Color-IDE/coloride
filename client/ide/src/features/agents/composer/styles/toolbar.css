@@ -1,0 +1,456 @@
+/* Composer toolbar chips share one height with mode badges (Debug / Plan / Ask). */
+.agent-composer-action {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 9999px;
+  background: #444;
+  color: #fff;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.agent-composer-action:hover,
+.agent-composer-action[aria-expanded="true"] {
+  background: #505050;
+  color: #fff;
+}
+
+.agent-composer-action:disabled {
+  cursor: default;
+  opacity: 0.82;
+}
+
+/* Monthly AI credits meter (cloud /v1/me) — beside context ring. */
+.agent-credits-meter {
+  position: relative;
+  display: inline-flex;
+  box-sizing: border-box;
+  height: 30px;
+  min-height: 30px;
+  max-width: 9.5rem;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 9999px;
+  padding: 0 9px 0 8px;
+  background: rgb(255 255 255 / 4%);
+  color: #9a9a9f;
+  font-size: 11px;
+  font-weight: 550;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  user-select: none;
+  white-space: nowrap;
+  cursor: default;
+  transition: color 140ms ease, background 140ms ease;
+}
+
+button.agent-credits-meter {
+  cursor: pointer;
+  font: inherit;
+}
+
+.agent-credits-meter-track {
+  display: block;
+  width: 36px;
+  height: 4px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 10%);
+}
+
+.agent-credits-meter-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #7dd3fc;
+  transition: width 200ms ease, background 140ms ease;
+}
+
+.agent-credits-meter-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.agent-credits-meter-bar {
+  display: block;
+  width: 36px;
+  height: 4px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, rgb(255 255 255 / 6%), rgb(255 255 255 / 14%), rgb(255 255 255 / 6%));
+  background-size: 200% 100%;
+  animation: agent-credits-shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes agent-credits-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+.agent-credits-meter.is-warning {
+  color: #fbbf24;
+  background: rgb(251 191 36 / 8%);
+}
+.agent-credits-meter.is-warning .agent-credits-meter-fill {
+  background: #fbbf24;
+}
+
+.agent-credits-meter.is-critical,
+.agent-credits-meter.is-exhausted {
+  color: #fca5a5;
+  background: rgb(248 113 113 / 10%);
+}
+.agent-credits-meter.is-critical .agent-credits-meter-fill,
+.agent-credits-meter.is-exhausted .agent-credits-meter-fill {
+  background: #f87171;
+}
+
+.agent-credits-meter.is-unmetered {
+  color: #a5b4fc;
+  background: rgb(165 180 252 / 10%);
+}
+
+.agent-credits-meter-tip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 12rem;
+  max-width: 16rem;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #171717;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: normal;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 18%);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(3px);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.agent-credits-meter-tip strong {
+  font-weight: 650;
+  font-size: 12px;
+}
+
+.agent-credits-meter-tip-note {
+  margin-top: 2px;
+  color: #525252;
+  font-weight: 450;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.agent-credits-meter:hover .agent-credits-meter-tip,
+.agent-credits-meter:focus-visible .agent-credits-meter-tip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.agent-credits-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgb(0 0 0 / 55%);
+}
+
+.agent-credits-dialog {
+  width: min(100%, 22rem);
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 16px;
+  padding: 18px 18px 14px;
+  background: #171717;
+  box-shadow: 0 18px 50px rgb(0 0 0 / 45%);
+  color: #f0f4f8;
+}
+
+.agent-credits-dialog-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.agent-credits-dialog-body {
+  margin: 8px 0 0;
+  color: #a1a1aa;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.agent-credits-dialog-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.agent-credits-dialog-primary,
+.agent-credits-dialog-secondary {
+  height: 32px;
+  border: 0;
+  border-radius: 10px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 550;
+  cursor: pointer;
+}
+
+.agent-credits-dialog-primary {
+  background: #f0f4f8;
+  color: #111;
+}
+
+.agent-credits-dialog-secondary {
+  background: rgb(255 255 255 / 6%);
+  color: #d4d4d8;
+}
+
+body[data-theme="light"] .agent-credits-meter {
+  background: rgb(0 0 0 / 4%);
+  color: #52525b;
+}
+body[data-theme="light"] .agent-credits-meter-track {
+  background: rgb(0 0 0 / 8%);
+}
+body[data-theme="light"] .agent-credits-meter-tip {
+  background: #171717;
+  color: #fafafa;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 22%);
+}
+body[data-theme="light"] .agent-credits-meter-tip-note {
+  color: #a1a1aa;
+}
+body[data-theme="light"] .agent-credits-dialog {
+  background: #fff;
+  border-color: rgb(0 0 0 / 8%);
+  color: #171717;
+  box-shadow: 0 18px 50px rgb(0 0 0 / 12%);
+}
+body[data-theme="light"] .agent-credits-dialog-body {
+  color: #52525b;
+}
+body[data-theme="light"] .agent-credits-dialog-primary {
+  background: #171717;
+  color: #fafafa;
+}
+body[data-theme="light"] .agent-credits-dialog-secondary {
+  background: rgb(0 0 0 / 5%);
+  color: #3f3f46;
+}
+
+/* Context meter — same 30px height as attach + mode badge. */
+.agent-composer-context {
+  position: relative;
+  display: inline-flex;
+  box-sizing: border-box;
+  height: 30px;
+  min-height: 30px;
+  align-items: center;
+  gap: 5px;
+  border-radius: 9999px;
+  padding: 0 9px 0 7px;
+  background: rgb(255 255 255 / 4%);
+  color: #9a9a9f;
+  font-size: 11px;
+  font-weight: 550;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  user-select: none;
+  white-space: nowrap;
+  transition: color 140ms ease, background 140ms ease;
+  cursor: default;
+}
+
+/* Portaled to body — opens above the meter, over the input (not clipped under it). */
+.agent-composer-context-tip.is-portaled {
+  position: fixed;
+  z-index: 99990;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #171717;
+  font-size: 12px;
+  font-weight: 550;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 18%);
+  pointer-events: none;
+  /* Anchor bottom edge to `top` so the cloud sits fully above the meter. */
+  transform: translate(-50%, -100%);
+  filter: drop-shadow(0 6px 14px rgb(0 0 0 / 16%));
+  animation: agent-context-tip-in 120ms ease-out both;
+}
+
+@keyframes agent-context-tip-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% + 3px));
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -100%);
+  }
+}
+
+/* Caret points down toward the context meter. */
+.agent-composer-context-tip.is-portaled::after {
+  content: "";
+  position: absolute;
+  top: calc(100% - 5px);
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  border: 0;
+  border-radius: 2.5px;
+  background: #ffffff;
+  transform: rotate(45deg);
+}
+
+.agent-composer-context-ring {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+}
+
+.agent-composer-context-track,
+.agent-composer-context-fill {
+  fill: none;
+  stroke-width: 2.25;
+}
+
+.agent-composer-context-track {
+  stroke: rgb(255 255 255 / 12%);
+}
+
+.agent-composer-context-fill {
+  stroke: #8b8b90;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 8px 8px;
+  transition: stroke-dasharray 220ms ease, stroke 140ms ease;
+}
+
+.agent-composer-context-label {
+  min-width: 2.1ch;
+}
+
+.agent-composer-context.is-warn {
+  color: #e0b45c;
+  background: rgb(224 180 92 / 10%);
+}
+
+.agent-composer-context.is-warn .agent-composer-context-fill {
+  stroke: #e0b45c;
+}
+
+.agent-composer-context.is-high {
+  color: #ef8f7a;
+  background: rgb(239 143 122 / 12%);
+}
+
+.agent-composer-context.is-high .agent-composer-context-fill {
+  stroke: #ef8f7a;
+}
+
+body[data-theme="light"] .agent-composer-context {
+  background: rgb(0 0 0 / 4%);
+  color: #6b6b70;
+}
+
+body[data-theme="light"] .agent-composer-context-tip.is-portaled {
+  border: 0;
+  background: #ffffff;
+  color: #171717;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 12%);
+}
+
+body[data-theme="light"] .agent-composer-context-tip.is-portaled::after {
+  background: #ffffff;
+}
+
+body[data-theme="light"] .agent-composer-context-track {
+  stroke: rgb(0 0 0 / 10%);
+}
+
+body[data-theme="light"] .agent-composer-context-fill {
+  stroke: #7a7a80;
+}
+
+body[data-theme="light"] .agent-composer-context.is-warn {
+  color: #b8860b;
+  background: rgb(184 134 11 / 10%);
+}
+
+body[data-theme="light"] .agent-composer-context.is-warn .agent-composer-context-fill {
+  stroke: #b8860b;
+}
+
+body[data-theme="light"] .agent-composer-context.is-high {
+  color: #c45c48;
+  background: rgb(196 92 72 / 10%);
+}
+
+body[data-theme="light"] .agent-composer-context.is-high .agent-composer-context-fill {
+  stroke: #c45c48;
+}
+
+.agent-composer-attach-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 11.25rem;
+  border: 1px solid rgb(255 255 255 / 3%);
+  border-radius: 6px;
+  background: #303030;
+  color: var(--agent-text);
+  box-shadow: none;
+}
+
+.agent-slash-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  left: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 6%);
+  border-radius: 12px;
+  background: #303030;
+  padding: 3px;
+  box-shadow: none;
+}
+
+.agent-slash-fade {
+  position: absolute;
+  right: 7px;
+  left: 3px;
+  z-index: 2;
+  height: 16px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 140ms ease;
+  --scroll-edge-fade-color: #303030;
+}

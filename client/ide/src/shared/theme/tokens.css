@@ -1,0 +1,85 @@
+:root {
+  --ui-surface: #171717;
+  --ui-surface-raised: #303030;
+  --ui-surface-hover: #303030;
+  --ui-surface-selected: #414141;
+
+  --ui-text-primary: #f4f4f5;
+  --ui-text-muted: #a1a1aa;
+
+  --ui-border-subtle: #333333;
+  --ui-keycap: #353535;
+  --ui-keycap-hover: #424242;
+  --ui-keycap-text: #8f8f94;
+  --ui-keycap-text-hover: #8f8f94;
+  --ui-menu-shadow: 0 12px 30px rgb(0 0 0 / 32%);
+  --ui-danger: #f0a0a0;
+  --ui-danger-hover: #fca5a5;
+  --ui-danger-surface: rgb(248 113 113 / 10%);
+  --ui-tab: rgb(255 255 255 / 4%);
+  --ui-tab-hover: rgb(255 255 255 / 7%);
+  --ui-tab-active: rgb(255 255 255 / 10%);
+
+  --ui-radius-control: 4px;
+  --ui-radius-menu: 6px;
+  --ui-radius-dialog: 8px;
+
+  --ui-height-control: 32px;
+  --ui-height-menu-item: 24px;
+
+  --ui-space-control-x: 8px;
+  --ui-space-menu: 4px;
+}
+
+html[data-theme="light"],
+body[data-theme="light"] {
+  --ui-surface: #ffffff;
+  --ui-surface-raised: #ffffff;
+  --ui-surface-hover: #f1f2f3;
+  --ui-surface-selected: #e4e4e7;
+
+  --ui-text-primary: #18181b;
+  --ui-text-muted: #71717a;
+
+  --ui-border-subtle: #e4e4e7;
+  --ui-keycap: #ececee;
+  --ui-keycap-hover: #e4e4e7;
+  --ui-keycap-text: #71717a;
+  --ui-keycap-text-hover: #52525b;
+  --ui-menu-shadow: 0 18px 42px rgb(24 24 27 / 14%);
+  --ui-danger: #b91c1c;
+  --ui-danger-hover: #991b1b;
+  --ui-danger-surface: #fee2e2;
+  --ui-tab: #f0f0f2;
+  --ui-tab-hover: #ebebed;
+  --ui-tab-active: #d4d4d8;
+}
+
+@theme inline {
+  --color-surface: var(--ui-surface);
+  --color-surface-raised: var(--ui-surface-raised);
+  --color-surface-hover: var(--ui-surface-hover);
+  --color-surface-selected: var(--ui-surface-selected);
+  --color-primary: var(--ui-text-primary);
+  --color-muted: var(--ui-text-muted);
+  --color-border-subtle: var(--ui-border-subtle);
+  --color-keycap: var(--ui-keycap);
+  --color-keycap-hover: var(--ui-keycap-hover);
+  --color-keycap-text: var(--ui-keycap-text);
+  --color-keycap-text-hover: var(--ui-keycap-text-hover);
+  --color-danger: var(--ui-danger);
+  --color-danger-hover: var(--ui-danger-hover);
+  --color-danger-surface: var(--ui-danger-surface);
+  --color-tab: var(--ui-tab);
+  --color-tab-hover: var(--ui-tab-hover);
+  --color-tab-active: var(--ui-tab-active);
+
+  --radius-control: var(--ui-radius-control);
+  --radius-menu: var(--ui-radius-menu);
+  --radius-dialog: var(--ui-radius-dialog);
+
+  --spacing-control-height: var(--ui-height-control);
+  --spacing-menu-item-height: var(--ui-height-menu-item);
+  --spacing-control-x: var(--ui-space-control-x);
+  --spacing-menu: var(--ui-space-menu);
+}

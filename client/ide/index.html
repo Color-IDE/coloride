@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' http://127.0.0.1:* http://localhost:* ws://127.0.0.1:* ws://localhost:* https:; worker-src 'self' blob:; media-src 'self' data: blob:; form-action 'none'" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#171717" />
+    <script src="/assets/boot.js"></script>
+    <title>Coloride</title>
+    <style>
+      .coloride-boot-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        background: rgb(23 23 23 / 20%);
+        backdrop-filter: blur(18px);
+        pointer-events: none;
+      }
+      html[data-startup] { background: transparent !important; }
+      html[data-startup] body,
+      html[data-startup] #root:empty { background: transparent !important; background-color: transparent !important; }
+      html[data-theme="light"] .coloride-boot-splash { background: rgb(247 248 249 / 20%); }
+      .coloride-boot-splash { transition: opacity 420ms cubic-bezier(.22, 1, .36, 1); will-change: opacity; }
+      html[data-startup="leaving"] .coloride-boot-splash { opacity: 0; }
+      html[data-startup-surface="native"] .coloride-boot-splash { display: none; }
+      html[data-startup-surface="native"] #root { opacity: 0; transition: opacity 420ms cubic-bezier(.22, 1, .36, 1); will-change: opacity; }
+      html[data-startup-surface="native"][data-startup="leaving"] #root { opacity: 1; }
+      @media (prefers-reduced-motion: reduce) {
+        .coloride-boot-splash,
+        html[data-startup-surface="native"] #root { transition: none; }
+      }
+      .coloride-boot-splash-chrome {
+        height: 40px;
+        -webkit-app-region: drag;
+        app-region: drag;
+      }
+      .coloride-boot-splash-stage {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .coloride-boot-splash-mark {
+        /* Match Electron's splash and LoginGate before React mounts. */
+        width: 76px;
+        height: 76px;
+        color: #565659;
+      }
+      .coloride-boot-splash-mark img {
+        object-fit: contain;
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+      <div class="coloride-boot-splash" aria-busy="true" aria-label="Loading Coloride">
+        <div class="coloride-boot-splash-chrome"></div>
+        <div class="coloride-boot-splash-stage">
+          <div class="coloride-boot-splash-mark" aria-hidden="true">
+            <img src="../desktop/resources/branding/coloride-loading.svg" alt="" />
+            <script>
+              if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+                document.currentScript.previousElementSibling.src = "../desktop/resources/branding/coloride-loading-reduced.svg";
+              }
+            </script>
+          </div>
+        </div>
+      </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

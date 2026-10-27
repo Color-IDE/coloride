@@ -1,0 +1,114 @@
+/* Browser chrome: hand cursor on controls (matches app pointer-cursors preference). */
+.browser-chrome-header button:not(:disabled):not([disabled]) {
+  cursor: pointer;
+}
+.browser-chrome-header button:not(:disabled):not([disabled]) svg,
+.browser-chrome-header button:not(:disabled):not([disabled]) * {
+  cursor: inherit;
+  pointer-events: none;
+}
+.browser-chrome-header .browser-url-input {
+  cursor: text;
+}
+
+body[data-theme="light"] .browser-chrome-header {
+  background: #ffffff !important;
+}
+
+body[data-theme="light"] .browser-chrome-header button {
+  color: #71717a !important;
+}
+
+body[data-theme="light"] .browser-chrome-header button:hover:not(:disabled) {
+  background: #e4e4e7 !important;
+  color: #171717 !important;
+}
+
+/* Same pattern as dark: slightly raised surface on the header, brighter on focus */
+body[data-theme="light"] .browser-url-input {
+  background: #e8e9eb !important;
+  color: #171717 !important;
+}
+
+body[data-theme="light"] .browser-url-input::placeholder {
+  color: #8b8b93 !important;
+}
+
+body[data-theme="light"] .browser-url-input:focus {
+  background: #dcdee2 !important;
+  box-shadow: none !important;
+}
+
+body[data-theme="light"] .explorer-editor-shell {
+  background: #ffffff !important;
+  border-color: #e4e4e6 !important;
+}
+
+body[data-theme="light"] .explorer-editor-body {
+  background: #ffffff !important;
+}
+
+.editor-empty-mark-dark { display: block; }
+.editor-empty-mark-light { display: none; }
+body[data-theme="light"] .editor-empty-mark-dark { display: none; }
+body[data-theme="light"] .editor-empty-mark-light { display: block; }
+
+.editor-empty-state {
+  --agent-control: #2c2c2c;
+  --agent-muted: #8f8f94;
+}
+
+body[data-theme="light"] .editor-empty-state {
+  --agent-control: #ececee;
+  --agent-muted: #3f3f46;
+}
+
+body[data-theme="light"] .editor-empty-command {
+  background: transparent !important;
+}
+
+body[data-theme="light"] .editor-empty-command-label {
+  color: #878888 !important;
+}
+
+body[data-theme="light"] .editor-empty-command-shortcut {
+  background: #ececee;
+  color: #3f3f46;
+}
+
+body[data-theme="light"] .editor-tab-separator {
+  background: #e4e4e6 !important;
+}
+
+/* Console drawer: animate only the clip height; keep terminal content at a
+   stable size so xterm/canvas does not reflow every animation frame. */
+.terminal-drawer {
+  transition: height 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: height;
+  contain: layout paint;
+}
+
+body.is-resizing-terminal .terminal-drawer {
+  transition: none;
+}
+
+.terminal-drawer-inner {
+  /* Content sits at the bottom and is revealed by the parent clip. */
+  transform: translateZ(0);
+}
+
+.terminal-resize-divider {
+  background: transparent;
+}
+
+body[data-theme="light"] .terminal-resize-divider {
+  background: transparent;
+}
+
+body[data-theme="light"] .terminal-panel-root {
+  border-color: #e4e4e6 !important;
+}
+
+body[data-theme="light"] .group:hover > .terminal-resize-divider {
+  background: #a3a3aa !important;
+}

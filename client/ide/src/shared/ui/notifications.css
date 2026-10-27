@@ -1,0 +1,87 @@
+.notification-viewport {
+  position: fixed;
+  /* The app shell is at 900; keep the portal above it and below the boot overlay. */
+  z-index: 1000;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: calc(46px + env(safe-area-inset-bottom));
+  width: min(360px, calc(100vw - 24px));
+  max-height: calc(100vh - 90px);
+  pointer-events: none;
+  -webkit-app-region: no-drag;
+  color: var(--ui-text-primary);
+}
+.notification-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.notification-stack > li { flex: 0 0 auto; }
+.notification-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--ui-border-subtle);
+  border-radius: var(--ui-radius-menu, 6px);
+  background: var(--ui-surface-raised);
+  box-shadow: 0 4px 18px rgb(0 0 0 / 18%);
+  pointer-events: auto;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.notification-icon { flex: 0 0 18px; margin-top: 1px; color: #8ab4e8; }
+.notification-icon svg, .notification-close svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.notification-card[data-kind="success"] .notification-icon { color: #83c9a1; }
+.notification-card[data-kind="warning"] .notification-icon { color: #e2bb76; }
+.notification-card[data-kind="error"] .notification-icon { color: var(--ui-danger); }
+.notification-content { flex: 1; min-width: 0; }
+.notification-title { margin: 0; font-size: 12px; font-weight: 550; }
+.notification-description { margin: 3px 0 0; color: var(--ui-text-muted); }
+.notification-close, .notification-action, .notification-summary button {
+  border: 0;
+  border-radius: var(--ui-radius-control, 4px);
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.notification-close { flex: 0 0 auto; padding: 2px; margin: -2px -2px 0 0; color: var(--ui-text-muted); }
+.notification-close:hover, .notification-summary button:hover { background: var(--ui-surface-selected); color: var(--ui-text-primary); }
+.notification-action {
+  margin-top: 9px;
+  padding: 3px 9px;
+  border: 1px solid var(--ui-border-subtle);
+  color: var(--ui-text-primary);
+}
+.notification-action:hover { background: var(--ui-surface-selected); }
+.notification-action:disabled { opacity: 0.55; cursor: default; }
+.notification-viewport button:focus-visible { outline: 2px solid var(--accent-color, #4ebdff); outline-offset: 2px; }
+.notification-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 5px;
+  padding-inline: 2px;
+  color: var(--ui-text-muted);
+  font-size: 11px;
+}
+.notification-summary button { padding: 2px 5px; pointer-events: auto; }
+body[data-theme="light"] .notification-icon { color: #426b9d; }
+body[data-theme="light"] .notification-card[data-kind="success"] .notification-icon { color: #258052; }
+body[data-theme="light"] .notification-card[data-kind="warning"] .notification-icon { color: #a66b13; }

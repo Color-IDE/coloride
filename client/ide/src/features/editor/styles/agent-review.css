@@ -1,0 +1,80 @@
+/* Agent edit Keep / Undo — global so it wins over a cached CodeMirror theme. */
+.cm-agent-hunk-card {
+  display: inline-flex !important;
+  box-sizing: border-box !important;
+  height: 24px !important;
+  min-height: 24px !important;
+  max-height: 24px !important;
+  align-items: center !important;
+  gap: 2px !important;
+  padding: 2px !important;
+  border-radius: 4px !important;
+  overflow: hidden;
+  background: #212121 !important;
+  box-shadow: none !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+}
+body[data-theme="light"] .cm-agent-hunk-card {
+  background: #f0f0f2 !important;
+  color: #3f3f46 !important;
+}
+.cm-agent-hunk-card .cm-agent-hunk-nav,
+.cm-agent-hunk-card .cm-agent-hunk-undo {
+  box-sizing: border-box !important;
+  height: 20px !important;
+  min-height: 20px !important;
+  max-height: 20px !important;
+  padding: 0 7px !important;
+  align-items: center !important;
+  font-size: 12px !important;
+  line-height: 1 !important;
+}
+.cm-agent-hunk-card .cm-agent-hunk-keep {
+  box-sizing: border-box !important;
+  height: 20px !important;
+  min-height: 20px !important;
+  max-height: 20px !important;
+  padding: 0 9px !important;
+  align-items: center !important;
+  font-size: 12px !important;
+  line-height: 1 !important;
+  border-radius: 3px !important;
+}
+.cm-agent-hunk-card .cm-agent-hunk-nav-btn {
+  height: 13px !important;
+  width: 13px !important;
+  padding: 0 !important;
+}
+.cm-agent-hunk-btn,
+.cm-agent-hunk-card .cm-agent-hunk-keep,
+.cm-agent-hunk-card .cm-agent-hunk-undo,
+.cm-agent-hunk-float .cm-agent-hunk-keep,
+.cm-agent-hunk-float .cm-agent-hunk-undo {
+  border-radius: 4px !important;
+}
+.cm-agent-hunk-float {
+  align-items: center !important;
+}
+.cm-agent-hunk-float .cm-agent-hunk-nav,
+.cm-agent-hunk-float .cm-agent-hunk-btn {
+  box-sizing: border-box !important;
+  height: 22px !important;
+  min-height: 22px !important;
+  max-height: 22px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  align-items: center !important;
+  border-radius: 4px !important;
+}
+.cm-agent-hunk-float .cm-agent-hunk-nav-btn {
+  height: 14px !important;
+  width: 14px !important;
+  padding: 0 !important;
+}
+
+/* Agent edit Accept / Reject live inside CodeMirror per-hunk (see theme.ts). */
+body[data-theme="light"] .editor-agent-review-kbd {
+  background: rgb(24 24 27 / 8%);
+  color: inherit;
+}

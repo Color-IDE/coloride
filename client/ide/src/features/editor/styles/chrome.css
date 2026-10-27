@@ -1,0 +1,608 @@
+/* Monaco, terminal and agent headers share the same compact tab chrome. */
+.explorer-editor-header,
+.terminal-pane-header,
+.agent-sidebar-header {
+  height: 2.5rem; /* h-10 */
+  box-sizing: border-box;
+  background-color: #171717;
+  border-bottom: 0;
+  --scroll-edge-fade-color: #171717;
+}
+
+.terminal-drawer,
+.terminal-drawer-inner,
+[data-terminal-host-id] {
+  background-color: var(--app-window-background) !important;
+  background: var(--app-window-background) !important;
+}
+
+/* Terminal canvas and header share the window background. */
+.terminal-xterm-host,
+[data-terminal-surface="true"] {
+  background-color: #171717 !important;
+  background: #171717 !important;
+}
+body[data-theme="light"] .filetree-toolbar,
+body[data-theme="light"] .explorer-editor-header,
+body[data-theme="light"] .agent-sidebar-header,
+body[data-theme="light"] .terminal-pane-header {
+  border-color: #e4e4e6 !important;
+}
+
+/* Quiet path bar under tabs — same metrics as a file-tree row */
+
+/* In-file find bar — under breadcrumb (not CodeMirror default panel) */
+.editor-find-bar {
+  flex-shrink: 0;
+  display: grid;
+  /* field | selection | replace | nav — search+replace fields share col 1 */
+  grid-template-columns: minmax(0, 1fr) 24px 24px auto;
+  grid-template-rows: auto;
+  align-items: center;
+  column-gap: 4px;
+  row-gap: 4px;
+  box-sizing: border-box;
+  height: 2.5rem;
+  /* Match breadcrumb horizontal padding so close X lines up under search */
+  padding: 0 8px;
+  /* Keep the expanded search surface flush with the editor in dark mode. */
+  background: #171717;
+  border-bottom: 1px solid #333333;
+  border-top: 0;
+  font-family: var(--editor-code-font, "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, monospace);
+  font-size: var(--editor-code-size, 13px);
+}
+.editor-find-bar.is-replace-open {
+  height: auto;
+  min-height: 2.5rem;
+  padding: 6px 8px;
+}
+.editor-find-field-search {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+}
+.editor-find-bar > .editor-find-selection-btn {
+  grid-column: 2;
+  grid-row: 1;
+}
+.editor-find-bar > .editor-find-replace-btn {
+  grid-column: 3;
+  grid-row: 1;
+}
+.editor-find-bar > .editor-find-actions {
+  grid-column: 4;
+  grid-row: 1;
+  justify-self: end;
+}
+.editor-find-field-replace {
+  grid-column: 1;
+  grid-row: 2;
+  min-width: 0;
+}
+.editor-find-bar > .editor-find-replace-actions {
+  grid-column: 2 / 5;
+  grid-row: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  justify-self: start;
+}
+.editor-find-field {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  width: 100%;
+  height: 26px;
+  padding: 0 4px 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: #2c2c2c;
+  box-shadow: none;
+  box-sizing: border-box;
+}
+.editor-find-field:focus-within {
+  border: 0;
+  box-shadow: none;
+  background: #2c2c2c;
+}
+.editor-find-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #e8e8ea;
+  font: inherit;
+  font-size: inherit;
+  line-height: 1.2;
+  caret-color: #7eb6e8;
+}
+.editor-find-input::placeholder {
+  color: rgb(255 255 255 / 28%);
+}
+
+.editor-find-toggles {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  flex-shrink: 0;
+}
+.editor-find-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent !important;
+  color: rgb(255 255 255 / 42%);
+  cursor: pointer;
+  transition: color 100ms ease;
+}
+.editor-find-toggle svg {
+  display: block;
+  flex-shrink: 0;
+}
+.editor-find-toggle:hover {
+  background: transparent !important;
+  color: rgb(255 255 255 / 72%);
+}
+.editor-find-toggle.is-active {
+  background: transparent !important;
+  color: #9ec5e8;
+}
+.editor-find-toggle.is-active:hover {
+  color: #b6d6f0;
+}
+.editor-find-selection-btn,
+.editor-find-replace-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent !important;
+  color: rgb(255 255 255 / 42%);
+  cursor: pointer;
+  transition: color 100ms ease;
+  flex-shrink: 0;
+}
+.editor-find-selection-btn:hover,
+.editor-find-replace-btn:hover {
+  background: transparent !important;
+  color: rgb(255 255 255 / 72%);
+}
+.editor-find-selection-btn.is-active,
+.editor-find-replace-btn.is-active {
+  background: transparent !important;
+  color: #9ec5e8;
+}
+.editor-find-selection-btn svg,
+.editor-find-replace-btn svg {
+  display: block;
+}
+.editor-find-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  flex-shrink: 0;
+}
+.editor-find-count {
+  min-width: 2.5rem;
+  padding: 0 6px 0 4px;
+  color: rgb(255 255 255 / 42%);
+  font-family: inherit;
+  font-size: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+  white-space: nowrap;
+}
+.editor-find-count.is-empty {
+  color: rgb(232 160 160 / 85%);
+}
+.editor-find-actions-sep {
+  width: 1px;
+  height: 14px;
+  margin: 0 4px;
+  background: rgb(255 255 255 / 10%);
+}
+/* Compact editor action target (24×24). */
+.editor-find-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent !important;
+  color: rgb(255 255 255 / 48%);
+  cursor: pointer;
+  transition: color 100ms ease;
+}
+/* Keep close (X) flush with the search icon column */
+.editor-find-actions .editor-find-icon-btn:last-child {
+  margin-left: 0;
+}
+.editor-find-icon-btn:hover:not(:disabled) {
+  background: transparent !important;
+  color: rgb(255 255 255 / 88%);
+}
+.editor-find-icon-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* Hide CodeMirror's built-in search panel if it ever mounts */
+.coloride-code-editor-root .cm-panels.cm-panels-top:has(.cm-search),
+.coloride-code-editor-root .cm-panels.cm-panels-bottom:has(.cm-search),
+.coloride-code-editor .cm-panel.cm-search {
+  display: none !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Problems list — same drawer as the terminal, fills the active pane */
+.editor-problems {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+  background: #171717;
+  color: rgb(255 255 255 / 78%);
+  font-family: var(--editor-code-font, "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, monospace);
+  font-size: var(--editor-code-size, 13px);
+}
+.editor-problems-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  padding: 4px 0;
+  overflow: auto;
+  list-style: none;
+}
+.editor-problems-empty {
+  padding: 10px 10px;
+  color: rgb(255 255 255 / 42%);
+}
+.editor-problems-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 4px 10px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.editor-problems-row:hover {
+  background: rgb(255 255 255 / 6%);
+}
+.editor-problems-sev {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 28%);
+  transform: translateY(-1px);
+}
+.editor-problems-row.is-error .editor-problems-sev {
+  background: #ef7474;
+}
+.editor-problems-row.is-warning .editor-problems-sev {
+  background: #e6b562;
+}
+.editor-problems-row.is-info .editor-problems-sev {
+  background: #5b9fd4;
+}
+.editor-problems-msg {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgb(255 255 255 / 82%);
+}
+.editor-problems-loc {
+  flex-shrink: 0;
+  color: rgb(255 255 255 / 38%);
+  font-variant-numeric: tabular-nums;
+}
+body[data-theme="light"] .editor-find-bar {
+  background: #ffffff;
+  border-bottom-color: #e4e4e6;
+  border-top: 0;
+}
+body[data-theme="light"] .editor-find-field {
+  border: 0;
+  background: #ececee;
+  box-shadow: none;
+}
+body[data-theme="light"] .editor-find-field:focus-within {
+  border: 0;
+  box-shadow: none;
+  background: #ececee;
+}
+body[data-theme="light"] .editor-find-input {
+  color: #09090b;
+  caret-color: #2563eb;
+}
+body[data-theme="light"] .editor-find-input::placeholder {
+  color: rgb(24 24 27 / 48%);
+}
+/* Icons: higher contrast on light chrome */
+body[data-theme="light"] .editor-find-toggle {
+  color: rgb(24 24 27 / 62%);
+}
+body[data-theme="light"] .editor-find-toggle:hover {
+  background: transparent !important;
+  color: #18181b;
+}
+body[data-theme="light"] .editor-find-toggle.is-active {
+  background: transparent !important;
+  color: #2563eb;
+}
+body[data-theme="light"] .editor-find-toggle.is-active:hover {
+  color: #1d4ed8;
+}
+body[data-theme="light"] .editor-find-selection-btn,
+body[data-theme="light"] .editor-find-replace-btn {
+  color: rgb(24 24 27 / 62%);
+}
+body[data-theme="light"] .editor-find-selection-btn:hover,
+body[data-theme="light"] .editor-find-replace-btn:hover {
+  background: transparent !important;
+  color: #18181b;
+}
+body[data-theme="light"] .editor-find-selection-btn.is-active,
+body[data-theme="light"] .editor-find-replace-btn.is-active {
+  background: transparent !important;
+  color: #2563eb;
+}
+body[data-theme="light"] .editor-find-count {
+  color: rgb(24 24 27 / 58%);
+}
+body[data-theme="light"] .editor-find-count.is-empty {
+  color: #b45353;
+}
+body[data-theme="light"] .editor-find-actions-sep {
+  background: rgb(24 24 27 / 12%);
+}
+body[data-theme="light"] .editor-find-icon-btn {
+  color: rgb(24 24 27 / 62%);
+}
+body[data-theme="light"] .editor-find-icon-btn:hover:not(:disabled) {
+  background: transparent !important;
+  color: #09090b;
+}
+body[data-theme="light"] .editor-find-icon-btn:disabled {
+  color: rgb(24 24 27 / 28%);
+  opacity: 1;
+}
+
+body[data-theme="light"] .editor-problems {
+  background: #ffffff !important;
+  color: rgb(24 24 27 / 78%);
+}
+body[data-theme="light"] .editor-problems-empty {
+  color: rgb(24 24 27 / 42%);
+}
+body[data-theme="light"] .editor-problems-row:hover {
+  background: rgb(24 24 27 / 5%);
+}
+body[data-theme="light"] .editor-problems-msg {
+  color: rgb(24 24 27 / 86%);
+}
+body[data-theme="light"] .editor-problems-loc {
+  color: rgb(24 24 27 / 40%);
+}
+
+body[data-theme="light"] .filetree-workspace-toggle {
+  color: #3f3f46;
+}
+body[data-theme="light"] .filetree-workspace-toggle:disabled {
+  color: #a1a1aa;
+}
+
+body[data-theme="light"] .filetree-mode-switch {
+  background: #e8e9eb;
+  box-shadow: none;
+}
+
+body[data-theme="light"] .filetree-mode-thumb {
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 8%);
+}
+
+body[data-theme="light"] .filetree-mode-active {
+  color: #171717;
+}
+
+body[data-theme="light"] .filetree-mode-inactive {
+  color: #71717a;
+}
+
+body[data-theme="light"] .filetree-mode-inactive:hover {
+  color: #171717;
+}
+
+body[data-theme="light"] .filetree-action-button {
+  color: #71717a !important;
+}
+
+body[data-theme="light"] .filetree-action-button:hover {
+  background: #e4e4e7 !important;
+  color: #171717 !important;
+}
+
+body[data-theme="light"] .filetree-action-button svg {
+  stroke: currentColor !important;
+}
+
+body[data-theme="light"] .tree-row-appear:hover,
+body[data-theme="light"] .tree-row-appear:focus-visible {
+  background: #f4f4f5 !important;
+  color: #171717 !important;
+}
+
+body[data-theme="light"] .tree-row-appear[aria-selected="true"] {
+  background: #eaebed !important;
+  box-shadow: none;
+  color: #171717 !important;
+}
+
+.editor-file-tab.is-missing {
+  color: #6f6f6f;
+  cursor: default;
+}
+
+.editor-file-tab.is-missing > button:first-child {
+  cursor: default;
+}
+
+.editor-file-tab.is-missing .editor-tab-missing-label {
+  text-decoration: line-through;
+  text-decoration-color: #6f6f6f;
+}
+
+body[data-theme="light"] .editor-file-tab.is-missing {
+  color: #a1a1aa;
+}
+
+body[data-theme="light"] .editor-file-tab.is-missing .editor-tab-missing-label {
+  text-decoration-color: #a1a1aa;
+}
+
+/* Tab status dots — soft, flat (no glow) */
+.editor-tab-dirty-dot,
+.editor-tab-error-dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  box-shadow: none;
+}
+
+.editor-tab-dirty-dot {
+  background: #7eb6e8;
+}
+
+.filetree-agent-review-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #73c991;
+}
+
+.filetree-dirty-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #c6c6c6;
+}
+
+body[data-theme="light"] .editor-tab-dirty-dot {
+  background: #9ec5e8;
+}
+
+body[data-theme="light"] .filetree-dirty-dot {
+  background: #71717a;
+}
+
+.editor-tab-error-dot {
+  background: #e8a0a0;
+}
+.editor-tab-agent-dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #7dd3a0;
+  box-shadow: none;
+  animation: editor-tab-agent-pulse 1.1s ease-in-out infinite;
+}
+@keyframes editor-tab-agent-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+body[data-theme="light"] .editor-tab-agent-dot {
+  background: #34a86a;
+}
+
+body[data-theme="light"] .editor-tab-error-dot {
+  background: #e8b4b4;
+}
+
+.terminal-add-dropdown {
+  top: auto;
+  left: auto;
+  z-index: 30;
+  min-width: 180px;
+  padding: 4px;
+  border: 1px solid rgb(255 255 255 / 3%);
+  border-radius: 6px;
+  box-shadow: none;
+  transform-origin: top right;
+}
+
+body[data-theme="light"] .terminal-add-dropdown {
+  border-color: rgb(24 24 27 / 5%);
+}
+
+.terminal-add-dropdown .app-menu-item {
+  min-height: 28px;
+  padding: 0 8px;
+  border-radius: 4px;
+}
+
+body[data-theme="light"] .terminal-tab-separator {
+  background: #e4e4e6 !important;
+}
+
+body[data-theme="light"] .terminal-pane-divider {
+  background: #c7c7cc !important;
+}
+
+body[data-theme="light"] .terminal-pane-header {
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+body[data-theme="light"] [data-terminal-pane-root] {
+  background: #ffffff !important;
+}
+
+body[data-theme="light"] .coloride-terminal {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+}
+
+/* Monaco tabs header — pure white in light */
+body[data-theme="light"] .explorer-editor-header {
+  background: #ffffff !important;
+}

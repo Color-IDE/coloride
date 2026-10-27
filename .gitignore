@@ -1,0 +1,69 @@
+# Tool caches
+.cache/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+
+# Node
+node_modules/
+.turbo/
+.vite/
+*.tsbuildinfo
+client/ide/dist/
+
+# Local env
+.env
+.env.*
+!.env.example
+
+# OS/editor
+.DS_Store
+.idea/
+.vscode/
+
+# Coloride release output
+release/
+artifacts/
+*.dmg
+*.AppImage
+*.msi
+*.deb
+
+# Bundled Python sidecar binaries (built in CI / locally)
+client/desktop/resources/sidecar/coloride-sidecar
+client/desktop/resources/sidecar/coloride-sidecar.exe
+client/desktop/resources/sidecar/_internal/
+core/ide-host/build/
+core/ide-host/dist/
+core/ide-host/*.spec
+
+# Generated Cline SDK bundle (rebuilt by electron-builder beforePack)
+client/desktop/resources/agent-runtime/
+
+# Isolated Electron terminal test artifacts
+test-results/
+playwright-report/
+
+# Source signing entitlements (other build output stays ignored)
+!client/desktop/build/
+client/desktop/build/*
+!client/desktop/build/entitlements.mac.plist
+!client/desktop/build/entitlements.mac.inherit.plist
+
+# Portable voice runtime and bundled model (generated at packaging time)
+client/desktop/resources/voice-runtime/
+
+# Build tooling is source, not generated build output
+!tooling/build/
+!tooling/build/*
+!tooling/release/
+!tooling/release/*

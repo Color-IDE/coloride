@@ -1,0 +1,502 @@
+/* Sidebar: slightly tighter chip; buttons closer to the right edge */
+.agent-view-sidebar .agent-checkpoint-dock-main {
+  padding: 0 8px 0 10px;
+  min-height: 32px;
+  height: 32px;
+  max-height: 32px;
+}
+
+.agent-approval button.agent-checkpoint-dock-left,
+.agent-checkpoint-dock-left {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  max-height: none;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent !important;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  transform: none;
+  transition: none;
+}
+
+.agent-view-sidebar .agent-checkpoint-dock-left {
+  height: 100%;
+  max-height: 32px;
+  gap: 2px;
+}
+
+.agent-approval button.agent-checkpoint-dock-left:hover:not(:disabled),
+.agent-checkpoint-dock-left:hover:not(:disabled) {
+  background: transparent !important;
+  color: inherit;
+  transform: none;
+}
+
+.agent-approval button.agent-checkpoint-dock-left:active:not(:disabled),
+.agent-checkpoint-dock-left:active:not(:disabled) {
+  background: transparent !important;
+  transform: none;
+}
+
+.agent-checkpoint-dock-left:disabled {
+  cursor: default;
+  opacity: 0.7;
+  background: transparent !important;
+}
+
+.agent-checkpoint-dock-left .agent-approval-label {
+  min-width: 0;
+  flex: 0 1 auto;
+  text-align: left;
+}
+
+.agent-checkpoint-chevron {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: rgb(135 136 136 / 50%);
+  opacity: 1;
+  transform: rotate(-90deg);
+  transition: transform 0.16s ease, color 0.12s ease;
+}
+.agent-checkpoint-chevron svg {
+  width: 16px;
+  height: 16px;
+}
+
+.agent-checkpoint-chevron.is-open {
+  transform: rotate(0deg);
+  color: rgb(135 136 136 / 70%);
+}
+
+.agent-checkpoint-dock-left:hover .agent-checkpoint-chevron {
+  color: rgb(135 136 136 / 70%);
+}
+
+.agent-checkpoint-dock-right {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-left: auto;
+  min-width: 0;
+  height: 100%;
+}
+
+.agent-checkpoint-dock-right button {
+  flex: 0 1 auto;
+  min-width: 0;
+  min-height: 0;
+  white-space: nowrap;
+}
+
+.agent-view-sidebar .agent-checkpoint-dock-right .agent-checkpoint-card-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.agent-view-sidebar .agent-checkpoint-dock-right .agent-review-pill-kbd-keys {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  opacity: 0.45;
+}
+.agent-view-sidebar .agent-checkpoint-dock-right .agent-review-pill-mod {
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+}
+.agent-view-sidebar .agent-checkpoint-dock-right .agent-review-pill-key-icon {
+  display: block;
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+}
+
+/* Sidebar: chevron before “N Files” */
+.agent-view-sidebar .agent-checkpoint-dock-left .agent-checkpoint-chevron {
+  order: 0;
+  flex-shrink: 0;
+}
+.agent-view-sidebar .agent-checkpoint-dock-left .agent-approval-label {
+  order: 1;
+}
+.agent-view-sidebar .agent-checkpoint-dock-left .agent-tool-verb {
+  font-weight: 500;
+  font-size: 12.5px;
+  color: #c8c8d0;
+}
+body[data-theme="light"] .agent-view-sidebar .agent-checkpoint-dock-left .agent-tool-verb {
+  color: #71717a;
+}
+.agent-view-sidebar .agent-checkpoint-dock-left:hover:not(:disabled) .agent-tool-verb {
+  color: #e4e4e7;
+}
+body[data-theme="light"] .agent-view-sidebar .agent-checkpoint-dock-left:hover:not(:disabled) .agent-tool-verb {
+  color: #3f3f46;
+}
+
+/* Full Agents tab: chevron after label (default order) */
+.agent-checkpoint-dock-full .agent-checkpoint-dock-left .agent-checkpoint-chevron {
+  order: 2;
+  margin-left: 4px;
+}
+.agent-checkpoint-dock-full .agent-checkpoint-dock-left .agent-approval-label,
+.agent-checkpoint-dock-full .agent-checkpoint-dock-left .agent-tool-verb,
+.agent-checkpoint-dock-full .agent-checkpoint-dock-left .agent-tool-rest {
+  font-size: 13.5px;
+  line-height: 1.25;
+}
+.agent-checkpoint-dock-full .agent-checkpoint-dock-left .agent-tool-verb {
+  font-weight: 560;
+}
+.agent-checkpoint-dock-full .agent-checkpoint-dock-left .agent-tool-rest {
+  font-size: 13px;
+  opacity: 0.88;
+}
+.agent-checkpoint-dock-full .agent-checkpoint-dock-main {
+  padding-right: 14px;
+}
+.agent-checkpoint-dock-full .agent-checkpoint-dock-right {
+  gap: 12px;
+  padding-right: 0;
+  margin-right: 0;
+}
+/* No outline on the full-tab review bar */
+.agent-checkpoint-dock-full.agent-approval-dock,
+.agent-checkpoint-dock-full.agent-checkpoint-dock,
+.agent-approval-dock.agent-checkpoint-dock-full {
+  border: none;
+  border-bottom: none;
+  box-shadow: none;
+}
+body[data-theme="light"] .agent-checkpoint-dock-full.agent-approval-dock,
+body[data-theme="light"] .agent-checkpoint-dock-full.agent-checkpoint-dock,
+body[data-theme="light"] .agent-approval-dock.agent-checkpoint-dock-full {
+  border: none;
+  border-bottom: none;
+  box-shadow: none;
+}
+.agent-checkpoint-dock-full .agent-checkpoint-dock-right .agent-approval-skip {
+  background: transparent;
+  color: #e4e4e8;
+  font-weight: 500;
+  font-size: 12.5px;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+}
+.agent-checkpoint-dock-full .agent-checkpoint-dock-right .agent-approval-skip:hover:not(:disabled) {
+  color: #ffffff;
+}
+.agent-checkpoint-dock-full .agent-checkpoint-dock-right .agent-approval-skip:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Agents tab: file-change card lives in the chat, never on the composer. */
+.agent-view:not(.agent-view-sidebar) .agent-docks-stack:has(.agent-checkpoint-card),
+.agent-view:not(.agent-view-sidebar) .agent-docks-stack .agent-checkpoint-card,
+.agent-view:not(.agent-view-sidebar) .agent-docks-stack .agent-checkpoint-dock-slot {
+  display: none;
+}
+
+.agent-checkpoint-dock-full.agent-checkpoint-card,
+.agent-approval-dock.agent-checkpoint-dock-full.agent-checkpoint-card,
+.agent-docks-stack > .agent-dock-slot:first-child .agent-checkpoint-dock-full.agent-checkpoint-card,
+.agent-docks-stack > .agent-checkpoint-dock-slot .agent-checkpoint-dock-full.agent-checkpoint-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  min-height: 0;
+  border: 1px solid rgb(255 255 255 / 7%);
+  border-bottom: 1px solid rgb(255 255 255 / 7%);
+  border-radius: 8px;
+  background: rgb(44 44 44 / 72%);
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.agent-checkpoint-card-row,
+.agent-checkpoint-card-head {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.agent-checkpoint-card-head {
+  padding: 0 0 6px;
+}
+
+.agent-checkpoint-card-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.agent-checkpoint-card-title,
+.agent-checkpoint-card-count {
+  min-width: 0;
+  overflow: hidden;
+  color: #ececee;
+  font-size: 13.5px;
+  font-weight: 560;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-checkpoint-card-count {
+  flex: 1 1 auto;
+}
+
+.agent-checkpoint-card-file-icon {
+  display: flex;
+  flex: 0 0 16px;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  min-width: 16px;
+  height: 16px;
+  line-height: 0;
+  color: #878888b3;
+}
+
+.agent-checkpoint-card-file-icon .agent-checkpoint-tree-icon,
+.agent-checkpoint-tree-icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.agent-checkpoint-card-file-meta {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.agent-checkpoint-card-stats {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  transition: transform 140ms ease, opacity 140ms ease;
+}
+
+.agent-checkpoint-card-file-open {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: #c8c8d0;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%);
+  transition: transform 140ms ease, opacity 140ms ease;
+}
+
+.agent-checkpoint-card-file-open svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
+.agent-checkpoint-card-stats .agent-diff-additions,
+.agent-checkpoint-card-stats .agent-diff-deletions {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.agent-checkpoint-card-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  margin-left: auto;
+}
+
+.agent-checkpoint-card-split {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 1px;
+  background: transparent;
+}
+
+.agent-checkpoint-card-split .agent-checkpoint-card-btn {
+  border-radius: 0;
+  background: #3a3a3c;
+  color: #ececee;
+}
+
+.agent-checkpoint-card-split .agent-checkpoint-card-btn:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.agent-checkpoint-card-split .agent-checkpoint-card-btn:last-child {
+  border-radius: 0 6px 6px 0;
+}
+
+.agent-checkpoint-card-split .agent-checkpoint-card-btn:hover:not(:disabled) {
+  background: #464648;
+  color: #ffffff;
+}
+
+.agent-checkpoint-card-btn {
+  min-width: 0;
+  min-height: 24px;
+  margin: 0;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #c8c8d0;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.agent-checkpoint-card-btn:hover:not(:disabled) {
+  background: rgb(255 255 255 / 7%);
+  color: #f4f4f6;
+}
+
+.agent-checkpoint-card-btn.is-review,
+.agent-checkpoint-card-btn.is-keep {
+  background: #3a3a3c;
+  color: #ececee;
+}
+
+.agent-checkpoint-card-btn:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.agent-checkpoint-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.agent-checkpoint-card.is-open .agent-checkpoint-card-list {
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.agent-checkpoint-card-file {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 26px;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 3px 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.agent-checkpoint-card-file:hover {
+  background: transparent;
+}
+
+.agent-checkpoint-card-file:hover .agent-checkpoint-card-stats {
+  transform: translateX(-20px);
+}
+
+.agent-checkpoint-card-file:hover .agent-checkpoint-card-file-open {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+
+.agent-checkpoint-card-file-name {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  color: #e4e4e8;
+  font-size: 13px;
+  font-weight: 450;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-checkpoint-card-empty {
+  padding: 6px 8px;
+  color: #9a9aa2;
+  font-size: 12.5px;
+}
+
+.agent-checkpoint-card-more {
+  align-self: flex-start;
+  margin: 2px 0 0;
+  padding: 3px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #9a9aa2;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 450;
+  line-height: 16px;
+  text-align: left;
+}
+
+.agent-checkpoint-card-more:hover {
+  color: #e4e4e8;
+}
+
+.agent-composer-stack.has-approval-dock:has(.agent-checkpoint-card) .agent-scroll-to-bottom-wrap {
+  bottom: calc(100% + 56px);
+}
+
+.agent-composer-stack.has-approval-dock:has(.agent-checkpoint-card.is-multi) .agent-scroll-to-bottom-wrap {
+  bottom: calc(100% + 168px);
+}
+
+.agent-composer-stack.has-approval-dock.has-checkpoint-review:has(.agent-checkpoint-card) .agent-scroll-to-bottom-wrap {
+  bottom: calc(100% + 260px);
+}

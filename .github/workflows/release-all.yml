@@ -1,0 +1,373 @@
+# Build Mac (universal) + Windows, then deploy installers to the VPS downloads folder
+# (https://www.coloride.com/downloads/) — primary path for users + electron-updater.
+#
+# Secrets on Coloride:
+#   COLORIDE_DEPLOY_HOST     e.g. deploy@downloads.example
+#   COLORIDE_DEPLOY_SSH_KEY  private key with write access to downloads path
+#   COLORIDE_DEPLOY_PATH     optional, default /var/www/coloride/sites/www/public/downloads
+#   RELEASES_GITHUB_TOKEN   optional backup upload to Coloride-Releases
+#
+# Trigger: push tag v*  OR  workflow_dispatch
+# Local one-liner: pnpm desktop:deploy-downloads
+
+name: Release All Platforms
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v0.1.7). Empty = package.json version."
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+env:
+  RELEASES_REPO: Coloride-AI/Coloride-Releases
+  DOWNLOADS_URL: https://www.coloride.com/downloads
+
+jobs:
+  meta:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      tag: ${{ steps.v.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.tag || github.ref) || github.ref }}
+      - id: v
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./client/desktop/package.json').version")
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.tag }}" ]; then
+            TAG="${{ github.event.inputs.tag }}"
+          elif [[ "${GITHUB_REF_NAME}" == v* ]]; then
+            TAG="${GITHUB_REF_NAME}"
+          else
+            TAG="v${VERSION}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION tag=$TAG"
+
+  mac:
+    needs: meta
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.tag || github.ref) || github.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - name: Install + build web
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build:web
+
+      - name: Build Python sidecar (native macOS arch)
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x tooling/build/build-sidecar.sh
+          mkdir -p client/desktop/resources/sidecar
+          # GitHub macos-latest is arm64; ship arm64 sidecar (covers Apple Silicon).
+          # Intel-only Macs are a follow-up (separate x64 build or lipo job).
+          ./tooling/build/build-sidecar.sh --out client/desktop/resources/sidecar
+          test -x client/desktop/resources/sidecar/coloride-sidecar
+          file client/desktop/resources/sidecar/coloride-sidecar
+          ls -lah client/desktop/resources/sidecar/
+
+      - name: Bundle offline voice runtime
+        run: node tooling/build/build-voice-runtime.cjs
+
+      # arm64 only: universal fails when the Python sidecar is a single-arch binary
+      # (identical file in both slices). Apple Silicon covers the vast majority of users.
+      - name: Build macOS arm64 DMG + ZIP
+        working-directory: client/desktop
+        env:
+          # The p12 is base64-encoded in GitHub Secrets. electron-builder
+          # imports it into the ephemeral runner keychain, signs the app and
+          # notarizes it before producing the ZIP used by electron-updater.
+          CSC_LINK: ${{ secrets.MACOS_DEVELOPER_ID_P12_BASE64 }}
+          CSC_KEY_PASSWORD: ${{ secrets.MACOS_DEVELOPER_ID_P12_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: pnpm exec electron-builder --mac dmg zip --arm64 --publish never
+
+      - name: Verify macOS signature and notarization
+        working-directory: client/desktop
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP_PATH="$(find release -type d -name 'Coloride.app' -print -quit)"
+          test -n "$APP_PATH"
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+          spctl --assess --type execute --verbose=4 "$APP_PATH"
+          xcrun stapler validate "$APP_PATH"
+
+      - name: Upload Mac artifacts to workflow
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-arm64
+          path: |
+            client/desktop/release/Coloride-*-arm64.dmg
+            client/desktop/release/Coloride-*-arm64.zip
+            client/desktop/release/Coloride-*-arm64.*.blockmap
+            client/desktop/release/latest-mac.yml
+          if-no-files-found: error
+
+      - name: Publish Mac to Coloride-Releases (optional backup)
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "No RELEASES_GITHUB_TOKEN — skip GitHub backup"
+            exit 0
+          fi
+          TAG="${{ needs.meta.outputs.tag }}"
+          VERSION="${{ needs.meta.outputs.version }}"
+          REPO="${{ env.RELEASES_REPO }}"
+          gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1 \
+            || gh release create "$TAG" --repo "$REPO" \
+                 --title "Coloride $TAG" \
+                 --notes "Coloride desktop $TAG — macOS arm64 + Windows x64."
+          shopt -s nullglob
+          FILES=(
+            client/desktop/release/Coloride-${VERSION}-arm64.dmg
+            client/desktop/release/Coloride-${VERSION}-arm64.zip
+            client/desktop/release/Coloride-${VERSION}-arm64.dmg.blockmap
+            client/desktop/release/Coloride-${VERSION}-arm64.zip.blockmap
+            client/desktop/release/latest-mac.yml
+          )
+          gh release upload "$TAG" "${FILES[@]}" --repo "$REPO" --clobber
+          echo "Mac backup → https://github.com/${REPO}/releases/tag/${TAG}"
+
+  windows:
+    needs: meta
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.tag || github.ref) || github.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - name: Install + build web
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build:web
+
+      - name: Build Python sidecar (Windows x64)
+        shell: pwsh
+        run: |
+          powershell -ExecutionPolicy Bypass -File tooling/build/build-sidecar.ps1 -OutDir client/desktop/resources/sidecar
+          Get-ChildItem client/desktop/resources/sidecar | Format-Table Name, Length
+
+      - name: Bundle offline voice runtime
+        run: node tooling/build/build-voice-runtime.cjs
+
+      - name: Build Windows NSIS
+        working-directory: client/desktop
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: pnpm exec electron-builder --win nsis --x64 --publish never
+
+      # Optional — Actions artifact storage is often full for ~130MB installers.
+      - name: Upload Windows artifacts to workflow (optional)
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: |
+            client/desktop/release/Coloride-*-win-x64-setup.exe
+            client/desktop/release/Coloride-*-win-*.blockmap
+            client/desktop/release/latest.yml
+          if-no-files-found: warn
+          retention-days: 3
+
+      # Primary path when artifact storage is full: ship straight to VPS.
+      - name: Deploy Windows installer to VPS /downloads
+        continue-on-error: false
+        shell: bash
+        env:
+          SSH_KEY: ${{ secrets.COLORIDE_DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.COLORIDE_DEPLOY_HOST }}
+          DEPLOY_PATH: ${{ secrets.COLORIDE_DEPLOY_PATH }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SSH_KEY:-}" ] || [ -z "${DEPLOY_HOST:-}" ]; then
+            echo "Missing deploy secrets — skip direct Windows VPS deploy"
+            exit 0
+          fi
+          VERSION="${{ needs.meta.outputs.version }}"
+          PATH_REMOTE="${DEPLOY_PATH:-/var/www/coloride/sites/www/public/downloads}"
+          REL=client/desktop/release
+          SETUP="Coloride-${VERSION}-win-x64-setup.exe"
+          install -m 600 /dev/null /tmp/deploy_key
+          printf '%s\n' "$SSH_KEY" | tr -d '\r' > /tmp/deploy_key
+          chmod 600 /tmp/deploy_key
+          ssh-keygen -y -f /tmp/deploy_key >/dev/null
+          SSH=(ssh -i /tmp/deploy_key -o StrictHostKeyChecking=accept-new -o BatchMode=yes)
+          SCP=(scp -i /tmp/deploy_key -o StrictHostKeyChecking=accept-new -o BatchMode=yes)
+          "${SSH[@]}" "$DEPLOY_HOST" "mkdir -p $(printf %q "$PATH_REMOTE")"
+          shopt -s nullglob
+          FILES=("$REL/$SETUP" "$REL/latest.yml")
+          FILES+=("$REL"/*-win-*.blockmap)
+          "${SCP[@]}" "${FILES[@]}" "${DEPLOY_HOST}:${PATH_REMOTE}/"
+          rm -f /tmp/deploy_key
+          echo "Windows ${VERSION} → ${DEPLOY_HOST}:${PATH_REMOTE}"
+
+      - name: Publish Windows to Coloride-Releases (optional backup)
+        continue-on-error: true
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "No RELEASES_GITHUB_TOKEN — skip GitHub backup"
+            exit 0
+          fi
+          TAG="${{ needs.meta.outputs.tag }}"
+          VERSION="${{ needs.meta.outputs.version }}"
+          REPO="${{ env.RELEASES_REPO }}"
+          gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1 \
+            || gh release create "$TAG" --repo "$REPO" \
+                 --title "Coloride $TAG" \
+                 --notes "Coloride desktop $TAG — macOS universal + Windows x64."
+          shopt -s nullglob
+          FILES=(
+            client/desktop/release/Coloride-${VERSION}-win-x64-setup.exe
+            client/desktop/release/latest.yml
+          )
+          FILES+=(client/desktop/release/*-win-*.blockmap)
+          gh release upload "$TAG" "${FILES[@]}" --repo "$REPO" --clobber
+          echo "Windows backup → https://github.com/${REPO}/releases/tag/${TAG}"
+
+  # Primary: push installers to VPS static downloads (one shot for admins).
+  # Note: cannot use `secrets` in job-level `if` — skip inside steps if unset.
+  deploy-vps:
+    needs: [meta, mac, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check deploy secrets
+        id: gate
+        env:
+          SSH_KEY: ${{ secrets.COLORIDE_DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.COLORIDE_DEPLOY_HOST }}
+        shell: bash
+        run: |
+          if [ -n "${SSH_KEY:-}" ] && [ -n "${DEPLOY_HOST:-}" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping VPS deploy (set COLORIDE_DEPLOY_HOST + COLORIDE_DEPLOY_SSH_KEY)"
+          fi
+
+      - name: Download Mac + Windows artifacts
+        if: steps.gate.outputs.enabled == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Flatten artifacts
+        if: steps.gate.outputs.enabled == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ship
+          find artifacts -type f \( \
+            -name 'Coloride-*.dmg' -o -name 'Coloride-*.zip' -o -name 'Coloride-*.exe' \
+            -o -name '*.blockmap' -o -name 'latest-mac.yml' -o -name 'latest.yml' \
+          \) -exec cp -v {} ship/ \;
+          ls -lah ship/
+
+      - name: Write latest.json
+        if: steps.gate.outputs.enabled == 'true'
+        shell: bash
+        run: |
+          VERSION="${{ needs.meta.outputs.version }}"
+          BASE="${{ env.DOWNLOADS_URL }}"
+          cat > ship/latest.json <<EOF
+          {
+            "version": "${VERSION}",
+            "channel": "stable",
+            "publishedAt": "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)",
+            "notes": "Coloride ${VERSION}",
+            "downloadUrl": "${BASE}/Coloride-${VERSION}-arm64.dmg",
+            "platforms": {
+              "darwin": {
+                "url": "${BASE}/Coloride-${VERSION}-arm64.dmg",
+                "filename": "Coloride-${VERSION}-arm64.dmg"
+              },
+              "win32": {
+                "url": "${BASE}/Coloride-${VERSION}-win-x64-setup.exe",
+                "filename": "Coloride-${VERSION}-win-x64-setup.exe"
+              }
+            }
+          }
+          EOF
+
+      - name: Rsync to VPS /downloads
+        if: steps.gate.outputs.enabled == 'true'
+        env:
+          SSH_KEY: ${{ secrets.COLORIDE_DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.COLORIDE_DEPLOY_HOST }}
+          DEPLOY_PATH: ${{ secrets.COLORIDE_DEPLOY_PATH }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PATH_REMOTE="${DEPLOY_PATH:-/var/www/coloride/sites/www/public/downloads}"
+          install -m 600 /dev/null /tmp/deploy_key
+          printf '%s\n' "$SSH_KEY" > /tmp/deploy_key
+          ssh-keygen -y -f /tmp/deploy_key >/dev/null
+          rsync -avz -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=accept-new -o BatchMode=yes" \
+            --chmod=Fu=rw,Fg=r,Fo=r,Du=rwx,Dg=rx,Do=rx \
+            ship/ "${DEPLOY_HOST}:${PATH_REMOTE}/"
+          rm -f /tmp/deploy_key
+          echo "Deployed to ${DEPLOY_HOST}:${PATH_REMOTE}"
+          echo "Public: ${{ env.DOWNLOADS_URL }}/"
+
+      - name: Smoke-check public URLs
+        if: steps.gate.outputs.enabled == 'true'
+        shell: bash
+        run: |
+          VERSION="${{ needs.meta.outputs.version }}"
+          BASE="${{ env.DOWNLOADS_URL }}"
+          for p in latest-mac.yml latest.yml latest.json \
+            "Coloride-${VERSION}-arm64.dmg" \
+            "Coloride-${VERSION}-win-x64-setup.exe"; do
+            code=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 60 "${BASE}/${p}" || echo err)
+            echo "$code  ${BASE}/${p}"
+            test "$code" = "200"
+          done

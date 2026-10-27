@@ -1,0 +1,176 @@
+/* Render one clean, softly rounded pointer for the metric-help popover. */
+.server-dashboard-scroll span.rotate-45.bg-white {
+  display: none !important;
+}
+
+.server-dashboard-scroll .z-30.w-60.rounded-2xl.bg-white::before {
+  position: absolute;
+  top: -4px;
+  right: 18px;
+  width: 12px;
+  height: 12px;
+  content: "";
+  border-radius: 3px;
+  background: #fff;
+  transform: rotate(45deg);
+}
+
+.remote-browser-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #3f3f3f #171717;
+}
+
+.remote-browser-scroll::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+
+.remote-browser-scroll::-webkit-scrollbar-track {
+  background: #171717;
+}
+
+.remote-browser-scroll::-webkit-scrollbar-thumb {
+  background: #3f3f3f;
+  border: 3px solid #171717;
+  border-radius: 999px;
+}
+
+.remote-browser-scroll::-webkit-scrollbar-thumb:hover {
+  background: #5a5a5a;
+}
+
+.remote-browser-locations-scroll {
+  overflow-anchor: none;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.remote-browser-locations-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.remote-browser-locations-track {
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.remote-browser-locations:is(:hover, :focus-within) .remote-browser-locations-track {
+  opacity: 1;
+}
+
+/* Outer picker shell — faint edge so the card doesn’t look hard-cut. */
+.remote-browser-card {
+  border-color: rgb(255 255 255 / 6%);
+}
+
+body[data-theme="light"] .remote-browser-card {
+  border-color: rgb(24 24 27 / 8%);
+}
+
+/* Primary action: white on dark, black on light (no accent blue). */
+.remote-browser-open-btn {
+  border: 0;
+  background: #f0f4f8;
+  color: #171717;
+}
+
+.remote-browser-open-btn:hover:not(:disabled) {
+  background: #ffffff;
+}
+
+body[data-theme="light"] .remote-browser-open-btn {
+  background: #18181b;
+  color: #fafafa;
+}
+
+body[data-theme="light"] .remote-browser-open-btn:hover:not(:disabled) {
+  background: #27272a;
+}
+
+.settings-field {
+  width: 100%;
+  height: 32px;
+  border: 0;
+  border-radius: 12px;
+  outline: 0;
+  background: #1d1d1d;
+  color: #f0f4f8;
+  padding: 0 11px;
+  font: inherit;
+  font-size: 12px;
+  transition: background 150ms ease, box-shadow 150ms ease;
+}
+
+.settings-field:hover {
+  background: #202020;
+}
+
+.settings-field:focus {
+  background: #171717;
+  box-shadow: none;
+}
+
+/* Bug reporting follows the app's dark surface, rather than a light dialog. */
+
+.status-bar-button,
+.status-bar-button-icon {
+  color: #878888;
+}
+
+.status-bar-button:hover,
+.status-bar-button:focus-visible,
+.status-bar-button[data-active="true"],
+.status-bar-button:hover .status-bar-button-icon,
+.status-bar-button:focus-visible .status-bar-button-icon,
+.status-bar-button[data-active="true"] .status-bar-button-icon {
+  color: #fff;
+}
+
+.status-bar-button svg {
+  color: inherit;
+  stroke: currentColor;
+}
+
+/* Settings content scrolls inside the rounded surface without a native gutter. */
+.settings-content-scroll {
+  scrollbar-color: transparent transparent;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
+.settings-content-scroll:hover {
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+.settings-content-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.settings-content-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.settings-content-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: transparent;
+}
+
+.settings-content-scroll:hover::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+}
+
+/* Main dark surfaces share the native window's background. */
+body:not([data-theme="light"]) .app-main-card,
+body:not([data-theme="light"]) .app-side-surface,
+body:not([data-theme="light"]) .filetree-toolbar,
+body:not([data-theme="light"]) .agent-view-sidebar,
+body:not([data-theme="light"]) .settings-content-surface,
+body:not([data-theme="light"]) .settings-content-header,
+body:not([data-theme="light"]) .explorer-editor-shell,
+body:not([data-theme="light"]) .explorer-editor-body,
+body:not([data-theme="light"]) .coloride-code-editor-root .cm-editor,
+body:not([data-theme="light"]) .coloride-code-editor-root .cm-scroller,
+body:not([data-theme="light"]) .coloride-code-editor-root .cm-gutters,
+body:not([data-theme="light"]) .coloride-code-editor-root .cm-minimap {
+  background: var(--app-window-background) !important;
+}

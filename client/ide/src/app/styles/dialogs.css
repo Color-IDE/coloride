@@ -1,0 +1,344 @@
+/*
+ * Solid plate under native traffic lights.
+ * Slightly cooler than pure white so inactive (unfocused) gray traffic lights
+ * stay visible when another app is in front — very light backgrounds made them vanish.
+ */
+body[data-theme="light"] .desktop-titlebar {
+  background-color: #eceef0 !important;
+}
+
+body[data-theme="light"] .titlebar-button:not(:disabled):hover,
+body[data-theme="light"] .titlebar-sign-in:not(:disabled):hover,
+body[data-theme="light"] .titlebar-sign-in-menu:not(:disabled):hover {
+  background: #e4e4e6 !important;
+  color: #171717 !important;
+}
+
+body[data-theme="light"] .titlebar-sign-in,
+body[data-theme="light"] .titlebar-sign-in-menu {
+  color: #8b8b90;
+}
+
+body[data-theme="light"] .titlebar-sign-in-menu[aria-expanded="true"] {
+  color: #171717;
+}
+
+body[data-theme="light"] .titlebar-button:not(:disabled):active {
+  background: #dadadd !important;
+}
+
+.logout-confirm-overlay {
+  -webkit-app-region: no-drag;
+}
+
+.logout-confirm-backdrop {
+  background: rgb(0 0 0 / 48%);
+}
+
+.logout-confirm-card {
+  border: 0;
+  background: #2a2a2a;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 28%);
+  transform: translateZ(0);
+  -webkit-font-smoothing: antialiased;
+}
+
+body[data-theme="light"] .logout-confirm-backdrop {
+  background: rgb(15 15 15 / 28%);
+}
+
+body[data-theme="light"] .logout-confirm-card {
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 10%);
+}
+
+body[data-theme="light"] .logout-confirm-card h2 {
+  color: #18181b !important;
+}
+
+body[data-theme="light"] .logout-confirm-card p {
+  color: #52525b !important;
+}
+
+body[data-theme="light"] .logout-confirm-cancel {
+  color: #3f3f46;
+}
+
+body[data-theme="light"] .logout-confirm-cancel:hover {
+  background: rgb(0 0 0 / 5%);
+}
+
+.production-workspace-overlay {
+  -webkit-app-region: no-drag;
+}
+
+.production-workspace-backdrop {
+  background: rgb(0 0 0 / 28%);
+}
+
+.production-workspace-card {
+  border: 1px solid #3a3a3a;
+  background: #2a2a2a;
+  box-shadow: 0 24px 64px rgb(0 0 0 / 55%);
+}
+
+.production-workspace-card h2 {
+  color: #f4f4f5;
+}
+
+.production-workspace-desc {
+  color: #a1a1aa;
+}
+
+.production-workspace-path {
+  color: #d4d4d8;
+}
+
+.production-workspace-cancel {
+  color: #e4e4e7;
+  transition: background-color 0.14s ease, color 0.14s ease;
+}
+
+.production-workspace-cancel:hover {
+  background: rgb(255 255 255 / 8%);
+}
+
+.production-workspace-copy {
+  background: #3a3a3a;
+  color: #f4f4f5;
+  transition: background-color 0.14s ease, color 0.14s ease;
+}
+
+.production-workspace-copy:hover {
+  background: #4b4b4b;
+}
+
+.production-workspace-anyway {
+  background: #e11d48;
+  color: #ffffff;
+  transition: background-color 0.14s ease, filter 0.14s ease;
+}
+
+.production-workspace-anyway:hover {
+  background: #be123c;
+}
+
+body[data-theme="light"] .production-workspace-backdrop {
+  background: rgb(24 24 27 / 18%);
+}
+
+body[data-theme="light"] .production-workspace-card {
+  border-color: #e4e4e7;
+  background: #ffffff;
+  box-shadow: 0 24px 48px rgb(0 0 0 / 16%);
+}
+
+body[data-theme="light"] .production-workspace-card h2 {
+  color: #18181b;
+}
+
+body[data-theme="light"] .production-workspace-desc {
+  color: #52525b;
+}
+
+body[data-theme="light"] .production-workspace-path {
+  color: #27272a;
+}
+
+body[data-theme="light"] .production-workspace-cancel {
+  color: #3f3f46;
+}
+
+body[data-theme="light"] .production-workspace-cancel:hover {
+  background: rgb(24 24 27 / 6%);
+}
+
+body[data-theme="light"] .production-workspace-copy {
+  background: #f4f4f5;
+  color: #18181b;
+}
+
+body[data-theme="light"] .production-workspace-copy:hover {
+  background: #e4e4e7;
+}
+
+body[data-theme="light"] .production-workspace-anyway {
+  background: #e11d48;
+}
+
+body[data-theme="light"] .production-workspace-anyway:hover {
+  background: #be123c;
+}
+
+.titlebar-account-menu {
+  padding: 4px;
+  border: 1px solid #333333;
+  border-radius: 10px;
+  background: #303030;
+  box-shadow: 0 12px 28px rgb(0 0 0 / 36%);
+}
+
+.titlebar-account-identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 7px;
+}
+
+.titlebar-account-name {
+  color: #f0f0f2;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.titlebar-account-email {
+  color: #8b8b90;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.titlebar-account-separator {
+  height: 1px;
+  margin: 4px 4px;
+  background: rgb(255 255 255 / 8%);
+}
+
+.titlebar-account-item {
+  display: flex;
+  width: 100%;
+  min-height: 28px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #e8e8ea;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-align: left;
+  cursor: default;
+  transition: background-color 100ms ease, color 100ms ease;
+}
+
+.titlebar-account-item:hover,
+.titlebar-account-item:focus-visible {
+  background: rgb(255 255 255 / 6%);
+  color: #f0f0f2;
+}
+
+.titlebar-account-item:active {
+  background: rgb(255 255 255 / 9%);
+}
+
+.titlebar-account-item:disabled {
+  opacity: 0.6;
+}
+
+.titlebar-account-item-label {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.titlebar-account-shortcut {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
+  margin-left: auto;
+  padding: 0 6px 2px;
+  border-radius: 5px;
+  background: #3a3a3a;
+  color: #d4d4d8;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 12px;
+  white-space: nowrap;
+}
+
+.titlebar-account-item:hover .titlebar-account-shortcut,
+.titlebar-account-item:focus-visible .titlebar-account-shortcut {
+  background: #424242;
+  color: #8f8f94;
+}
+
+.titlebar-account-item.is-danger {
+  color: #f0a0a0;
+}
+
+.titlebar-account-item.is-danger:hover,
+.titlebar-account-item.is-danger:focus-visible {
+  background: rgb(248 113 113 / 10%);
+  color: #fca5a5;
+}
+
+body[data-theme="light"] .titlebar-account-menu {
+  border-color: rgb(24 24 27 / 8%);
+  background: #ffffff;
+  box-shadow: 0 18px 42px rgb(24 24 27 / 14%);
+}
+
+body[data-theme="light"] .titlebar-account-name {
+  color: #18181b;
+}
+
+body[data-theme="light"] .titlebar-account-email {
+  color: #71717a;
+}
+
+body[data-theme="light"] .titlebar-account-separator {
+  background: rgb(24 24 27 / 12%);
+}
+
+body[data-theme="light"] .titlebar-account-item {
+  color: #27272a;
+}
+
+body[data-theme="light"] .titlebar-account-item:hover,
+body[data-theme="light"] .titlebar-account-item:focus-visible {
+  background: #f1f2f3;
+  color: #171717;
+}
+
+body[data-theme="light"] .titlebar-account-item:active {
+  background: #e8e9eb;
+}
+
+body[data-theme="light"] .titlebar-account-shortcut {
+  background: #ececee;
+  color: #52525b;
+}
+
+body[data-theme="light"] .titlebar-account-item:hover .titlebar-account-shortcut,
+body[data-theme="light"] .titlebar-account-item:focus-visible .titlebar-account-shortcut {
+  background: #e4e4e7;
+  color: #52525b;
+}
+
+body[data-theme="light"] .titlebar-account-item.is-danger {
+  color: #b91c1c;
+}
+
+body[data-theme="light"] .titlebar-account-item.is-danger:hover,
+body[data-theme="light"] .titlebar-account-item.is-danger:focus-visible {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+body[data-theme="light"] .agent-chat-title {
+  color: #171717 !important;
+}
+
+html[data-theme="light"],
+html[data-theme="light"] body,
+html[data-theme="light"] #root {
+  background: var(--app-canvas);
+  background-color: var(--app-canvas);
+  color: var(--text-primary);
+}

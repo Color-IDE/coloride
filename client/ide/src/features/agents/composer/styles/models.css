@@ -1,0 +1,317 @@
+/* Unique mode colors — no repeats:
+   Act = blue (default), Ask = teal, Plan = violet, Debug = amber */
+.agent-composer-mode-badge {
+  display: inline-flex;
+  box-sizing: border-box;
+  height: 30px;
+  min-height: 30px;
+  align-items: center;
+  gap: 6px;
+  border-radius: 9999px;
+  padding: 0 4px 0 10px;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1;
+  user-select: none;
+}
+.agent-composer-mode-badge.is-icon-only {
+  gap: 0;
+  padding: 0 8px;
+}
+
+.agent-composer-mode-badge.is-ask {
+  background: rgb(62 184 168 / 18%);
+  color: #9ee0d6;
+}
+
+.agent-composer-mode-badge.is-plan {
+  background: rgb(155 122 216 / 18%);
+  color: #d4c4f5;
+}
+
+.agent-composer-mode-badge.is-debug {
+  background: rgb(224 168 74 / 18%);
+  color: #f0c98a;
+}
+
+.agent-composer-mode-badge.is-full {
+  background: rgb(232 88 88 / 16%);
+  color: #f0a8a8;
+}
+
+.agent-composer-mode-badge-clear {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: inherit;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.agent-composer-mode-badge-clear:hover {
+  background: rgb(255 255 255 / 14%);
+}
+
+.agent-composer-model-trigger {
+  border: 0;
+  background: transparent;
+  color: #e7e7e8;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.agent-composer-model-trigger:hover,
+.agent-composer-model-trigger[aria-expanded="true"] {
+  background: #444;
+  color: #fff;
+}
+
+.agent-composer-model-trigger svg:last-child {
+  color: var(--agent-muted);
+  transition: transform 140ms ease;
+}
+
+.agent-composer-model-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: min(520px, calc(100vh - 160px));
+  overflow: visible;
+  border: 1px solid rgb(255 255 255 / 3%);
+  border-radius: var(--ui-radius-menu);
+  background: #303030;
+  color: var(--agent-text);
+  box-shadow: none;
+}
+
+/* Portaled fixed menus — escape overflow:hidden on the agent column */
+.agent-composer-model-menu-fixed,
+.agent-composer-model-flyout-fixed {
+  position: fixed;
+  z-index: 10050;
+  overflow: visible;
+}
+
+/* Side flyout of models (Cursor-style submenu) */
+.agent-composer-model-flyout {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: min(420px, calc(100vh - 180px));
+  overflow: visible;
+  border: 1px solid rgb(255 255 255 / 3%);
+  border-radius: var(--ui-radius-menu);
+  background: #303030;
+  color: var(--agent-text);
+  box-shadow: none;
+}
+
+.agent-model-option-wrap {
+  position: relative;
+}
+
+.agent-composer-model-flyout > div {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* Same cloud family as status / rail tips: white in dark, black in light. */
+.agent-model-hover-tip {
+  width: 248px;
+  padding: 14px 16px 13px;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #171717;
+  box-shadow: none;
+  pointer-events: none;
+  opacity: 0;
+  filter: drop-shadow(0 8px 20px rgb(0 0 0 / 18%));
+}
+
+.agent-model-hover-tip.is-visible {
+  opacity: 1;
+}
+
+.agent-model-hover-tip-caret {
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  background: #ffffff;
+  border-radius: 2px;
+  transform: translateY(-50%) rotate(45deg);
+  box-shadow: none;
+}
+
+/* Tip on the left of the row → caret on the tip's right edge */
+.agent-model-hover-tip.is-side-left .agent-model-hover-tip-caret {
+  right: -5px;
+}
+
+/* Tip on the right of the row → caret on the tip's left edge */
+.agent-model-hover-tip.is-side-right .agent-model-hover-tip-caret {
+  left: -5px;
+}
+
+.agent-model-tip-desc {
+  margin: 0 0 14px;
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+  color: #171717;
+}
+
+.agent-model-tip-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.agent-model-tip-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.agent-model-tip-key {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #27272a;
+}
+
+.agent-model-tip-bars {
+  display: flex;
+  gap: 5px;
+}
+
+.agent-model-tip-bar {
+  width: 28px;
+  height: 5px;
+  border-radius: 999px;
+  background: #e4e4e7;
+}
+
+.agent-model-tip-bar.is-on {
+  background: #18181b;
+}
+
+.agent-model-tip-divider {
+  height: 1px;
+  margin: 13px 0 11px;
+  background: rgb(24 24 27 / 10%);
+}
+
+.agent-model-tip-token-head {
+  margin-bottom: 7px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #71717a;
+}
+
+.agent-model-tip-token-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: #52525b;
+}
+
+.agent-model-auto,
+.agent-model-menu-item {
+  box-sizing: border-box;
+  height: 24px;
+  min-height: 24px;
+  max-height: 24px;
+  border: 0;
+  border-radius: var(--ui-radius-control);
+  padding: 0 8px;
+  background: transparent;
+  color: inherit;
+  font-size: 12px;
+  /* Truncated labels need room for descenders such as g, p, and y. */
+  line-height: 18px;
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.agent-composer-attach-menu .agent-model-menu-item svg,
+.agent-composer-model-menu .agent-model-menu-item svg,
+.agent-composer-model-flyout .agent-model-menu-item svg,
+.agent-composer-model-menu .agent-model-submenu-trigger svg,
+.agent-composer-model-menu .size-4,
+.agent-composer-model-menu .size-\[18px\],
+.agent-composer-model-flyout .size-4,
+.agent-composer-model-flyout .size-\[18px\] {
+  width: 14px;
+  height: 14px;
+}
+
+.agent-model-auto:hover,
+.agent-model-menu-item:hover:not(:disabled) {
+  background: #414141;
+}
+
+.agent-model-menu-item.is-selected,
+.agent-model-submenu-trigger.is-open {
+  background: #414141;
+}
+
+.agent-model-submenu-trigger,
+.agent-composer-model-flyout .agent-model-menu-item {
+  box-sizing: border-box;
+  height: 24px;
+  min-height: 24px;
+  max-height: 24px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.agent-model-menu-item:disabled,
+.agent-model-menu-item.is-locked {
+  cursor: default;
+  color: #777;
+  pointer-events: none;
+}
+
+.agent-model-label {
+  color: var(--agent-muted);
+}
+
+.agent-model-divider {
+  height: 1px;
+  margin: 3px 6px;
+  background: #454545;
+}
+
+.agent-model-divider.compact {
+  margin: 2px 8px;
+}
+
+.agent-running {
+  color: var(--agent-muted);
+}
+
+.agent-running span {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: currentColor;
+  animation: agent-running-pulse 1.1s ease-in-out infinite;
+}
+
+.agent-running span:nth-child(2) {
+  animation-delay: 120ms;
+}
+
+.agent-running span:nth-child(3) {
+  animation-delay: 240ms;
+}
+
+@keyframes agent-running-pulse {
+  0%, 70%, 100% { opacity: 0.28; transform: translateY(0); }
+  35% { opacity: 1; transform: translateY(-2px); }
+}

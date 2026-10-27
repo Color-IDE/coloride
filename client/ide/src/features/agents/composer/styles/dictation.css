@@ -1,0 +1,35 @@
+/* Dictation stays provisional until the microphone is stopped. */
+.agent-composer-input.is-voice-provisional {
+  color: var(--text-muted, #888);
+  -webkit-text-fill-color: var(--text-muted, #888);
+}
+
+.agent-voice-button.is-recording {
+  color: #ef4444;
+  background: rgb(239 68 68 / 12%);
+}
+.agent-voice-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.agent-icon-button.agent-voice-button {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+.agent-voice-button:hover:not(:disabled) {
+  background: rgb(255 255 255 / 10%);
+  color: var(--agent-text);
+}
+.agent-voice-button.is-recording:hover:not(:disabled) {
+  color: #ef4444;
+  background: rgb(239 68 68 / 18%);
+}
+
+body[data-theme="light"] .agent-voice-button:hover:not(:disabled) {
+  background: rgb(24 24 27 / 8%);
+}
+body[data-theme="light"] .agent-voice-button.is-recording:hover:not(:disabled) {
+  background: rgb(239 68 68 / 18%);
+}

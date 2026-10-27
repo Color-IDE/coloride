@@ -1,0 +1,303 @@
+/* ── Plan history card (accordion + rail, ChatReasoning layout) ── */
+
+.agent-plan-card {
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  color: color-mix(in srgb, var(--agent-text, #c8c8ce) 88%, var(--agent-muted, #9a9aa2));
+}
+
+.agent-plan-card-toggle {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 26px;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 2px 0;
+  color: inherit;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: left;
+  transition: opacity 120ms ease, color 120ms ease;
+}
+
+.agent-plan-card-toggle:hover {
+  color: var(--agent-text, #ececee);
+  opacity: 0.88;
+}
+
+.agent-plan-card-toggle-label {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+/* Finished plan: tiny "Done. k/N" row, same voice as Thought for … */
+.agent-plan-card.is-compact {
+  margin-bottom: 6px;
+}
+
+.agent-plan-card.is-compact .agent-plan-card-toggle {
+  min-height: 22px;
+  gap: 6px;
+  padding: 0;
+  font-size: 13px;
+  color: var(--agent-muted, #9a9aa2);
+  opacity: 0.78;
+}
+
+.agent-plan-card.is-compact .agent-plan-card-toggle:hover {
+  opacity: 1;
+}
+
+.agent-plan-card.is-compact .agent-plan-card-toggle-label {
+  font-size: 13px;
+}
+
+.agent-plan-card.is-compact .agent-thinking-chevron {
+  transform: scale(0.9) rotate(-90deg);
+}
+
+.agent-plan-card.is-compact .agent-thinking-chevron.is-open {
+  transform: scale(0.9) rotate(0deg);
+}
+
+.agent-plan-card-toggle:hover .agent-thinking-chevron,
+.agent-plan-card-toggle:focus-visible .agent-thinking-chevron,
+.agent-plan-card-toggle .agent-thinking-chevron.is-open {
+  opacity: 1;
+}
+
+.agent-plan-card-body {
+  margin: 2px 0 0;
+  padding: 0;
+}
+
+.agent-plan-card-summary {
+  margin: 0 0 6px;
+  padding-left: 2px;
+  color: rgb(236 236 238 / 62%);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+/* Shared vertical rail (timeline dots + connector) */
+
+.agent-plan-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agent-plan-rail-step {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  min-height: 0;
+}
+
+.agent-plan-rail-track {
+  display: flex;
+  width: 14px;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 6px;
+}
+
+.agent-plan-rail-dot {
+  display: inline-flex;
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgb(236 236 238 / 38%);
+  color: transparent;
+  font-size: 0;
+  line-height: 0;
+}
+
+.agent-plan-rail-step.is-done .agent-plan-rail-dot,
+.agent-plan-rail-step.is-in_progress .agent-plan-rail-dot,
+.agent-plan-rail-step.is-skipped .agent-plan-rail-dot {
+  width: 14px;
+  height: 14px;
+  background: transparent;
+  color: inherit;
+}
+
+.agent-plan-rail-step.is-done .agent-plan-rail-dot {
+  color: #86efac;
+}
+
+.agent-plan-rail-step.is-in_progress .agent-plan-rail-dot {
+  color: #93c5fd;
+}
+
+.agent-plan-rail-step.is-skipped .agent-plan-rail-dot {
+  color: rgb(236 236 238 / 40%);
+}
+
+.agent-plan-rail-step.is-pending .agent-plan-rail-dot {
+  background: rgb(236 236 238 / 32%);
+}
+
+.agent-plan-rail-line {
+  width: 2px;
+  min-height: 8px;
+  flex: 1 1 auto;
+  margin: 3px 0 0;
+  border-radius: 999px;
+  background: rgb(236 236 238 / 14%);
+}
+
+.agent-plan-rail-line.is-fade {
+  background: linear-gradient(
+    to bottom,
+    rgb(236 236 238 / 14%) 0%,
+    transparent 100%
+  );
+  min-height: 12px;
+}
+
+.agent-plan-rail-body {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 1px;
+  padding: 2px 0 10px;
+}
+
+.agent-plan-rail-step:last-child .agent-plan-rail-body {
+  padding-bottom: 2px;
+}
+
+.agent-plan-rail-title {
+  color: color-mix(in srgb, var(--agent-text, #c8c8ce) 92%, transparent);
+  font-size: 13px;
+  font-weight: 450;
+  line-height: 1.4;
+}
+
+.agent-plan-rail-step.is-done .agent-plan-rail-title {
+  color: color-mix(in srgb, var(--agent-text, #c8c8ce) 78%, transparent);
+}
+
+.agent-plan-rail-step.is-skipped .agent-plan-rail-title {
+  text-decoration: line-through;
+  opacity: 0.62;
+}
+
+.agent-plan-rail-step.is-in_progress .agent-plan-rail-title {
+  color: var(--agent-text, #ececee);
+}
+
+.agent-plan-rail-detail {
+  color: rgb(236 236 238 / 50%);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.agent-plan-dock-rail {
+  max-height: min(28vh, 240px);
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.agent-composer-stack.has-plan-dock .agent-scroll-to-bottom-wrap {
+  bottom: calc(100% + 52px);
+}
+
+body[data-theme="light"] .agent-plan-card-summary,
+body[data-theme="light"] .agent-plan-rail-detail,
+body[data-theme="light"] .agent-plan-dock-progress-hint {
+  color: rgb(24 24 27 / 55%);
+}
+
+body[data-theme="light"] .agent-plan-card.is-compact .agent-plan-card-toggle {
+  color: rgb(24 24 27 / 55%);
+}
+
+body[data-theme="light"] .agent-plan-rail-dot {
+  background: rgb(24 24 27 / 28%);
+}
+
+body[data-theme="light"] .agent-plan-rail-step.is-pending .agent-plan-rail-dot {
+  background: rgb(24 24 27 / 22%);
+}
+
+body[data-theme="light"] .agent-plan-rail-step.is-done .agent-plan-rail-dot {
+  color: #15803d;
+}
+
+body[data-theme="light"] .agent-plan-rail-step.is-in_progress .agent-plan-rail-dot {
+  color: #1d4ed8;
+}
+
+body[data-theme="light"] .agent-plan-rail-step.is-skipped .agent-plan-rail-dot {
+  color: rgb(24 24 27 / 38%);
+}
+
+body[data-theme="light"] .agent-plan-rail-line {
+  background: rgb(24 24 27 / 12%);
+}
+
+body[data-theme="light"] .agent-plan-rail-line.is-fade {
+  background: linear-gradient(
+    to bottom,
+    rgb(24 24 27 / 12%) 0%,
+    transparent 100%
+  );
+}
+
+body[data-theme="light"] .agent-plan-rail-title {
+  color: rgb(24 24 27 / 88%);
+}
+
+body[data-theme="light"] .agent-plan-rail-step.is-done .agent-plan-rail-title {
+  color: rgb(24 24 27 / 72%);
+}
+
+body[data-theme="light"] .agent-plan-card-toggle:hover {
+  color: rgb(24 24 27 / 92%);
+}
+
+.agent-checkpoint-dock .agent-approval-label,
+.agent-checkpoint-dock .agent-tool-verb,
+.agent-checkpoint-dock .agent-tool-rest {
+  font-size: 12px;
+  line-height: 1.15;
+}
+.agent-checkpoint-dock-main {
+  display: flex;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 12px;
+  min-height: 34px;
+  height: auto;
+  max-height: none;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.2;
+}

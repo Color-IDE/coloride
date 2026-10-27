@@ -1,0 +1,120 @@
+/* Auto-grows in JS up to 14 lines @ leading-6 + py-1; scroll after that. */
+.agent-composer-input {
+  box-sizing: border-box;
+  field-sizing: fixed;
+  flex: 0 0 auto;
+  min-height: calc(1 * 1.5rem + 0.5rem); /* 1 line + py-1 */
+  max-height: calc(14 * 1.5rem + 0.5rem); /* 14 lines + py-1 */
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 18%) transparent;
+  cursor: text;
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
+}
+
+.agent-composer {
+  pointer-events: auto;
+  cursor: text;
+}
+
+.agent-composer button,
+.agent-composer [role="button"],
+.agent-composer .agent-composer-action,
+.agent-composer .agent-composer-code-chip {
+  cursor: pointer;
+}
+
+/* Full Agents tab — keep dock density (centered new-task matches docked). */
+.agent-composer-docked:not(.agent-composer-compact) .agent-composer-input,
+.agent-composer-centered:not(.agent-composer-compact) .agent-composer-input {
+  min-height: 24px !important;
+}
+
+/* Compact class wins over centered/base min-heights when empty */
+.agent-composer-input.agent-composer-input-compact:placeholder-shown {
+  min-height: 22px !important;
+  max-height: 22px !important;
+  height: 22px !important;
+}
+.agent-composer-input.agent-composer-input-compact:not(:placeholder-shown) {
+  min-height: 22px !important;
+  max-height: calc(6 * 22px) !important;
+}
+
+.agent-composer-input::-webkit-scrollbar {
+  width: 6px;
+}
+
+.agent-composer-input::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgb(255 255 255 / 18%);
+}
+
+.agent-composer-input::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+body[data-theme="light"] .agent-composer-input {
+  scrollbar-color: rgb(24 24 27 / 18%) transparent;
+}
+
+body[data-theme="light"] .agent-composer-input::-webkit-scrollbar-thumb {
+  background: rgb(24 24 27 / 18%);
+}
+
+.agent-centered-composer-stage,
+.agent-newtask-stage {
+  width: 100%;
+  /* Same side inset as chat column / docked wrap */
+  padding-left: var(--agent-chat-inline-pad, 10px);
+  padding-right: var(--agent-chat-inline-pad, 10px);
+  box-sizing: border-box;
+}
+
+.agent-centered-composer-stack,
+.agent-newtask-stack {
+  margin-inline: auto;
+  width: 100%;
+  max-width: var(--agent-chat-max, 48rem);
+}
+
+.agent-composer-centered,
+.agent-composer-docked {
+  /* Height follows textarea + action row — no fixed min-height gap under buttons. */
+  min-height: 0;
+  border: 1px solid rgb(255 255 255 / 4%);
+  background: #2c2c2c;
+}
+
+.agent-composer-centered {
+  /* New task: flat card — no lift shadow */
+  box-shadow: none;
+}
+
+.agent-composer-docked {
+  box-shadow: none;
+}
+
+.agent-composer .agent-centered-composer-actions {
+  flex: 0 0 auto;
+  margin-top: 0.4rem;
+}
+
+.coloride-brand {
+  display: inline-flex;
+  max-width: 100%;
+  line-height: 0;
+  color: inherit;
+}
+
+.coloride-brand-svg {
+  display: block;
+  overflow: visible;
+}
+
+.agent-newchat-workspace {
+  max-width: 100%;
+  align-self: stretch;
+}

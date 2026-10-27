@@ -1,0 +1,286 @@
+/* Connect-server dialog: a focused, full-width form with a lightweight SSH cue. */
+body[data-theme="light"] .connect-server-modal {
+  background: #ffffff !important;
+  border-color: #e1e1e5 !important;
+  box-shadow: 0 28px 80px rgb(24 24 27 / 20%);
+}
+body[data-theme="light"] .connect-server-mark {
+  background: transparent !important;
+  color: #171717 !important;
+}
+body[data-theme="light"] .connect-server-form h2 {
+  color: #18181b !important;
+}
+body[data-theme="light"] .connect-server-subtitle,
+body[data-theme="light"] .connect-server-help {
+  color: #71717a !important;
+}
+body[data-theme="light"] .connect-server-form input {
+  background: #f3f4f6 !important;
+  color: #18181b !important;
+}
+body[data-theme="light"] .connect-server-form input::placeholder {
+  color: #85858e !important;
+  opacity: 1;
+}
+body[data-theme="light"] .connect-server-form button[class*="bg-\\[\\#3c3c3c\\]"] {
+  background: #f3f4f6 !important;
+  color: #3f3f46 !important;
+}
+/* Hide number spinners on port / numeric connect fields */
+.connect-server-no-spinner {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.connect-server-no-spinner::-webkit-outer-spin-button,
+.connect-server-no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.connect-server-input-locked {
+  cursor: default;
+  opacity: 0.75;
+}
+/* Field errors: red side-cloud with pin (sidebar tooltip language).
+ * Sit OUTSIDE the field: left cloud left of input, right cloud right of input.
+ * Pin always faces the input. */
+.connect-server-form,
+.connect-server-form .relative {
+  overflow: visible !important;
+}
+.connect-field-error-cloud {
+  position: absolute;
+  top: 20px; /* vertical center of 40px input */
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  width: max-content;
+  max-width: min(240px, 36vw);
+  pointer-events: none;
+  filter: drop-shadow(0 6px 16px rgb(0 0 0 / 28%));
+}
+/* Cloud to the RIGHT of the field — pin on the left edge of the cloud */
+.connect-field-error-cloud--right {
+  left: calc(100% + 10px);
+  right: auto;
+  transform: translateY(-50%);
+  animation: connect-field-error-in-right 150ms ease-out both;
+}
+/* Cloud to the LEFT of the field — pin on the right edge of the cloud */
+.connect-field-error-cloud--left {
+  right: calc(100% + 10px);
+  left: auto;
+  transform: translateY(-50%);
+  animation: connect-field-error-in-left 150ms ease-out both;
+}
+.connect-field-error-cloud-label {
+  position: relative;
+  z-index: 1;
+  display: block;
+  padding: 5px 10px;
+  border-radius: 10px;
+  background: #e5484d;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+/* Multi-line error clouds (~2 lines). Respect \n via pre-line. */
+.connect-field-error-cloud-label--wrap {
+  white-space: pre-line;
+  max-width: 9.5rem;
+  text-wrap: balance;
+}
+.connect-field-error-cloud-pin {
+  position: relative;
+  z-index: 0;
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  margin-inline: -5px;
+  border-radius: 2px;
+  background: #e5484d;
+  transform: rotate(45deg);
+}
+@keyframes connect-field-error-in-right {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+@keyframes connect-field-error-in-left {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+/* Orange warning cloud (Full access tip) — same shape as error clouds */
+.connect-field-warn-cloud {
+  position: absolute;
+  top: 50%;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  width: max-content;
+  max-width: min(220px, 40vw);
+  pointer-events: none;
+  filter: drop-shadow(0 6px 16px rgb(0 0 0 / 28%));
+}
+.connect-field-warn-cloud--right {
+  left: calc(100% + 10px);
+  transform: translateY(-50%);
+  animation: connect-field-error-in-right 150ms ease-out both;
+}
+.connect-field-warn-cloud-label {
+  position: relative;
+  z-index: 1;
+  display: block;
+  padding: 5px 10px;
+  border-radius: 10px;
+  background: #e8672a;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  white-space: pre-line;
+  max-width: 11rem;
+  text-wrap: balance;
+}
+.connect-field-warn-cloud-pin {
+  position: relative;
+  z-index: 0;
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  margin-inline: -5px;
+  border-radius: 2px;
+  background: #e8672a;
+  transform: rotate(45deg);
+}
+body[data-theme="light"] .connect-server-close {
+  color: #71717a !important;
+}
+body[data-theme="light"] .connect-server-close:hover {
+  background: #f1f2f4 !important;
+  color: #18181b !important;
+}
+body[data-theme="light"] .connect-server-submit {
+  background: #27272a !important;
+  border-color: #27272a !important;
+  color: #ffffff !important;
+}
+body[data-theme="light"] .connect-server-submit:hover {
+  background: #3f3f46 !important;
+}
+
+body[data-theme="light"] nav[aria-label="Primary"] button {
+  border-color: transparent !important;
+  color: #a3a3aa !important;
+}
+
+body[data-theme="light"] nav[aria-label="Primary"] button:hover {
+  background: #eaebed !important;
+  color: #171717 !important;
+}
+
+body[data-theme="light"] nav[aria-label="Primary"] button[data-active="true"] {
+  border-color: var(--sidebar-active-border) !important;
+  background: #fff !important;
+  color: #171717 !important;
+}
+
+body[data-theme="light"] nav[aria-label="Primary"] button[data-active="true"] > span,
+body[data-theme="light"] nav[aria-label="Primary"] button[data-active="true"] svg {
+  color: #171717 !important;
+}
+
+/* Primary sidebar cloud: dark surface in light mode, including its left pin. */
+body[data-theme="light"] .primary-rail-tooltip {
+  background: #18181b;
+  color: #ffffff;
+  box-shadow:
+    0 1px 2px rgb(24 24 27 / 12%),
+    0 8px 20px rgb(24 24 27 / 14%);
+}
+
+body[data-theme="light"] .primary-rail-tooltip-pin {
+  background: #18181b;
+}
+
+body[data-theme="light"] nav[aria-label="Settings sections"] button {
+  border: 0 !important;
+  color: #a3a3aa !important;
+}
+
+body[data-theme="light"] nav[aria-label="Settings sections"] .settings-menu-item:hover {
+  background: #eaebed !important;
+  color: #171717 !important;
+}
+
+body[data-theme="light"] nav[aria-label="Settings sections"] .settings-menu-item[aria-current="page"] {
+  border: 0 !important;
+  background: #eaebed !important;
+  color: #171717 !important;
+}
+
+body[data-theme="light"] nav[aria-label="Settings sections"] .settings-menu-search,
+body[data-theme="light"] nav[aria-label="Settings sections"] .settings-menu-search input {
+  border: 0 !important;
+  background: #f1f2f3 !important;
+  color: #27272a !important;
+}
+
+body[data-theme="light"] nav[aria-label="Settings sections"] .settings-menu-search:focus-within,
+body[data-theme="light"] nav[aria-label="Settings sections"] .settings-menu-search:focus-within input {
+  background: #eaebed !important;
+  color: #171717 !important;
+}
+
+body[data-theme="light"] nav[aria-label="Settings sections"] .settings-menu-search input::placeholder {
+  color: #8b8b93 !important;
+}
+
+body[data-theme="light"] .settings-content-surface {
+  border-color: #e4e4e6 !important;
+  background: #fff !important;
+}
+
+body[data-theme="light"] .settings-content-header {
+  background: #fff !important;
+}
+
+body[data-theme="light"] .settings-content-title,
+body[data-theme="light"] .settings-preference-label {
+  color: #171717 !important;
+}
+
+body[data-theme="light"] .settings-section-group,
+body[data-theme="light"] .settings-preference-row {
+  border-color: #e4e4e6 !important;
+}
+
+body[data-theme="light"] .settings-section-heading,
+body[data-theme="light"] .settings-preference-description {
+  color: #71717a !important;
+}
+
+body[data-theme="light"] .settings-select,
+body[data-theme="light"] .settings-segmented,
+body[data-theme="light"] .settings-number-stepper,
+body[data-theme="light"] .appearance-accent-options {
+  border: 0 !important;
+  background: #f1f2f3 !important;
+  color: #27272a !important;
+}

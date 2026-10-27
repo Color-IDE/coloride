@@ -1,0 +1,331 @@
+body[data-theme="light"] .agent-workspace-add-menu {
+  border: none;
+  background: #ffffff;
+  box-shadow:
+    0 12px 40px rgb(24 24 27 / 14%),
+    0 2px 8px rgb(24 24 27 / 8%);
+}
+
+body[data-theme="light"] .agent-workspace-add-menu button {
+  color: #3f3f46;
+}
+
+body[data-theme="light"] .agent-workspace-add-menu button:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #18181b;
+}
+
+.agent-side,
+.agent-main {
+  border-color: transparent;
+  background: transparent;
+}
+
+.agent-main {
+  --agent-content-top: 0.875rem; /* shared top inset: chat message + tools rail */
+  container-type: inline-size;
+  container-name: agent-main;
+}
+
+.agent-chat-header {
+  min-width: 0;
+}
+
+.agent-chat-title {
+  margin: 0;
+  color: var(--agent-text, #e8e8ec);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.35;
+}
+
+.agent-chat-column {
+  min-width: 0;
+  /* Size queries for chat-only chrome (scrubber, etc.) — independent of tools rail. */
+  container-type: inline-size;
+  container-name: agent-chat;
+  /* Match docked composer: wrap inset + max-w-3xl stack. */
+  --agent-chat-inline-pad: 20px;
+  --agent-chat-max: 48rem;
+}
+
+/* Match the first message to the empty composer's small top inset. */
+.agent-view-sidebar .agent-main {
+  --agent-content-top: 2px;
+}
+
+.agent-view-sidebar .agent-chat-column {
+  --agent-chat-inline-pad: 6px;
+}
+
+/* Same effective width as .agent-composer-stack inside .agent-composer-wrap. */
+.agent-chat-measure {
+  box-sizing: border-box;
+  width: min(var(--agent-chat-max), calc(100% - (2 * var(--agent-chat-inline-pad))));
+  max-width: min(var(--agent-chat-max), calc(100% - (2 * var(--agent-chat-inline-pad))));
+  min-width: 0;
+  overflow-x: hidden;
+  margin-inline: auto;
+  padding-inline: 0;
+}
+
+/* Separate right rail — chat centers in the left column only (Cursor-style). */
+.agent-workspace-rail {
+  box-sizing: border-box;
+  width: 11.5rem;
+  min-width: 11.5rem;
+  padding-top: var(--agent-content-top);
+  padding-right: 0.75rem;
+  padding-left: 0.5rem;
+}
+
+.agent-workspace-rail[aria-hidden="true"] {
+  width: 0;
+  min-width: 0;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+/* Same top inset as the tools rail so the first user message lines up. */
+.agent-timeline-content.is-history-loading {
+  min-height: 40%;
+}
+
+.agent-timeline-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 28px 8px 12px;
+}
+
+.agent-timeline-loading-bar {
+  display: block;
+  height: 10px;
+  width: min(72%, 420px);
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--agent-control, #2c2c2c) 70%, transparent) 0%,
+    color-mix(in srgb, var(--agent-control-hover, #3a3a3a) 90%, transparent) 50%,
+    color-mix(in srgb, var(--agent-control, #2c2c2c) 70%, transparent) 100%
+  );
+  background-size: 200% 100%;
+  animation: agent-timeline-shimmer 1.1s ease-in-out infinite;
+  opacity: 0.55;
+}
+
+.agent-timeline-loading-bar.is-short {
+  width: min(46%, 260px);
+}
+
+@keyframes agent-timeline-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+.agent-timeline-content {
+  padding-top: var(--agent-content-top);
+  /* Breathing room above the fixed composer — scroll still reaches the end. */
+  padding-bottom: 5rem; /* ~80px / tailwind pb-20 */
+}
+
+/* Variable-height chat history chrome. */
+.agent-timeline-virtual-header {
+  box-sizing: border-box;
+  width: min(var(--agent-chat-max, 48rem), calc(100% - (2 * var(--agent-chat-inline-pad, 10px))));
+  max-width: min(var(--agent-chat-max, 48rem), calc(100% - (2 * var(--agent-chat-inline-pad, 10px))));
+  min-height: var(--agent-content-top);
+  margin-inline: auto;
+  padding: 4px 0 2px;
+  color: var(--agent-muted);
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+}
+
+.agent-timeline-virtual-header:empty {
+  padding-block: 0;
+}
+
+.agent-timeline-load-earlier {
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 2px 9px;
+  font: inherit;
+}
+
+.agent-timeline-load-earlier:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--agent-control, #2c2c2c) 72%, transparent);
+  color: var(--agent-text);
+}
+
+.agent-timeline-load-earlier:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+/* Clip horizontally without creating a nested scroll container: sticky prompts
+   must anchor to the history viewport, not to a turn that grows while streaming. */
+.agent-timeline-virtual-item {
+  box-sizing: border-box;
+  overflow-x: clip;
+  overflow-y: visible;
+}
+
+.agent-timeline-virtual-footer {
+  height: 5rem;
+}
+
+.agent-timeline-virtual-footer.has-dock {
+  height: 8rem;
+}
+
+.agent-turn-checkpoint-card {
+  box-sizing: border-box;
+  width: 100%;
+  /* Clear the next sticky prompt: it pulls up by --agent-content-top. */
+  margin: 12px 0 calc(var(--agent-content-top, 0.875rem) + 10px);
+}
+
+.agent-turn-checkpoint-card .agent-checkpoint-card,
+.agent-turn-checkpoint-card .agent-checkpoint-dock-full.agent-checkpoint-card,
+.agent-turn-checkpoint-card .agent-approval-dock.agent-checkpoint-dock-full.agent-checkpoint-card {
+  margin-bottom: 0;
+  overflow: visible;
+  pointer-events: auto;
+}
+
+/* Recycled history rows must not create compositor layers every time they re-enter. */
+.agent-timeline-virtualized .agent-timeline-enter,
+.agent-timeline-virtualized .agent-timeline-enter-soft {
+  animation: none;
+  will-change: auto;
+}
+
+.agent-timeline-virtualized .agent-timeline-live-row .agent-timeline-enter {
+  animation: agent-timeline-enter 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.agent-timeline-virtualized .agent-timeline-live-row .agent-timeline-enter-soft {
+  animation: agent-timeline-enter-soft 0.16s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.agent-workspace-rail-inner {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.agent-workspace-tool {
+  box-sizing: border-box;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--agent-muted, #8f8f94);
+  white-space: nowrap;
+  justify-content: flex-start;
+}
+
+.agent-workspace-tool:hover {
+  background: color-mix(in srgb, var(--agent-text, #f2f2f3) 8%, transparent);
+  color: var(--agent-text, #f2f2f3);
+}
+
+.agent-workspace-tool:active {
+  transform: scale(0.95);
+}
+
+/* Narrow agent card: tall icon-only tool card (labels hidden). */
+@container agent-main (max-width: 860px) {
+  .agent-workspace-rail {
+    width: auto;
+    min-width: 0;
+    padding-right: 0.75rem;
+    padding-left: 0.25rem;
+  }
+
+  .agent-workspace-rail-inner {
+    width: 2.25rem;
+    min-width: 2.25rem;
+    padding: 0.35rem 0.2rem;
+    border: 1px solid var(--agent-rail-compact-border, var(--agent-border, #363636));
+    border-radius: 14px;
+    background: var(--agent-rail-compact-bg);
+    box-shadow: 0 1px 0 rgb(0 0 0 / 12%);
+    gap: 0.15rem;
+  }
+
+  .agent-workspace-tool {
+    height: 1.85rem;
+    width: 100%;
+    justify-content: center;
+    gap: 0;
+    padding-left: 0;
+    padding-right: 0;
+    border-radius: 10px;
+  }
+
+  .agent-workspace-tool-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
+/* Idle tools: no fill — only muted text (matches dark). Hover gets a light wash. */
+body[data-theme="light"] .agent-workspace-tool {
+  background: transparent !important;
+  color: #6b6b70;
+  box-shadow: none;
+}
+
+body[data-theme="light"] .agent-workspace-tool:hover {
+  background: rgb(24 24 27 / 6%) !important;
+  color: #1f1f22;
+}
+
+body[data-theme="light"] .agent-workspace-tool:active {
+  background: rgb(24 24 27 / 8%) !important;
+}
+
+/* Wide labeled rail: never paint a card behind Browser/Terminal. */
+body[data-theme="light"] .agent-workspace-rail-inner {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.agent-new-task,
+.agent-provider,
+.agent-mode-switch,
+.agent-composer {
+  border: 0;
+  background: var(--agent-control);
+  color: var(--agent-text);
+  box-shadow: none;
+}
+
+/* Preserve the restored draft and its error outline; details use notifications. */
+.agent-composer.is-provider-error {
+  box-shadow: 0 0 0 1px rgb(232 111 119 / 82%), 0 0 0 4px rgb(232 111 119 / 10%);
+}
+
+body[data-theme="light"] .agent-composer.is-provider-error {
+  box-shadow: 0 0 0 1px rgb(193 64 74 / 62%), 0 0 0 4px rgb(193 64 74 / 9%);
+}

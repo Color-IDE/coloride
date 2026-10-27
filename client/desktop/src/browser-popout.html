@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Browser</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #171717;
+        color: #f0f4f8;
+        font: 12px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color-scheme: dark;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      .shell {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+      .tabstrip {
+        display: flex;
+        align-items: stretch;
+        height: 36px;
+        background: #171717;
+        -webkit-app-region: drag;
+        app-region: drag;
+      }
+      .tabstrip.is-mac {
+        padding-left: 78px;
+      }
+      .tabs {
+        display: flex;
+        align-items: flex-end;
+        gap: 2px;
+        min-width: 0;
+        flex: 1;
+        padding: 4px 0 0 6px;
+        overflow: hidden;
+      }
+      .tab {
+        -webkit-app-region: no-drag;
+        app-region: no-drag;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 72px;
+        max-width: 180px;
+        height: 28px;
+        padding: 0 6px 0 10px;
+        border: 0;
+        border-radius: 8px 8px 0 0;
+        background: transparent;
+        color: #9a9a9f;
+        cursor: default;
+      }
+      .tab:hover { background: #222; color: #d4d4d8; }
+      .tab.is-active {
+        background: #1e1e1e;
+        color: #f0f4f8;
+      }
+      .tab-title {
+        min-width: 0;
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-align: left;
+      }
+      .tab-close {
+        appearance: none;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        opacity: 0.55;
+        cursor: default;
+      }
+      .tab-close:hover { background: rgb(255 255 255 / 10%); opacity: 1; }
+      .tab-close svg { width: 10px; height: 10px; }
+      .new-tab {
+        -webkit-app-region: no-drag;
+        app-region: no-drag;
+        appearance: none;
+        border: 0;
+        background: transparent;
+        color: #8b8b90;
+        width: 28px;
+        height: 28px;
+        margin: 4px 4px 0;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        cursor: default;
+      }
+      .new-tab:hover { background: #262626; color: #f0f4f8; }
+      .new-tab svg { width: 14px; height: 14px; }
+      .caption {
+        display: none;
+        align-items: stretch;
+        flex-shrink: 0;
+        -webkit-app-region: no-drag;
+        app-region: no-drag;
+      }
+      .tabstrip.is-win .caption { display: flex; }
+      .caption-btn {
+        appearance: none;
+        border: 0;
+        background: transparent;
+        color: #a6a6a6;
+        width: 46px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: default;
+      }
+      .caption-btn svg { width: 12px; height: 12px; }
+      .caption-btn.is-close svg { width: 14px; height: 14px; }
+      .caption-btn:hover { background: rgb(255 255 255 / 6%); color: #fff; }
+      .caption-btn.is-close:hover { background: #c42b1c; color: #fff; }
+      .toolbar {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        height: 36px;
+        padding: 0 8px;
+        background: #1e1e1e;
+      }
+      .btn {
+        -webkit-app-region: no-drag;
+        appearance: none;
+        border: 0;
+        background: transparent;
+        color: #878888;
+        width: 28px;
+        height: 28px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        cursor: pointer;
+      }
+      .btn:hover:not(:disabled) { background: #262626; color: #f0f4f8; }
+      .btn:active:not(:disabled) { transform: scale(0.95); }
+      .btn:disabled { opacity: 0.3; pointer-events: none; cursor: default; }
+      .btn svg, .btn * { cursor: inherit; pointer-events: none; }
+      .btn.is-accent { color: #7dd3fc; }
+      .btn.is-accent:hover:not(:disabled) { color: #bae6fd; }
+      .btn svg { width: 15px; height: 15px; display: block; }
+      form.url-form {
+        flex: 1;
+        min-width: 0;
+        margin: 0 4px;
+        display: flex;
+      }
+      #url {
+        width: 100%;
+        min-width: 0;
+        height: 28px;
+        border: 0;
+        border-radius: 10px;
+        background: #2a2a2a;
+        color: #f0f4f8;
+        padding: 0 10px;
+        outline: none;
+        font: inherit;
+        cursor: text;
+        -webkit-user-select: text;
+        user-select: text;
+      }
+      #url::placeholder { color: #6b6b6b; }
+      #url:focus { background: #383838; }
+      .surface {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 72px;
+        bottom: 0;
+        background: #1e1e1e;
+      }
+      .spin { animation: spin 0.8s linear infinite; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <div class="tabstrip" id="tabstrip">
+        <div class="tabs" id="tabs" role="tablist" aria-label="Browser tabs"></div>
+        <button class="new-tab" id="new-tab" type="button" title="New tab" aria-label="New tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
+        <div class="caption" role="group" aria-label="Window controls">
+          <button class="caption-btn" id="win-min" type="button" title="Minimize" aria-label="Minimize">
+            <svg viewBox="0 0 12 12" fill="none"><path d="M1.5 6h9" stroke="currentColor" stroke-width="1.15" stroke-linecap="square" /></svg>
+          </button>
+          <button class="caption-btn" id="win-max" type="button" title="Maximize" aria-label="Maximize">
+            <svg id="win-max-icon" viewBox="0 0 12 12" fill="none"><rect x="1.75" y="1.75" width="8.5" height="8.5" stroke="currentColor" stroke-width="1.15" /></svg>
+          </button>
+          <button class="caption-btn is-close" id="win-close" type="button" title="Close" aria-label="Close">
+            <svg viewBox="0 0 12 12" fill="none"><path d="M1.8 1.8l8.4 8.4M10.2 1.8l-8.4 8.4" stroke="currentColor" stroke-width="1.35" stroke-linecap="square" /></svg>
+          </button>
+        </div>
+      </div>
+      <header class="toolbar" id="chrome" role="toolbar" aria-label="Browser controls">
+        <button class="btn" id="back" type="button" title="Back" aria-label="Back" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5.5 12.002H19" />
+            <path d="M10.9999 18.002C10.9999 18.002 4.99998 13.583 4.99997 12.0019C4.99996 10.4208 11 6.00195 11 6.00195" />
+          </svg>
+        </button>
+        <button class="btn" id="forward" type="button" title="Forward" aria-label="Forward" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18.5 12L4.99997 12" />
+            <path d="M13 18C13 18 19 13.5811 19 12C19 10.4188 13 6 13 6" />
+          </svg>
+        </button>
+        <button class="btn" id="reload" type="button" title="Reload" aria-label="Reload">
+          <svg id="reload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15.1667 0.999756L15.7646 2.11753C16.1689 2.87322 16.371 3.25107 16.2374 3.41289C16.1037 3.57471 15.6635 3.44402 14.7831 3.18264C13.9029 2.92131 12.9684 2.78071 12 2.78071C6.75329 2.78071 2.5 6.90822 2.5 11.9998C2.5 13.6789 2.96262 15.2533 3.77093 16.6093M8.83333 22.9998L8.23536 21.882C7.83108 21.1263 7.62894 20.7484 7.7626 20.5866C7.89627 20.4248 8.33649 20.5555 9.21689 20.8169C10.0971 21.0782 11.0316 21.2188 12 21.2188C17.2467 21.2188 21.5 17.0913 21.5 11.9998C21.5 10.3206 21.0374 8.74623 20.2291 7.39023" />
+          </svg>
+        </button>
+        <form class="url-form" id="url-form">
+          <input id="url" type="text" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="Search or enter URL" aria-label="Browser URL" />
+        </form>
+        <button class="btn is-accent" id="dock" type="button" title="Return to Coloride" aria-label="Dock browser in Coloride">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.8996 20.9979C16.5484 20.9913 18.4591 20.9017 19.6801 19.6806C20.9979 18.3629 20.9979 16.242 20.9979 12.0002C20.9979 7.75844 20.9979 5.63748 19.6801 4.3197C18.3624 3.00191 16.2414 3.00191 11.9997 3.00191C7.75786 3.00191 5.6369 3.00191 4.31912 4.3197C3.09802 5.54075 3.00844 7.45152 3.00188 11.1003" />
+            <path d="M3.5197 20.4825L9.069 14.9485M3.5197 20.4825C4.01372 20.977 7.34129 20.9309 8.04478 20.9209M3.5197 20.4825C3.02568 19.988 3.07178 16.6567 3.08178 15.9525" />
+          </svg>
+        </button>
+      </header>
+    </div>
+    <div class="surface" aria-hidden="true"></div>
+    <script>
+      (() => {
+        const api = window.coloridePopout;
+        if (!api) return;
+
+        const tabstrip = document.getElementById("tabstrip");
+        const tabsEl = document.getElementById("tabs");
+        const back = document.getElementById("back");
+        const forward = document.getElementById("forward");
+        const reload = document.getElementById("reload");
+        const reloadIcon = document.getElementById("reload-icon");
+        const form = document.getElementById("url-form");
+        const urlInput = document.getElementById("url");
+        const dock = document.getElementById("dock");
+        const newTab = document.getElementById("new-tab");
+        const winMin = document.getElementById("win-min");
+        const winMax = document.getElementById("win-max");
+        const winMaxIcon = document.getElementById("win-max-icon");
+        const winClose = document.getElementById("win-close");
+
+        if (api.platform === "darwin") tabstrip.classList.add("is-mac");
+        if (api.platform === "win32") tabstrip.classList.add("is-win");
+
+        let urlFocused = false;
+        let tabs = [];
+
+        const setLoading = (next) => {
+          reloadIcon.classList.toggle("spin", Boolean(next));
+          reload.title = next ? "Loading…" : "Reload";
+        };
+
+        const renderTabs = (nextTabs) => {
+          tabs = Array.isArray(nextTabs) ? nextTabs : tabs;
+          tabsEl.replaceChildren();
+          for (const tab of tabs) {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = tab.active ? "tab is-active" : "tab";
+            btn.setAttribute("role", "tab");
+            btn.setAttribute("aria-selected", tab.active ? "true" : "false");
+            btn.title = tab.title || "New tab";
+
+            const label = document.createElement("span");
+            label.className = "tab-title";
+            label.textContent = tab.title || "New tab";
+            btn.appendChild(label);
+
+            const close = document.createElement("span");
+            close.className = "tab-close";
+            close.title = "Close tab";
+            close.innerHTML = '<svg viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2L2 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="square"/></svg>';
+            close.addEventListener("click", (event) => {
+              event.stopPropagation();
+              void api.closeTab(tab.tabId);
+            });
+            btn.appendChild(close);
+            btn.addEventListener("click", () => {
+              if (!tab.active) void api.selectTab(tab.tabId);
+            });
+            tabsEl.appendChild(btn);
+          }
+        };
+
+        const applyState = (state) => {
+          if (!state) return;
+          if (typeof state.canGoBack === "boolean") back.disabled = !state.canGoBack;
+          if (typeof state.canGoForward === "boolean") forward.disabled = !state.canGoForward;
+          if (typeof state.loading === "boolean") setLoading(state.loading);
+          if (typeof state.url === "string" && !urlFocused) urlInput.value = state.url;
+          if (typeof state.title === "string" && state.title) document.title = state.title;
+          if (Array.isArray(state.tabs)) renderTabs(state.tabs);
+          if (typeof state.maximized === "boolean") {
+            winMax.title = state.maximized ? "Restore" : "Maximize";
+            winMax.setAttribute("aria-label", winMax.title);
+          }
+        };
+
+        back.addEventListener("click", () => void api.goBack());
+        forward.addEventListener("click", () => void api.goForward());
+        reload.addEventListener("click", () => void api.reload());
+        dock.addEventListener("click", () => void api.dock());
+        newTab.addEventListener("click", () => void api.newTab());
+        winMin.addEventListener("click", () => void api.windowControls.minimize());
+        winMax.addEventListener("click", () => void api.windowControls.toggleMaximize());
+        winClose.addEventListener("click", () => void api.windowControls.close());
+
+        form.addEventListener("submit", (event) => {
+          event.preventDefault();
+          const raw = String(urlInput.value || "").trim();
+          if (!raw) return;
+          urlInput.blur();
+          void api.navigate(raw);
+        });
+
+        urlInput.addEventListener("focus", () => {
+          urlFocused = true;
+          requestAnimationFrame(() => urlInput.select());
+        });
+        urlInput.addEventListener("blur", () => {
+          urlFocused = false;
+        });
+
+        window.addEventListener("keydown", (event) => {
+          const mod = event.metaKey || event.ctrlKey;
+          if (mod && event.key.toLowerCase() === "l") {
+            event.preventDefault();
+            urlInput.focus();
+            urlInput.select();
+            return;
+          }
+          if (mod && event.key.toLowerCase() === "t") {
+            event.preventDefault();
+            void api.newTab();
+            return;
+          }
+          if (mod && event.key.toLowerCase() === "w") {
+            event.preventDefault();
+            const active = tabs.find((tab) => tab.active);
+            void api.closeTab(active ? active.tabId : undefined);
+            return;
+          }
+          if (event.key === "Escape" && document.activeElement === urlInput) {
+            urlInput.blur();
+          }
+          if (mod && event.key.toLowerCase() === "r" && !event.shiftKey) {
+            event.preventDefault();
+            void api.reload();
+          }
+          if (mod && event.key === "[") {
+            event.preventDefault();
+            void api.goBack();
+          }
+          if (mod && event.key === "]") {
+            event.preventDefault();
+            void api.goForward();
+          }
+        });
+
+        if (api.windowControls?.onMaximizedChange) {
+          api.windowControls.onMaximizedChange((maximized) => {
+            applyState({ maximized });
+          });
+        }
+        if (typeof api.onState === "function") api.onState(applyState);
+        if (typeof api.getState === "function") {
+          void api.getState().then(applyState).catch(() => undefined);
+        }
+      })();
+    </script>
+  </body>
+</html>
