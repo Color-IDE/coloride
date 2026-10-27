@@ -6,6 +6,7 @@
 
 <img src="https://img.shields.io/badge/macOS-Apple%20Silicon-151515?style=flat-square&logo=apple&logoColor=white" alt="macOS · Apple Silicon" />
 <img src="https://img.shields.io/badge/Fatto%20in-Europa-003399?style=flat-square&labelColor=003399&logo=europeanunion&logoColor=FFCC00" alt="Fatto in Europa" />
+<a href="./LICENSE"><img src="https://img.shields.io/badge/licenza-MIT-555555?style=flat-square" alt="Licenza MIT" /></a>
 
 
 [English](README.md) · [中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Português](README.pt.md) · [Deutsch](README.de.md) · **Italiano**
