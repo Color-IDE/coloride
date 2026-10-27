@@ -130,3 +130,24 @@ report usage to the product dashboard. They also do not download updates from
 the official feed unless `COLORIDE_OFFICIAL_UPDATE=1`.
 
 Crash reporting is separate (`COLORIDE_SENTRY_DISABLED=1`).
+
+### Building installers
+
+Tag pushes (`vX.Y.Z`, matching the desktop package version) and the **Release
+Desktop** workflow build macOS arm64 and experimental Windows x64 installers.
+**Release Windows** runs the same pipeline for Windows only. Both use Node.js 22
+and publish assets to a draft GitHub Release in the current repository using
+`GITHUB_TOKEN`; no VPS or external release repository is required. Review the
+artifacts and signing results before publishing the draft.
+
+macOS builds are unsigned and not notarized unless all five repository secrets
+are configured: `MACOS_DEVELOPER_ID_P12_BASE64`,
+`MACOS_DEVELOPER_ID_P12_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`,
+and `APPLE_TEAM_ID`. Partial credentials fail the build. Signed builds require
+successful signature, Gatekeeper and stapling checks. Windows installers are
+unsigned. Neither workflow includes voice models or a voice runtime.
+
+For local signed macOS builds, use `pnpm desktop:release:signed` with the Apple
+credentials described in `tooling/release/macos-sign-release.sh`. VPS deployment
+is an optional administrator task via `tooling/release/deploy-downloads.sh`;
+its `--help` lists the required configuration.

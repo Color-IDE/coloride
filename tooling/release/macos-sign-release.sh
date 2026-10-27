@@ -145,7 +145,7 @@ else
   EB_ARCH=x64
 fi
 
-pnpm exec electron-builder --mac dmg zip --"$EB_ARCH" --publish "$PUBLISH"
+pnpm exec electron-builder --mac dmg zip --"$EB_ARCH" --publish "$PUBLISH" -c.mac.notarize=true -c.forceCodeSigning=true
 
 echo
 echo "==> Done."
@@ -154,9 +154,12 @@ ls -la "$ELECTRON_DIR/release" | head -30
 echo
 echo "Verify Gatekeeper (should say 'accepted' after notarize stapling):"
 APP_PATH="$(find "$ELECTRON_DIR/release" -name 'Coloride.app' -type d | head -1 || true)"
+test -n "$APP_PATH"
 if [[ -n "$APP_PATH" ]]; then
   echo "    app: $APP_PATH"
-  spctl --assess --type execute -v "$APP_PATH" || true
+  codesign --verify --deep --strict "$APP_PATH"
+  spctl --assess --type execute -v "$APP_PATH"
+  xcrun stapler validate "$APP_PATH"
   codesign -dv --verbose=2 "$APP_PATH" 2>&1 | head -20 || true
 fi
 echo

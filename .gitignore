@@ -61,9 +61,6 @@ client/desktop/build/*
 !client/desktop/build/entitlements.mac.plist
 !client/desktop/build/entitlements.mac.inherit.plist
 
-# Portable voice runtime and bundled model (generated at packaging time)
-client/desktop/resources/voice-runtime/
-
 # Build tooling is source, not generated build output
 !tooling/build/
 !tooling/build/*

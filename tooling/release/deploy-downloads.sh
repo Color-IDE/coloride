@@ -7,11 +7,11 @@
 #   ./tooling/release/deploy-downloads.sh --dry-run
 #   ./tooling/release/deploy-downloads.sh --dir /path/to/artifacts
 #
-# Env (optional):
+# Configuration:
 #   COLORIDE_DEPLOY_HOST   required
 #   COLORIDE_DEPLOY_PATH   required
 #   COLORIDE_RELEASE_DIR   default: client/desktop/release
-#   COLORIDE_DOWNLOADS_URL optional public URL printed after upload
+#   COLORIDE_DOWNLOADS_URL required public HTTPS base URL
 #
 # Needs: rsync + SSH key to the host (BatchMode).
 
@@ -25,10 +25,6 @@ RELEASE_DIR="${COLORIDE_RELEASE_DIR:-client/desktop/release}"
 HOST="${COLORIDE_DEPLOY_HOST:-}"
 REMOTE_PATH="${COLORIDE_DEPLOY_PATH:-}"
 PUBLIC_URL="${COLORIDE_DOWNLOADS_URL:-}"
-if [ -z "$HOST" ] || [ -z "$REMOTE_PATH" ]; then
-  echo "Set COLORIDE_DEPLOY_HOST and COLORIDE_DEPLOY_PATH before publishing downloads." >&2
-  exit 1
-fi
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -47,8 +43,21 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+if [ -z "$HOST" ] || [ -z "$REMOTE_PATH" ]; then
+  echo "Set COLORIDE_DEPLOY_HOST and COLORIDE_DEPLOY_PATH before publishing downloads." >&2
+  exit 1
+fi
+
+if [ -z "$PUBLIC_URL" ]; then
+  echo "Set COLORIDE_DOWNLOADS_URL before publishing downloads." >&2
+  exit 1
+fi
+
 VERSION="$(node -p "require('./client/desktop/package.json').version")"
-SRC="$ROOT/$RELEASE_DIR"
+case "$RELEASE_DIR" in
+  /*) SRC="$RELEASE_DIR" ;;
+  *) SRC="$ROOT/$RELEASE_DIR" ;;
+esac
 
 if [ ! -d "$SRC" ]; then
   echo "error: release dir not found: $SRC" >&2
