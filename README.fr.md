@@ -11,26 +11,36 @@
 
 [English](README.md) · [中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · **Français** · [Português](README.pt.md) · [Deutsch](README.de.md) · [Italiano](README.it.md)
 
-<img src="docs/assets/coloride-ide.png" alt="Coloride : éditeur, terminal et agent" width="880" />
+<img src="docs/assets/coloride-ide.png" alt="Coloride : éditeur et terminal" width="880" />
 
 </div>
 
 ---
+Ouvrez un dossier et travaillez avec votre code, le terminal et le navigateur sur cet ordinateur. Rien de cela n'appelle un serveur Coloride.
 
+Coloride est une marque. La licence MIT couvre le code source, pas le nom, le logo ni les domaines.
 
+## Ce qui fonctionne aujourd'hui
 
-Ouvrez un dossier et retrouvez votre code, vos terminaux, votre navigateur et votre agent dans une seule application. Modifier des fichiers locaux et utiliser le terminal ne nécessite ni compte Coloride, ni connexion SSH, ni VPS. Les fonctions d’IA nécessitent un fournisseur configuré ou un compte pour les modèles gérés.
+Coloride tourne sur **macOS avec Apple Silicon**.
 
-Coloride prend actuellement en charge **macOS sur Apple Silicon**. Les espaces de travail SSH sont facultatifs ; l’IDE local reste le cœur du produit. Les requêtes aux modèles et les intégrations activées peuvent transmettre le contexte sélectionné aux services configurés.
+- **Modifier le code :** explorateur, onglets, langages CodeMirror, complétion, diagnostics, recherche et aperçu des images.
+- **Lancer le projet :** terminaux locaux avec contrôle des tâches. La session reste ouverte tant que l'hôte local tourne.
+- **Voir le résultat :** navigateur Chromium intégré et fenêtres séparées. Localhost pointe vers votre ordinateur.
+- **Commencer par un fichier vide :** New File ouvre un buffer sans titre. S'il a changé, sa fermeture demande s'il faut l'enregistrer.
 
-## Fonctionnalités
+La connexion et l'agent géré sont désactivés. `coloride.dev` n'a pas encore d'API. Le code SSH reste dans le dépôt et n'apparaît pas dans l'interface. La [feuille de route](./docs/roadmap.md) indique des priorités, pas un travail terminé.
 
-- **Modifier du code :** explorateur de fichiers, onglets multiples, prise en charge des langages avec CodeMirror, complétion, diagnostics, recherche et aperçu des images.
-- **Exécuter un projet :** terminaux locaux avec contrôle des tâches, reconnexion et sessions persistantes tant que l’hôte local reste actif.
-- **Prévisualiser votre travail :** navigateur Chromium intégré et fenêtres séparées. En local, localhost désigne votre Mac ; en SSH, le navigateur utilise le tunnel SOCKS distant.
-- **Travailler avec un agent :** contexte du projet, choix du modèle, outils, approbations, réponses en streaming et revue des fichiers avec Keep / Undo.
-- **Personnaliser l’espace de travail :** apparence, raccourcis clavier, terminaux divisés et intégration du presse-papiers.
-- **Se connecter à distance si nécessaire :** espaces de travail SSH/SFTP et informations serveur, sans imposer un serveur au développement local.
+## Vérifications
+
+Depuis la racine du dépôt, après la préparation ci-dessous :
+
+```sh
+corepack pnpm typecheck
+core/ide-host/.venv/bin/python -m pytest core/ide-host/tests -q
+```
+
+Les tests d'interface sont dans [tests/README.md](./tests/README.md). Envoyer un changement se fait selon [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Développement et documentation
 

@@ -11,24 +11,36 @@
 
 [English](README.md) · [中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Português](README.pt.md) · **Deutsch** · [Italiano](README.it.md)
 
-<img src="docs/assets/coloride-ide.png" alt="Coloride: Editor, Terminal und Agent" width="880" />
+<img src="docs/assets/coloride-ide.png" alt="Coloride: Editor und Terminal" width="880" />
 
 </div>
 
 ---
+Öffne einen Ordner und arbeite auf diesem Computer mit Code, Terminal und Browser. Nichts davon ruft einen Coloride-Server auf.
 
-Öffne einen Ordner und arbeite mit Code, Terminals, Browser und Agent in derselben Anwendung. Lokale Dateien und das Terminal brauchen kein Coloride-Konto, keine SSH-Verbindung und keinen VPS. KI-Funktionen brauchen einen konfigurierten Modellanbieter oder ein Konto für verwaltete Modelle.
+Coloride ist eine Marke. Die MIT-Lizenz gilt für den Quelltext, nicht für Name, Logo oder Domains.
 
-Coloride unterstützt derzeit **macOS auf Apple Silicon**. SSH-Workspaces sind optional; die lokale IDE ist das Kernprodukt. Modellanfragen und aktivierte Integrationen können den ausgewählten Kontext an die konfigurierten Dienste senden.
+## Was heute funktioniert
 
-## Was du tun kannst
+Coloride läuft auf **macOS mit Apple Silicon**.
 
-- **Code bearbeiten:** Dateiexplorer, mehrere Editor-Tabs, CodeMirror-Sprachunterstützung, Vervollständigung, Diagnosen, Suche und Bildvorschau.
-- **Dein Projekt ausführen:** lokale Terminals mit Jobsteuerung, Wiederverbindung und dauerhaften Sitzungen, solange der lokale Host läuft.
-- **Deine Arbeit ansehen:** eingebetteter Chromium-Browser und eigene Fenster. Lokal zeigt localhost auf deinen Mac; über SSH nutzt der Browser den entfernten SOCKS-Tunnel.
-- **Mit einem Agent arbeiten:** Projektkontext, Modellauswahl, Werkzeuge, Freigaben, gestreamte Antworten und Dateireview mit Keep / Undo.
-- **Den Workspace anpassen:** Erscheinungsbild, Tastenkürzel, geteilte Terminals und die native Zwischenablage.
-- **Bei Bedarf remote verbinden:** SSH/SFTP-Workspaces und Serverinformationen, ohne einen Server zur Voraussetzung für lokale Entwicklung zu machen.
+- **Code bearbeiten:** Explorer, Tabs, CodeMirror-Sprachen, Vervollständigung, Diagnosen, Suche und Bildvorschau.
+- **Das Projekt ausführen:** lokale Terminals mit Jobsteuerung. Die Sitzung bleibt, solange der lokale Host läuft.
+- **Das Ergebnis sehen:** eingebetteter Chromium-Browser und eigene Fenster. Localhost zeigt auf deinen Computer.
+- **Mit einer leeren Datei starten:** New File öffnet einen unbenannten Puffer. Beim Schließen fragt er, ob Änderungen gespeichert werden sollen.
+
+Anmeldung und verwalteter Agent sind aus. `coloride.dev` hat noch keine API. SSH-Code liegt noch im Repository und erscheint nicht in der Oberfläche. Die [Roadmap](./docs/roadmap.md) nennt Prioritäten, keine fertige Arbeit.
+
+## Prüfungen
+
+Im Repository-Root, nach der Einrichtung unten:
+
+```sh
+corepack pnpm typecheck
+core/ide-host/.venv/bin/python -m pytest core/ide-host/tests -q
+```
+
+Oberflächentests stehen in [tests/README.md](./tests/README.md). Änderungen sendest du nach [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Entwicklung und Dokumentation
 
