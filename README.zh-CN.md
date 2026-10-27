@@ -11,7 +11,7 @@
 
 [English](README.md) · **中文** · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Português](README.pt.md) · [Deutsch](README.de.md) · [Italiano](README.it.md)
 
-<img src="docs/assets/coloride-ide.png" alt="Coloride 编辑器、终端和代理" width="880" />
+<img src="docs/assets/coloride-ide.png" alt="Coloride 编辑器与终端" width="880" />
 
 </div>
 
