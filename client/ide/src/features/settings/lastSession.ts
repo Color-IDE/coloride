@@ -30,6 +30,8 @@ export type LastSessionSnapshot = {
   activeTab: string | null;
   serverSubTab: string;
   sidePanelOpen: boolean;
+  /** Agent dock on the right of Explorer. */
+  rightPanelOpen: boolean;
   terminalOpen: boolean;
   agentToolsOpen: boolean;
   updatedAt: number;
@@ -43,6 +45,7 @@ const empty = (): LastSessionSnapshot => ({
   activeTab: null,
   serverSubTab: "health",
   sidePanelOpen: true,
+  rightPanelOpen: true,
   terminalOpen: false,
   agentToolsOpen: true,
   updatedAt: 0,
@@ -72,6 +75,7 @@ export function readLastSession(): LastSessionSnapshot {
         : null,
       serverSubTab: typeof parsed.serverSubTab === "string" ? parsed.serverSubTab : "health",
       sidePanelOpen: parsed.sidePanelOpen !== false,
+      rightPanelOpen: parsed.rightPanelOpen !== false,
       terminalOpen: Boolean(parsed.terminalOpen),
       agentToolsOpen: parsed.agentToolsOpen !== false,
       updatedAt: typeof parsed.updatedAt === "number" ? parsed.updatedAt : 0,

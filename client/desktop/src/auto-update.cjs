@@ -1,7 +1,7 @@
 /**
  * In-app auto-update via electron-updater (generic feed on VPS).
  *
- * Seamless flow (Antigravity / Cursor style):
+ * Seamless update flow:
  *  1. check on startup → if available, download immediately (no UI wait)
  *  2. download in background (no progress modal required)
  *  3. on downloaded → quitAndInstall automatically (app restarts on new version)
@@ -37,6 +37,7 @@ const { getColorideVersion } = require("./app-version.cjs");
 
 /** @type {import('electron').BrowserWindow | null} */
 let mainWindowRef = null;
+let settingsWindowRef = null;
 /** @type {import('electron-updater').AppUpdater | null} */
 let updater = null;
 let listenersBound = false;
@@ -61,10 +62,10 @@ let snapshot = {
 };
 
 function broadcast() {
-  if (!mainWindowRef || mainWindowRef.isDestroyed() || mainWindowRef.webContents.isDestroyed()) {
-    return;
+  for (const win of [mainWindowRef, settingsWindowRef]) {
+    if (!win || win.isDestroyed() || win.webContents.isDestroyed()) continue;
+    win.webContents.send("coloride:updateEvent", { ...snapshot });
   }
-  mainWindowRef.webContents.send("coloride:updateEvent", { ...snapshot });
 }
 
 /**
@@ -223,7 +224,7 @@ function getUpdater() {
         downloadUrl: publicDownloadUrlForVersion(version),
         autoInstalling: true,
       });
-      // Antigravity-style: install + relaunch immediately (no progress UI required).
+      // Install and relaunch immediately. No progress UI is required.
       scheduleAutoInstall();
     });
     updater.on("error", (err) => {
@@ -439,6 +440,7 @@ function scheduleStartupCheck(channel = "stable") {
 
 module.exports = {
   setMainWindow,
+  setSettingsWindow: (win) => { settingsWindowRef = win; },
   getSnapshot,
   checkForUpdates,
   downloadUpdate,

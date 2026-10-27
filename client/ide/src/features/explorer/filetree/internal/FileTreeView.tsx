@@ -116,7 +116,7 @@ export function FileTree({
       workspaceIsPathOrDescendant(reviewPath, normalized),
     );
   };
-  /** Collapse the whole workspace tree under the header (VS Code-style). */
+  /** Collapse the whole workspace tree under the header. */
   const [workspaceExpanded, setWorkspaceExpanded] = useState(true);
   const [internalExpandedIds, setInternalExpandedIds] = useState<Set<string>>(
     () => new Set(initialExpanded),
@@ -298,7 +298,7 @@ export function FileTree({
     () => getVisibleTreeItems(sourceItems, effectiveExpandedIds),
     [sourceItems, effectiveExpandedIds],
   );
-  /** Visible rows + optional inline create draft (VS Code-style New File/Folder). */
+  /** Visible rows, plus an inline draft when creating a file or folder. */
   const displayItems = useMemo(() => {
     if (!createDraft) return visibleItems;
     const draftItem: FileTreeItem = {

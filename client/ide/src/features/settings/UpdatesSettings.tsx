@@ -129,16 +129,11 @@ export function UpdatesSettings() {
           </UpdateValue>
         </SettingsRow>
         <SettingsRow
-          description="Updates are checked automatically in the background."
+          description={updateState.lastCheckedAt ? `Last checked ${formatDate(updateState.lastCheckedAt)}.` : "Updates are checked automatically in the background."}
           label="Update status"
         >
           <UpdateStatus label={status} tone={tone} />
         </SettingsRow>
-        {updateState.lastCheckedAt && (
-          <p className="settings-update-meta -mt-1 pb-2 text-right text-[11px] text-[#77777c]">
-            Last checked {formatDate(updateState.lastCheckedAt)}
-          </p>
-        )}
         {(updateState.error || actionError) && (
           <p className="settings-update-error rounded-lg bg-[#3b292b] px-3 py-2 text-xs leading-5 text-[#e69a9f]">
             {actionError || updateState.error}

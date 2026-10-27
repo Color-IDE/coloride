@@ -43,7 +43,7 @@
   color: var(--agent-muted);
 }
 
-/* ——— Agent timeline enter (Cursor-like: quick fade + slight rise) ——— */
+/* ——— Agent timeline enter: quick fade and a slight rise ——— */
 @keyframes agent-timeline-enter {
   from {
     opacity: 0;

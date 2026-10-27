@@ -288,7 +288,7 @@ export async function requestDeviceCode(): Promise<DeviceCodeResponse> {
         body: JSON.stringify({}),
       });
 
-  // Cursor-style: device_code === challenge (long). Either field is enough.
+  // device_code and challenge are the same long secret. Either field is enough.
   const deviceCode =
     (typeof raw.device_code === "string" && raw.device_code.trim()) ||
     (typeof raw.challenge === "string" && raw.challenge.trim()) ||
@@ -312,7 +312,7 @@ export async function requestDeviceCode(): Promise<DeviceCodeResponse> {
     );
   }
 
-  // Prefer server-built Cursor URL; otherwise assemble loginDeepControl like Cursor.
+  // Prefer the server-built URL; otherwise assemble loginDeepControl locally.
   let verificationComplete =
     typeof raw.verification_uri_complete === "string" &&
     raw.verification_uri_complete.trim()
@@ -462,7 +462,7 @@ export async function focusDesktopWindow(): Promise<void> {
 }
 
 /**
- * Cursor-style device login (poll — no custom protocol):
+ * Device login by polling, with no custom protocol:
  * 1. POST /auth/device/code → device_code/challenge + verification_uri_complete
  * 2. Open loginDeepControl?challenge=…&uuid=…&mode=login in the system browser
  * 3. Poll GET /auth/device/poll?device_code=<challenge> every `interval` seconds
@@ -474,7 +474,7 @@ export async function startBrowserLinkLogin(): Promise<BrowserLinkSession> {
   requireCloudEnabled();
   const code = await requestDeviceCode();
   const expiresAt = Date.now() + code.expires_in * 1000;
-  // Prefer Cursor-style long link; never surface short user_code in the UI.
+  // Prefer the long link. Never surface the short user_code in the UI.
   const linkUrl = code.verification_uri_complete;
   // Poll secret: device_code === challenge (~256-bit).
   const pollCode = code.device_code || code.challenge || "";

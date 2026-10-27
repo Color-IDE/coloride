@@ -1,10 +1,20 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
+let settingsSection;
+ipcRenderer.on("coloride:settingsSection", (_event, section) => { settingsSection = section; });
+
 const desktopApi = {
   cloudConfig: ipcRenderer.sendSync("coloride:cloudConfig"),
   startupAppearance: process.argv.find(arg => arg.startsWith("--coloride-startup-theme="))?.split("=")[1],
   nativeStartupSplash: process.argv.includes("--coloride-native-startup-splash")
     && ipcRenderer.sendSync("coloride:hasStartupSplash"),
+  openSettings: (section) => ipcRenderer.invoke("coloride:openSettings", section),
+  onSettingsSectionChange: (callback) => {
+    if (settingsSection) callback(settingsSection);
+    const listener = (_event, section) => callback(section);
+    ipcRenderer.on("coloride:settingsSection", listener);
+    return () => ipcRenderer.removeListener("coloride:settingsSection", listener);
+  },
   getRuntime: () => ipcRenderer.invoke("coloride:getRuntime"),
   getAppInfo: () => ipcRenderer.invoke("coloride:getAppInfo"),
   finishStartup: () => ipcRenderer.invoke("coloride:finishStartup"),

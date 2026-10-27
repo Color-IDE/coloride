@@ -183,7 +183,7 @@ export function installTerminalShellIntegration(
       }
       // The prompt marker already points at the command line. Reuse it so a
       // hollow current-prompt circle becomes the completed command marker,
-      // exactly like VS Code, without ever rendering two circles on one line.
+      // Keep a single prompt marker on the line.
       if (prompt) {
         prompt.command = command;
         prompt.durationMs = null;

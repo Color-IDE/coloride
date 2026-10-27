@@ -543,7 +543,7 @@ body[data-theme="light"] .windows-caption-btn.is-close:active {
   justify-content: center;
 }
 
-/* Cursor-like soft blue “Restart to Update” */
+/* Soft blue “Restart to Update” */
 .titlebar-pill--accent {
   background: #5b8def;
   color: #f4f7ff;

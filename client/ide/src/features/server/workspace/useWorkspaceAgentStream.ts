@@ -150,7 +150,7 @@ export function useWorkspaceAgentStream({
   };
 
   /**
-   * Apply agent write/edit into the Explorer editor (Cursor-style live buffer).
+   * Apply an agent write or edit into the open Explorer buffer.
    * - streaming: open tab + set content without marking user-dirty
    * - final: set content (or reload from remote) and clear streaming flag
    * Skips clobber when the user has unsaved edits (unless already agentStreaming).

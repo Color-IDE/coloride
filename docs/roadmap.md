@@ -2,7 +2,7 @@
 
 ColorIDE aims to become a professional development environment that brings editing, terminals, AI and project operations together for local and remote work. The experience we want to deliver from start to finish is opening a project, understanding it, modifying it, verifying the result and, when appropriate, deploying it with control over every operation.
 
-The foundation is a local IDE: opening files and using terminals must work without an account, an SSH connection or cloud services. Remote development and AI extend that foundation. VS Code, Cursor, Zed and Windsurf provide reference points for comparing specific workflows; competing with them requires reliability before feature count.
+The foundation is a local IDE: opening files and using terminals must work without an account, an SSH connection or cloud services. Remote development and AI extend that foundation. Reliability comes before feature count.
 
 This document defines priorities and expected outcomes. It is not an audit of implemented functionality: some capabilities already exist, while others need development or validation. Progress percentages and dates require evidence. The numbering 0–12 represents **13 phases**, including the foundation.
 

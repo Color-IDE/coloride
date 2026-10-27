@@ -23,7 +23,7 @@ export function AgentThinkingRow({
   /** Once the user toggles, never auto open/close that block. */
   const userTouchedRef = useRef(false);
 
-  // Lifecycle shell + optional summary (Cursor / research pattern):
+  // Lifecycle shell and an optional summary:
   // - auto-open while a real summary streams
   // - collapse when complete unless the user took control
   useEffect(() => {
@@ -37,7 +37,7 @@ export function AgentThinkingRow({
     }
   }, [running, hasDetail, entry.activityId]);
 
-  // Duration only after thinking finishes (not live). Cursor-style: Thought for 8s.
+  // Duration only after thinking finishes, for example "Thought for 8s".
   const durationLabel = hasDuration
     ? formatThoughtDuration(entry.durationMs!)
     : "";

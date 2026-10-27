@@ -21,6 +21,12 @@ const readStoredAccessLevel = (): AgentAccessLevel => {
 
 let currentAccessLevel = readStoredAccessLevel();
 
+if (typeof window !== "undefined") window.addEventListener?.("storage", event => {
+  if (event.storageArea !== window.localStorage || (event.key !== AGENT_ACCESS_LEVEL_KEY && event.key !== null)) return;
+  currentAccessLevel = readStoredAccessLevel();
+  listeners.forEach(listener => listener());
+});
+
 const subscribe = (listener: () => void) => {
   listeners.add(listener);
   return () => listeners.delete(listener);

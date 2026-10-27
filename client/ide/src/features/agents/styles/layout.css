@@ -70,7 +70,7 @@ body[data-theme="light"] .agent-workspace-add-menu button:hover {
   padding-inline: 0;
 }
 
-/* Separate right rail — chat centers in the left column only (Cursor-style). */
+/* Separate right rail. Chat stays centered in the left column. */
 .agent-workspace-rail {
   box-sizing: border-box;
   width: 11.5rem;

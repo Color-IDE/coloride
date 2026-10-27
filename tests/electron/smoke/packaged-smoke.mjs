@@ -181,12 +181,15 @@ try {
     const config = await (await fetch(`http://${runtime.host}:${runtime.port}/api/agents/config`, {headers})).json();
     expect(config.managedLlm).toBe(false);
   }
-  // Old account links resolve to General after removing Account from Settings.
+  // Old account links open General in the native Settings window.
+  const settingsOpened = app.waitForEvent('window');
   await page.evaluate(() => window.dispatchEvent(new CustomEvent('coloride:open-settings', {detail:{section:'account'}})));
-  await expect(page.getByRole('heading', {name:'General', exact:true, level:1})).toBeVisible();
-  await expect(page.getByRole('navigation', {name:'Settings sections'}).getByRole('button', {name:'Account', exact:true})).toHaveCount(0);
-  await expect(page.locator('.settings-account')).toHaveCount(0);
-  await page.screenshot({path: resolve('artifacts/terminal-smoke/settings-without-account.png')});
+  const settings = await settingsOpened;
+  settings.setDefaultTimeout(15000);
+  await expect(settings.getByRole('region', {name:'General settings', exact:true})).toBeVisible();
+  await expect(settings.getByRole('navigation', {name:'Settings sections'}).getByRole('button', {name:'Account', exact:true})).toHaveCount(0);
+  await expect(settings.locator('.settings-account')).toHaveCount(0);
+  await settings.screenshot({path: resolve('artifacts/terminal-smoke/settings-without-account.png')});
   await expect(page.getByRole('button', {name:'Account menu', exact:true})).toHaveCount(0);
   if (await page.evaluate(() => window.colorideDesktop.cloudConfig.enabled)) {
     const signIn = page.getByRole('button', {name:'Sign in', exact:true});

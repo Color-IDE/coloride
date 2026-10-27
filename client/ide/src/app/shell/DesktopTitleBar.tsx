@@ -559,7 +559,13 @@ function TitleBarButton({ children, disabled, label, onClick }: { children: Reac
 }
 
 function PanelOpenIcon() {
-  return <svg aria-hidden="true" className="size-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.6" viewBox="0 0 24 24"><path d="M13 3H11C7.22876 3 5.34315 3 4.17157 4.17157C3 5.34315 3 7.22876 3 11V13C3 16.7712 3 18.6569 4.17157 19.8284C5.34315 21 7.22876 21 11 21H13C16.7712 21 18.6569 21 19.8284 19.8284C21 18.6569 21 16.7712 21 13V11C21 7.22876 21 5.34315 19.8284 4.17157C18.6569 3 16.7712 3 13 3Z" /><path d="M9 3V21" /></svg>;
+  return (
+    <svg aria-hidden="true" className="size-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.6" viewBox="0 0 24 24">
+      <path d="M13 3H11C7.22876 3 5.34315 3 4.17157 4.17157C3 5.34315 3 7.22876 3 11V13C3 16.7712 3 18.6569 4.17157 19.8284C5.34315 21 7.22876 21 11 21H13C16.7712 21 18.6569 21 19.8284 19.8284C21 18.6569 21 16.7712 21 13V11C21 7.22876 21 5.34315 19.8284 4.17157C18.6569 3 16.7712 3 13 3Z" />
+      <path d="M9 3V21" />
+      <path d="M9 3H11C7.22876 3 5.34315 3 4.17157 4.17157C3 5.34315 3 7.22876 3 11V13C3 16.7712 3 18.6569 4.17157 19.8284C5.34315 21 7.22876 21 11 21H9" fill="currentColor" fillOpacity="0.18" stroke="none" />
+    </svg>
+  );
 }
 
 function PanelClosedIcon() {
@@ -567,11 +573,27 @@ function PanelClosedIcon() {
 }
 
 function BackIcon() {
-  return <svg aria-hidden="true" className="size-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.6" viewBox="0 0 24 24"><path d="M5.5 12.002H19" /><path d="M10.9999 18.002C10.9999 18.002 4.99998 13.583 4.99997 12.0019C4.99996 10.4208 11 6.00195 11 6.00195" /></svg>;
+  return (
+    <svg aria-hidden="true" className="size-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="none" />
+      <g clipRule="evenodd" fill="currentColor" fillRule="evenodd" stroke="currentColor" strokeWidth="0.35" strokeLinejoin="round">
+        <path d="M2.461 12a.75.75 0 0 1 .75-.75l17.79.012a.75.75 0 1 1-.002 1.5L3.21 12.75a.75.75 0 0 1-.749-.75" />
+        <path d="M10.517 4.47a.75.75 0 0 1 .001 1.06L4.06 12l6.458 6.47a.75.75 0 0 1-1.061 1.06l-6.988-7a.75.75 0 0 1 0-1.06l6.988-7a.75.75 0 0 1 1.06 0" />
+      </g>
+    </svg>
+  );
 }
 
 function ForwardIcon() {
-  return <svg aria-hidden="true" className="size-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.6" viewBox="0 0 24 24"><path d="M18.5 12H4.99997" /><path d="M13 18C13 18 19 13.5811 19 12C19 10.4188 13 6 13 6" /></svg>;
+  return (
+    <svg aria-hidden="true" className="size-4 -scale-x-100" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="none" />
+      <g clipRule="evenodd" fill="currentColor" fillRule="evenodd" stroke="currentColor" strokeWidth="0.35" strokeLinejoin="round">
+        <path d="M2.461 12a.75.75 0 0 1 .75-.75l17.79.012a.75.75 0 1 1-.002 1.5L3.21 12.75a.75.75 0 0 1-.749-.75" />
+        <path d="M10.517 4.47a.75.75 0 0 1 .001 1.06L4.06 12l6.458 6.47a.75.75 0 0 1-1.061 1.06l-6.988-7a.75.75 0 0 1 0-1.06l6.988-7a.75.75 0 0 1 1.06 0" />
+      </g>
+    </svg>
+  );
 }
 
 function ExternalBrowserIcon() {
@@ -590,7 +612,13 @@ function TerminalClosedIcon() {
 }
 
 function TerminalOpenIcon() {
-  return <svg aria-hidden="true" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24"><path d="M2.99219 15.0001H20.9922" strokeLinecap="round" strokeLinejoin="round" /><path d="M2.49219 12.0001C2.49219 7.52178 2.49219 5.28261 3.88343 3.89136C5.27467 2.50012 7.51384 2.50012 11.9922 2.50012C16.4705 2.50012 18.7097 2.50012 20.1009 3.89136C21.4922 5.28261 21.4922 7.52178 21.4922 12.0001C21.4922 16.4785 21.4922 18.7176 20.1009 20.1089C18.7097 21.5001 16.4705 21.5001 11.9922 21.5001C7.51384 21.5001 5.27467 21.5001 3.88343 20.1089C2.49219 18.7176 2.49219 16.4785 2.49219 12.0001Z" /></svg>;
+  return (
+    <svg aria-hidden="true" className="size-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.6" viewBox="0 0 24 24">
+      <path d="M2.49219 12.0001C2.49219 7.52178 2.49219 5.28261 3.88343 3.89136C5.27467 2.50012 7.51384 2.50012 11.9922 2.50012C16.4705 2.50012 18.7097 2.50012 20.1009 3.89136C21.4922 5.28261 21.4922 7.52178 21.4922 12.0001C21.4922 16.4785 21.4922 18.7176 20.1009 20.1089C18.7097 21.5001 16.4705 21.5001 11.9922 21.5001C7.51384 21.5001 5.27467 21.5001 3.88343 20.1089C2.49219 18.7176 2.49219 16.4785 2.49219 12.0001Z" />
+      <path d="M2.99219 15.0001H20.9922" />
+      <path d="M3.2 15.2H20.8V20.4C20.8 20.9 18.6 21.3 12 21.3C5.4 21.3 3.2 20.9 3.2 20.4V15.2Z" fill="currentColor" fillOpacity="0.18" stroke="none" />
+    </svg>
+  );
 }
 
 

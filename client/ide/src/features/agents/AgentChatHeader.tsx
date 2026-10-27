@@ -29,6 +29,7 @@ interface Props {
   headerTabMenu: { x: number; y: number } | null;
   setHeaderTabMenu: Dispatch<SetStateAction<{ x: number; y: number } | null>>;
   setChatHistoryOpen: Dispatch<SetStateAction<boolean>>;
+  onCloseSidebar?: () => void;
 }
 export function AgentChatHeader({
   chatTabsScrollRef,
@@ -47,6 +48,7 @@ export function AgentChatHeader({
   headerTabMenu,
   setHeaderTabMenu,
   setChatHistoryOpen,
+  onCloseSidebar,
 }: Props) {
   // Titles replace "Chat" after the tab row has already been measured.
   useLayoutEffect(() => {
@@ -116,8 +118,15 @@ export function AgentChatHeader({
                   className="absolute right-1.5 z-10"
                   onClick={() => {
                     const remaining = openChatTabs.filter((tab) => tab !== id);
-                    setOpenChatTabs(remaining.length ? remaining : [null]);
                     if (terminal && id) void closeManagedTerminalSession(id);
+                    if (remaining.length === 0) {
+                      setOpenChatTabs([null]);
+                      selectSession(null);
+                      setActiveHeaderTerminal(null);
+                      onCloseSidebar?.();
+                      return;
+                    }
+                    setOpenChatTabs(remaining);
                     if (active) {
                       const next =
                         remaining[Math.max(0, openChatTabs.indexOf(id) - 1)] ??

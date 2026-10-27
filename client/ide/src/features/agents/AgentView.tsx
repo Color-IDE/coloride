@@ -1830,6 +1830,7 @@ export function AgentView(props: AgentViewProps) {
             headerTabMenu={headerTabMenu}
             setHeaderTabMenu={setHeaderTabMenu}
             setChatHistoryOpen={setChatHistoryOpen}
+            onCloseSidebar={props.onCloseSidebar}
           />
         ) : null}
         {isSidebar && headerTabMenu

@@ -93,7 +93,7 @@ export function AgentCheckpointDock({
   restoring,
   reviewOpen,
   turnActive,
-  /** sidebar = Explorer dock (Cursor chip). full = Agents tab (own bar). */
+  /** sidebar = Explorer dock. full = Agents tab, with its own bar. */
   variant = "full",
 }: {
   checkpoints: AgentCheckpoint[];

@@ -202,7 +202,7 @@ export function DiagnosticsSettings() {
           </button>
         </SettingsRow>
         <SettingsRow
-          description="Copy a sanitized report without passwords, tokens, hostnames, file paths or terminal output."
+          description={lastRunAt ? `Last run ${formatDate(lastRunAt)}.` : "Copy a sanitized report without passwords, tokens, hostnames, file paths or terminal output."}
           label="Copy report"
         >
           <div className="flex items-center gap-2">
@@ -224,11 +224,6 @@ export function DiagnosticsSettings() {
             </button>
           </div>
         </SettingsRow>
-        {lastRunAt && (
-          <p className="diagnostics-last-run -mt-1 pb-2 text-right text-[11px] text-[#77777c]">
-            Last run {formatDate(lastRunAt)}
-          </p>
-        )}
       </SettingsGroup>
     </div>
   );

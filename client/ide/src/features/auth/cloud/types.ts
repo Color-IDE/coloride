@@ -18,7 +18,7 @@ export type CloudAuthTokens = {
 };
 
 /**
- * Cursor-style device login payload from POST /auth/device/code.
+ * Device login payload from POST /auth/device/code.
  *
  * Primary path: open `verification_uri_complete` (loginDeepControl?challenge=&uuid=)
  * and poll with `device_code` (=== `challenge`, long secret).
@@ -27,7 +27,7 @@ export type CloudAuthTokens = {
 export type DeviceCodeResponse = {
   /** Long secret used for poll (`device_code` === `challenge`). */
   device_code: string;
-  /** Same as device_code when API sends Cursor-style challenge. */
+  /** Same as device_code when the API sends a challenge. */
   challenge?: string;
   uuid?: string;
   /** Short human code — fallback only; not shown in desktop UI. */

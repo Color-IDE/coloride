@@ -257,7 +257,7 @@ export function useTreeKeyboard({
         return;
 
       if (key === "a") {
-        // Select all visible rows (VS Code-like).
+        // Select all visible rows.
         event.preventDefault();
         const paths = visibleItems.map(getTreeItemPath);
         setSelectedPaths(new Set(paths));

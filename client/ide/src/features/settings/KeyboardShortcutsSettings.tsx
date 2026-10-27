@@ -88,8 +88,8 @@ export function KeyboardShortcutsSettings() {
 
   return (
     <div className="settings-shortcuts mt-6 pb-8">
-      <div className="flex flex-wrap items-center gap-2">
-        <label className="settings-shortcut-search flex h-8 min-w-[220px] flex-1 items-center gap-2 rounded-lg bg-[#2c2c2c] px-2.5 text-[#85858a] focus-within:text-[#d4d4d7]">
+      <div className="settings-shortcut-toolbar flex flex-wrap items-center gap-2">
+        <label className="settings-shortcut-search flex h-8 min-w-[220px] flex-1 items-center gap-2 rounded bg-[#2c2c2c] px-2.5 text-[#85858a] focus-within:text-[#d4d4d7]">
           <Icon icon={SearchIcon} aria-hidden="true" size={14} strokeWidth={1.7} />
           <input
             aria-label="Search keyboard shortcuts"
@@ -113,7 +113,7 @@ export function KeyboardShortcutsSettings() {
           const definitions = filteredDefinitions.filter((definition) => definition.category === category);
           if (definitions.length === 0) return null;
           return (
-            <section className="settings-shortcut-group border-b border-[#303030] py-4 first:pt-0 last:border-b-0" key={category}>
+            <section className="settings-shortcut-group py-4 first:pt-0" data-settings-group={category} id={`settings-group-${category.toLocaleLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`} key={category}>
               <h2 className="settings-section-heading mb-1 text-xs font-medium text-[#808085]">{category}</h2>
               <div>
                 {definitions.map((definition) => {
@@ -135,7 +135,7 @@ export function KeyboardShortcutsSettings() {
                           )}
                           <button
                             aria-label={`Change shortcut for ${definition.label}`}
-                            className={`settings-shortcut-binding flex h-8 min-w-[112px] items-center justify-center rounded-lg px-3 text-xs transition-colors active:scale-[0.98] ${recording ? "bg-[var(--accent-color)] text-[#10202b]" : "bg-[#2c2c2c] text-[#e8e8ea] hover:bg-[#353535]"}`}
+                            className={`settings-shortcut-binding flex h-8 min-w-[112px] items-center justify-center rounded px-3 text-xs transition-colors active:scale-[0.98] ${recording ? "bg-[var(--accent-color)] text-[#10202b]" : "bg-[#2c2c2c] text-[#e8e8ea] hover:bg-[#353535]"}`}
                             data-recording={recording}
                             data-shortcut-recorder="true"
                             onClick={() => {

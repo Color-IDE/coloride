@@ -18,7 +18,7 @@ export interface AgentViewProps {
   connected: boolean;
   onResizeStart: MouseEventHandler<HTMLDivElement>;
   /**
-   * Live agent edits → Explorer editor (Cursor-style).
+   * Live agent edits land in the Explorer editor.
    * Opens the path and applies streaming/final content.
    */
   onApplyAgentFileStream?: AgentFileStreamApply;

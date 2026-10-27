@@ -23,7 +23,9 @@ export function useSmoothStreamingText(text: string, streaming: boolean) {
       publish(text);
       return;
     }
-    if (!text.startsWith(shownRef.current)) publish("");
+    // A revision that does not extend what is already on screen replaces it
+    // in one step. Clearing first drops the message for a frame.
+    if (!text.startsWith(shownRef.current)) publish(text);
     if (timerRef.current !== null || shownRef.current === text) return;
     const tick = () => {
       const target = targetRef.current;

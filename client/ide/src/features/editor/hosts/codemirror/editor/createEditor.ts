@@ -279,7 +279,7 @@ export function createCodeMirrorEditor(
     (binding) => binding.key !== "Mod-f" && binding.key !== "Mod-Shift-f",
   );
 
-  // VS Code-style definition links — code files only (never markdown / AGENTS.md).
+  // Definition links are for code files only, never markdown.
   const gotoDefinition = Prec.highest(
     gotoDefinitionExtension(
       params.onGoToDefinition,
@@ -337,7 +337,7 @@ export function createCodeMirrorEditor(
     textOnlySelection(),
     dropCursor(),
     EditorState.allowMultipleSelections.of(true),
-    // VS Code: Alt+click adds a caret. Cmd/Ctrl+click is go-to-definition, not multi-cursor.
+    // Alt+click adds a caret. Cmd/Ctrl+click goes to the definition.
     EditorView.clickAddsSelectionRange.of((event) => event.altKey),
     indentOnInput(),
     syntaxHighlighting(defaultHighlightStyle, { fallback: true }),

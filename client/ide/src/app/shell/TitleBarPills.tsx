@@ -1,5 +1,5 @@
 /**
- * Top-right title bar action pills (Cursor-style).
+ * Top-right title bar action pills.
  * Plug new chips into `TitleBarPills` — they stack left of the avatar.
  */
 import { AnimatePresence, motion } from "motion/react";
@@ -99,7 +99,7 @@ function useUpdatePill(): TitleBarPillModel | null {
     void refreshUpdateStateFromMain();
   }, []);
 
-  // When a packaged update is available, start the download once (Cursor-like).
+  // When a packaged update is available, start the download once.
   useEffect(() => {
     const status = updateState.status;
     const auto = updateState.autoUpdateEnabled || Boolean(updateState.result?.autoUpdateEnabled);

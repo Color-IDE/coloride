@@ -1654,7 +1654,7 @@ class RemoteWorkspaceTools:
                 metadata={"path": root, "recursive": recursive, "exitCode": 0},
             )
         quoted_root = shlex.quote(root)
-        # Match Cursor-style long listings (permissions, links, owner, group, size, date, name).
+        # Long listings include permissions, links, owner, group, size, date and name.
         if recursive:
             command = (
                 "find {root} -maxdepth {depth} -mindepth 1 "

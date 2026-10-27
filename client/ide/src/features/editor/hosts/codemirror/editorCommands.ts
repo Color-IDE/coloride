@@ -1,5 +1,5 @@
 /**
- * VS Code-style editing keys: comment, move/duplicate line, expand selection.
+ * Editing keys: comment, move or duplicate a line, expand the selection.
  */
 
 import {

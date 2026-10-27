@@ -1,11 +1,7 @@
-import {
-  ArrowDown01Icon,
-  ArrowRight01Icon,
-  Tick02Icon,
-} from "@hugeicons/core-free-icons";
+
+import { MenuCheck } from "../../settings/SettingsControls";
 import { motion } from "motion/react";
 import { createPortal } from "react-dom";
-import { Icon } from "../../../shared/ui/Icon";
 import { Switch as SettingsSwitch } from "../../../shared/ui/Switch";
 import { PaidModelIcon } from "./ComposerModelDetails";
 import { ComposerModelHoverTip } from "./ComposerModelHoverTip";
@@ -93,11 +89,7 @@ export function ComposerModelSelector({
           {COMPOSER_MODELS.find((item) => item.model === providerModel)
             ?.label ?? providerModel}
         </span>
-        <Icon
-          icon={ArrowDown01Icon}
-          className={composerModelOpen ? "rotate-180" : ""}
-          size={13}
-        />
+        <ComposerChevron className={composerModelOpen ? "rotate-180" : ""} />
       </button>
       {composerModelOpen
         ? createPortal(
@@ -162,11 +154,9 @@ export function ComposerModelSelector({
                           >
                             {level.label}
                             {composerReasoning === level.value && (
-                              <Icon
-                                icon={Tick02Icon}
-                                className="ml-auto"
-                                size={14}
-                              />
+                              <span className="ml-auto flex">
+                                <MenuCheck />
+                              </span>
                             )}
                           </button>
                         ))}
@@ -202,12 +192,10 @@ export function ComposerModelSelector({
                       (item) => item.model === providerModel,
                     )?.label ?? providerModel}
                   </span>
-                  <Icon
-                    icon={ArrowRight01Icon}
-                    className={`shrink-0 opacity-50 transition-transform${
-                      modelFlyoutPos?.side === "left" ? " -scale-x-100" : ""
+                  <ComposerChevron
+                    className={`shrink-0 opacity-50 -rotate-90${
+                      modelFlyoutPos?.side === "left" ? " rotate-90" : ""
                     }`}
-                    size={14}
                   />
                 </button>
               </motion.div>
@@ -299,11 +287,7 @@ export function ComposerModelSelector({
                               {option.requiresPaidPlan ? (
                                 <PaidModelIcon />
                               ) : selected ? (
-                                <Icon
-                                  icon={Tick02Icon}
-                                  className="shrink-0"
-                                  size={14}
-                                />
+                                <MenuCheck />
                               ) : null}
                             </button>
                           </div>
@@ -332,5 +316,22 @@ export function ComposerModelSelector({
           )
         : null}
     </div>
+  );
+}
+
+function ComposerChevron({ className }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={`size-1.5 shrink-0 transition-transform ${className ?? ""}`}
+      fill="none"
+      height="6"
+      viewBox="0 0 24 24"
+      width="6"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path d="M0 0h24v24H0z" fill="none" />
+      <path d="m4 9 8 8 8-8" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+    </svg>
   );
 }
