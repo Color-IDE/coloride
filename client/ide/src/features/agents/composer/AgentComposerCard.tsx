@@ -41,7 +41,6 @@ import {
   type SlashCommandInvocation,
   type SlashCommandResult,
 } from "../slashCommands";
-import { useVoiceInput } from "../useVoiceInput";
 import { ComposerAttachments } from "./ComposerAttachments";
 import {
   ComposerCodeReferences,
@@ -75,7 +74,6 @@ export const AgentComposerCard = memo(function AgentComposerCard({
   compact = false,
   newTask = false,
   composerDisabled,
-  voiceEnabled = true,
   composerReasoning,
   contextUsage = { inputTokens: 0, maxTokens: 500_000, pct: 0 },
   draftKey = 0,
@@ -113,7 +111,6 @@ export const AgentComposerCard = memo(function AgentComposerCard({
   /** Blank Agents New Task — design-only chrome, not used on open chats. */
   newTask?: boolean;
   composerDisabled: boolean;
-  voiceEnabled?: boolean;
   composerReasoning: ComposerReasoning;
   /** Latest prompt context fill from model usage events. */
   contextUsage?: ComposerContextUsage;
@@ -726,17 +723,9 @@ export const AgentComposerCard = memo(function AgentComposerCard({
     writeComposerText,
   ]);
 
-  const voiceInput = useVoiceInput(
-    `${draftScope}:${draftKey}`,
-    composerDisabled || !voiceEnabled,
-    () => messageRef.current,
-    writeComposerText,
-  );
-
   const handlePrimaryAction = useCallback(() => {
     // Prefer queue/send when there is draft text or attachments; otherwise Stop while generating.
     if (hasText || attachments.length > 0 || codeRefs.length > 0) {
-      if (voiceInput.state !== "idle") return;
       void handleSubmit();
       return;
     }
@@ -753,19 +742,10 @@ export const AgentComposerCard = memo(function AgentComposerCard({
     onStop,
     stopping,
     turnActive,
-    voiceInput.state,
   ]);
 
   const onComposerKeyDown = useCallback(
     (event: KeyboardEvent<HTMLTextAreaElement>) => {
-      if (
-        event.key === "Enter" &&
-        !event.shiftKey &&
-        voiceInput.state !== "idle"
-      ) {
-        event.preventDefault();
-        return;
-      }
       // Keep the familiar select-all shortcut inside the composer. In
       // particular, macOS maps Ctrl+A to "start of line" natively, whereas
       // Coloride's editor-style input should treat Ctrl/Cmd+A consistently.
@@ -957,7 +937,6 @@ export const AgentComposerCard = memo(function AgentComposerCard({
       removeCodeRef,
       runSlashCommand,
       slashIndex,
-      voiceInput.state,
       writeComposerText,
     ],
   );
@@ -1117,7 +1096,6 @@ export const AgentComposerCard = memo(function AgentComposerCard({
             onRemove={removeCodeRef}
           />
           <ComposerInput
-            readOnly={voiceInput.state !== "idle"}
             aria-label="Message agent"
             compact={compact}
             disabled={composerDisabled}
@@ -1137,10 +1115,6 @@ export const AgentComposerCard = memo(function AgentComposerCard({
                 : compact && placeholder.length > 42
                   ? "Ask Coloride…"
                   : placeholder
-            }
-            provisional={
-              voiceInput.state === "recording" ||
-              voiceInput.state === "starting"
             }
             ref={textareaRef}
             value={message}
@@ -1176,7 +1150,6 @@ export const AgentComposerCard = memo(function AgentComposerCard({
           accessLevel={accessLevel}
           onChangeAccess={onChangeAccess}
           openFilePicker={openFilePicker}
-          voiceInput={voiceInput}
           primaryLabel={primaryLabel}
           showStop={showStop}
           primaryDisabled={primaryDisabled}

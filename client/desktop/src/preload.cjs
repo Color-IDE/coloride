@@ -5,15 +5,6 @@ const desktopApi = {
   startupAppearance: process.argv.find(arg => arg.startsWith("--coloride-startup-theme="))?.split("=")[1],
   nativeStartupSplash: process.argv.includes("--coloride-native-startup-splash")
     && ipcRenderer.sendSync("coloride:hasStartupSplash"),
-  dictation: {
-    start: (id, locale) => ipcRenderer.invoke("coloride:dictation:start", { id, locale }),
-    stop: (id, abort = false) => ipcRenderer.invoke("coloride:dictation:stop", id, abort),
-    onEvent: callback => {
-      const listener = (_event, payload) => callback(payload);
-      ipcRenderer.on("coloride:dictation:event", listener);
-      return () => ipcRenderer.removeListener("coloride:dictation:event", listener);
-    },
-  },
   getRuntime: () => ipcRenderer.invoke("coloride:getRuntime"),
   getAppInfo: () => ipcRenderer.invoke("coloride:getAppInfo"),
   finishStartup: () => ipcRenderer.invoke("coloride:finishStartup"),

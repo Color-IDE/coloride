@@ -44,7 +44,7 @@ import { AppStatusBar } from "./shell/AppStatusBar";
 import { DesktopTitleBar } from "./shell/DesktopTitleBar";
 import {
   NAVIGATION_STORAGE_KEY,
-  readStoredNavigation,
+
   sameLocation,
   tabRequiresVps,
   type NavigationLocation,
@@ -134,7 +134,6 @@ export function App() {
     }
     window.open(target, "_blank", "noopener,noreferrer");
   }, []);
-  const storedNavigationRef = useRef(readStoredNavigation());
   const lastSessionRef = useRef(readLastSession());
   const hadOpenProject =
     appPreferences.startupBehavior === "restore-session" &&
@@ -227,12 +226,10 @@ export function App() {
   /** Rising edge only — do not re-open the picker / kick Welcome on every tab click. */
   const workspaceSelectionPromptedRef = useRef(false);
   /** Bumped when the user clicks a saved VPS so we can enter an already-live session. */
-  const [connectIntentNonce, setConnectIntentNonce] = useState(0);
+  const [connectIntentNonce] = useState(0);
+  void connectIntentNonce;
 
-  const markUserConnectIntent = useCallback(() => {
-    userConnectIntentRef.current = true;
-    setConnectIntentNonce((current) => current + 1);
-  }, []);
+
 
   const showLocalModeNotice = useCallback((message: string) => {
     if (!message) {
@@ -331,16 +328,6 @@ export function App() {
       }
     })();
   }, [denyProtectedTab]);
-
-  const openPostConnectionDestination = useCallback(() => {
-    navigateTo({
-      activeTab:
-        appPreferences.afterConnectBehavior === "server-health"
-          ? "server"
-          : "explorer",
-      serverSubTab: "health",
-    });
-  }, [appPreferences.afterConnectBehavior, navigateTo]);
 
   // After the user connects (list or modal) and a workspace is ready → Explorer.
   // Also covers clicking the same saved VPS while SSH is already up.
@@ -722,12 +709,6 @@ export function App() {
     void loadServerView().then(module => module.prefetchServerDashboard(connectionKey)).catch(() => {});
   }, [sshConnected, workspace.host, workspace.port, workspace.username]);
 
-  const cancelInitialWorkspaceSelection = () => {
-    closeRemoteFilePicker();
-    resetToWelcome();
-    void workspace.cancelWorkspaceSelection();
-  };
-
   const { startPanelResize, startAgentPanelResize, startTerminalResize } =
     useAppPanelResize({
       activeTab,
@@ -944,7 +925,6 @@ export function App() {
     handleToggleTerminal,
     workspace,
     openLocalFolderPicker,
-    sshConnected,
     showLocalModeNotice,
     openRemoteFilePicker,
     handleSelectTab,

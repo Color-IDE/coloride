@@ -182,7 +182,6 @@ function applyAppIcon() {
 let sidecar = null;
 let sidecarConfig = null;
 let mainWindow = null;
-const dictation = require("./dictation/ipc.cjs")({ app, ipcMain, getMainWindow: () => mainWindow });
 let keyboardShortcuts = {
   "files.new-file": "mod+n",
   "files.new-folder": "mod+shift+n",
@@ -1482,7 +1481,6 @@ function configureMenu() {
       unavailable("Find in Project", "Shift+Command+F"), separator,
       editor("Toggle Line Comment", "toggleComment", "Command+/"), separator,
       {label:"AutoFill",submenu:[unavailable("Contact Info"),unavailable("Passwords")]},
-      unavailable("Start Dictation"),
       {label:"Emoji & Symbols",click:() => app.showEmojiPanel()},
     ]};
     const selection = {label:"Selection", submenu:[
@@ -1948,11 +1946,7 @@ ipcMain.on("coloride:hasStartupSplash", (event) => {
 ipcMain.handle("coloride:finishStartup", async (event) => {
   const win = mainWindow;
   if (!win || event.sender !== win.webContents || event.senderFrame !== event.sender.mainFrame) return false;
-  const finished = await finishStartupSplash(win);
-  // did-finish-load also fires for the initial about:blank document. Optional
-  // model loading must wait until the real IDE has painted and its splash left.
-  if (!win.isDestroyed() && win === mainWindow) dictation.prewarm();
-  return finished;
+  return await finishStartupSplash(win);
 });
 
 ipcMain.handle("coloride:setWindowBackdrop", (_event, mode, options) => {

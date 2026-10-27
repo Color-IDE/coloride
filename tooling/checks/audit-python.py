@@ -10,7 +10,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 SOURCES = (
     "core/ide-host/src",
-    "client/desktop/src/dictation",
     "tooling",
 )
 

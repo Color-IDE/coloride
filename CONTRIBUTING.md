@@ -30,7 +30,7 @@ Installers and signed releases are separate from a development checkout. `pnpm d
 | `core/ide-host` | Local FastAPI host, files, PTYs, language servers, agents, optional SSH |
 | `packages/contracts` | API definitions and TypeScript contracts |
 | `tooling/dev` | Development launch and environment setup |
-| `tooling/build` | Sidecar, remote runner and voice-runtime builds |
+| `tooling/build` | Sidecar and remote runner builds |
 | `tooling/release` | Signing, release and publishing |
 | `tooling/checks` | Structure checks, source audits and test runners |
 | `artifacts` | Generated build caches, screenshots and test results |

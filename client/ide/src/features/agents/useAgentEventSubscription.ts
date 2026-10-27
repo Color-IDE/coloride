@@ -124,6 +124,7 @@ export function useAgentEventSubscription({
 }: Dependencies) {
   // Batch WS agent events to one React update per animation frame so Thinking/tools
   // paint live instead of freezing the main thread on every SSE crumb.
+  void sessionsRef;
   const pendingLiveEventsRef = useRef<AgentEvent[]>([]);
   const liveFlushRafRef = useRef<number | null>(null);
 

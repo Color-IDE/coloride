@@ -29,7 +29,7 @@ await Promise.all([home, userData, project, output].map(folder => mkdir(folder, 
 await writeFile(file, 'ColorIDE startup fixture\n');
 const env = { ...process.env, HOME: home, COLORIDE_TEST_USER_DATA: userData,
   COLORIDE_DEV: dev ? '1' : '0', COLORIDE_SENTRY_DISABLED: '1', COLORIDE_SKIP_UPDATE_CHECK: '1',
-  COLORIDE_VOICE_PREWARM: '0', SHELL: '/bin/bash' };
+  SHELL: '/bin/bash' };
 for (const key of ['ELECTRON_RUN_AS_NODE', 'COLORIDE_WEB_DEV_URL', 'COLORIDE_SIDECAR']) delete env[key];
 env.COLORIDE_PYTHON = resolveTestPython();
 const samples = [];

@@ -40,54 +40,6 @@ const ExplorerIconActive = (props: { size?: number; className?: string }) => (
   </svg>
 );
 
-const ServerIcon = (props: { size?: number; className?: string }) => (
-  <svg
-    aria-hidden="true"
-    className={props.className}
-    fill="none"
-    height={props.size ?? 24}
-    viewBox="0 0 24 24"
-    width={props.size ?? 24}
-    xmlns="http://www.w3.org/2000/svg"
-    stroke="currentColor"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth="2"
-    role="img"
-    aria-label="server icon"
-  >
-    <path
-      d="M7 12h10M7 12c-.464 0-.697 0-.892.022a3.5 3.5 0 0 0-3.086 3.086C3 15.303 3 15.536 3 16s0 .697.022.892a3.5 3.5 0 0 0 3.086 3.086C6.303 20 6.536 20 7 20h10c.464 0 .697 0 .892-.022a3.5 3.5 0 0 0 3.086-3.086C21 16.697 21 16.464 21 16s0-.697-.022-.892a3.5 3.5 0 0 0-3.086-3.086C17.697 12 17.464 12 17 12M7 12c-.464 0-.697 0-.892-.022a3.5 3.5 0 0 1-3.086-3.086C3 8.697 3 8.464 3 8s0-.697.022-.892a3.5 3.5 0 0 1 3.086-3.086C6.303 4 6.536 4 7 4h10c.464 0 .697 0 .892.022a3.5 3.5 0 0 1 3.086 3.086C21 7.303 21 7.536 21 8s0 .697-.022.892a3.5 3.5 0 0 1-3.086 3.086C17.697 12 17.464 12 17 12m-4-4h.01M17 8h.01M13 16h.01M17 16h.01"
-      fill="none"
-    />
-  </svg>
-);
-
-const ServerIconActive = (props: { size?: number; className?: string }) => (
-  <svg
-    aria-hidden="true"
-    className={props.className}
-    height={props.size ?? 24}
-    viewBox="0 0 24 24"
-    width={props.size ?? 24}
-    xmlns="http://www.w3.org/2000/svg"
-    role="img"
-    aria-label="server icon"
-    fill="currentColor"
-  >
-    <path
-      clipRule="evenodd"
-      d="M2 6.4A3.4 3.4 0 0 1 5.4 3h13.2A3.4 3.4 0 0 1 22 6.4v1.2a3.4 3.4 0 0 1-3.4 3.4H5.4A3.4 3.4 0 0 1 2 7.6zM14 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2Zm4 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z"
-      fillRule="evenodd"
-    />
-    <path
-      clipRule="evenodd"
-      d="M2 16.4A3.4 3.4 0 0 1 5.4 13h13.2a3.4 3.4 0 0 1 3.4 3.4v1.2a3.4 3.4 0 0 1-3.4 3.4H5.4A3.4 3.4 0 0 1 2 17.6zm12-.4a1 1 0 1 0 0 2 1 1 0 0 0 0-2Zm4 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z"
-      fillRule="evenodd"
-    />
-  </svg>
-);
-
 const AgentsIcon = (props: { size?: number; className?: string }) => (
   <svg
     aria-hidden="true"

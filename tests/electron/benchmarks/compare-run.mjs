@@ -45,7 +45,7 @@ async function cleanup(){
 }
 async function launch(entry){
  const env=Object.fromEntries(Object.entries(process.env).filter(([key])=>!key.startsWith('VSCODE_')&&!key.startsWith('ELECTRON_')));
- Object.assign(env,{HOME:entry.home,COLORIDE_VOICE_PREWARM:'0',COLORIDE_SENTRY_DISABLED:'1',COLORIDE_SKIP_UPDATE_CHECK:'1'});
+ Object.assign(env,{HOME:entry.home,COLORIDE_SENTRY_DISABLED:'1',COLORIDE_SKIP_UPDATE_CHECK:'1'});
  const folder=dirname(plan.files[0].path);
  if(entry.editor==='coloride'){
   Object.assign(env,{COLORIDE_TEST_USER_DATA:join(entry.profile,'user-data'),COLORIDE_DEV:'0',SHELL:'/bin/bash'});

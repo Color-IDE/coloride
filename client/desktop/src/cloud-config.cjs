@@ -1,6 +1,7 @@
 const defaults = require("./cloud-config.json");
 
 function endpoint(value, name) {
+  if (!value) return "";
   const url = new URL(value);
   if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash) {
     throw new Error(`${name} must be an HTTPS URL without credentials, query or fragment.`);

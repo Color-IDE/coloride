@@ -2255,8 +2255,6 @@ export function AgentView(props: AgentViewProps) {
                     autoModel={autoModel}
                     llmCredits={llmCredits}
                     composerDisabled={composerDisabled}
-                    viewActive={viewActive}
-                    activeHeaderTerminal={activeHeaderTerminal}
                     composerReasoning={composerReasoning}
                     contextUsage={contextUsage}
                     composerDraftKey={composerDraftKey}

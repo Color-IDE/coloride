@@ -29,14 +29,6 @@ function OpenProjectIcon() {
   );
 }
 
-function FolderIcon() {
-  return (
-    <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 24 24">
-      <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H9l2 2h7.5A2.5 2.5 0 0 1 21 9.5v7A2.5 2.5 0 0 1 18.5 19h-13A2.5 2.5 0 0 1 3 16.5v-9Z" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.6" />
-    </svg>
-  );
-}
-
 function PlusIcon() {
   return (
     <svg aria-hidden="true" className="size-[18px]" fill="none" viewBox="0 0 24 24">
@@ -57,38 +49,18 @@ function CloneIcon() {
   );
 }
 
-function PaletteIcon() {
-  return (
-    <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 24 24">
-      <path d="M5 8h14M5 12h10M5 16h7" stroke="currentColor" strokeLinecap="round" strokeWidth="1.6" />
-    </svg>
-  );
-}
-
-function ServerIcon() {
-  return (
-    <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 24 24">
-      <rect height="5" rx="1.4" stroke="currentColor" strokeWidth="1.6" width="16" x="4" y="4" />
-      <rect height="5" rx="1.4" stroke="currentColor" strokeWidth="1.6" width="16" x="4" y="15" />
-      <path d="M7 6.5h.01M7 17.5h.01" stroke="currentColor" strokeLinecap="round" strokeWidth="2.4" />
-    </svg>
-  );
-}
-
 export function StartView({
   localFolderOpening = false,
   onCloneRepository,
-  onCommandPalette,
   onNewFile,
   onOpenProject,
   onOpenRecent,
-  onOpenServer,
   recents,
   servers,
 }: StartViewProps) {
   const bindings = useShortcutBindings();
   const recentRows = recents.slice(0, 6);
-  const serverRows = servers.slice(0, 4);
+  void servers;
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -126,7 +98,7 @@ export function StartView({
           <StartRow icon={<CloneIcon />} label="Clone Repository" onClick={onCloneRepository} />
         </section>
 
-        {recentRows.length || serverRows.length ? (
+        {recentRows.length ? (
           <section className="mt-5 flex flex-col gap-1">
             <SectionLabel>RECENT PROJECTS</SectionLabel>
             {recentRows.map((item, index) => (

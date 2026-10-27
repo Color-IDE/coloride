@@ -49,7 +49,6 @@
 @import "../features/editor/styles/agent-review.css";
 @import "../features/agents/styles/git.css";
 @import "../features/agents/styles/landing.css";
-@import "../features/agents/composer/styles/dictation.css";
 @import "../features/agents/styles/history.css";
 @import "./styles/selection.css";
 @import "../features/agents/styles/history-rename.css";

@@ -135,11 +135,6 @@ interface Props {
   accessLevel: AgentAccessLevel;
   onChangeAccess: ((level: AgentAccessLevel) => void) | undefined;
   openFilePicker: (imagesOnly?: boolean) => void;
-  voiceInput: {
-    state: "idle" | "starting" | "recording" | "stopping";
-    error: string;
-    toggle: () => Promise<void>;
-  };
   primaryLabel: "Stop generating" | "Queue next message" | "Send";
   showStop: boolean;
   primaryDisabled: boolean;
@@ -174,7 +169,6 @@ export function ComposerToolbar({
   accessLevel,
   onChangeAccess,
   openFilePicker,
-  voiceInput,
   primaryLabel,
   showStop,
   primaryDisabled,
@@ -561,37 +555,9 @@ export function ComposerToolbar({
         </AnimatePresence>
       </div>
       <button
-        aria-label={
-          voiceInput.state === "idle" ? "Dictate message" : "Stop dictation"
-        }
-        aria-pressed={voiceInput.state !== "idle"}
-        aria-description={voiceInput.error || undefined}
-        className={`agent-icon-button agent-voice-button ml-auto shrink-0${voiceInput.state !== "idle" ? " is-recording" : ""}`}
-        disabled={composerDisabled || voiceInput.state === "stopping"}
-        onClick={() => void voiceInput.toggle()}
-        title={
-          voiceInput.error ||
-          (voiceInput.state === "idle" ? "Dictate message" : "Stop dictation")
-        }
-        type="button"
-      >
-        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14">
-          <path d="M0 0h14v14H0z" fill="none" />
-          <g
-            fill="none"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M9.5 6.5a2.5 2.5 0 1 1-5 0V3a2.5 2.5 0 1 1 5 0z" />
-            <path d="M12 7a4.49 4.49 0 0 1-4.5 4.5h-1A4.49 4.49 0 0 1 2 7m5 4.5v2" />
-          </g>
-        </svg>
-      </button>
-      <button
         aria-label={primaryLabel}
-        className={`agent-send-button agent-send-button-centered is-${activeMode}${showStop ? " is-stop" : ""} shrink-0`}
-        disabled={primaryDisabled || (!showStop && voiceInput.state !== "idle")}
+        className={`agent-send-button agent-send-button-centered is-${activeMode}${showStop ? " is-stop" : ""} ml-auto shrink-0`}
+        disabled={primaryDisabled}
         onClick={handlePrimaryAction}
         type="button"
       >

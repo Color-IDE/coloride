@@ -30,7 +30,6 @@ interface Dependencies {
   openLocalFolderPicker: (options?: {
     revealExplorer?: boolean;
   }) => Promise<void>;
-  sshConnected: boolean;
   showLocalModeNotice: (message: string) => void;
   openRemoteFilePicker: (folderOnly?: boolean) => void;
   handleSelectTab: (tab: string) => void;
@@ -60,7 +59,6 @@ export function useAppMenuActions({
   handleToggleTerminal,
   workspace,
   openLocalFolderPicker,
-  sshConnected,
   showLocalModeNotice,
   openRemoteFilePicker,
   handleSelectTab,

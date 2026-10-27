@@ -76,7 +76,7 @@ The Python host owns execution and terminal processes. The renderer consumes API
 | `core/ide-host` | Local FastAPI host, files, PTYs, language servers, agents, optional SSH |
 | `packages/contracts` | API definitions and TypeScript contracts |
 | `tooling/dev` | Development launch and environment setup |
-| `tooling/build` | Sidecar, remote runner and voice-runtime builds |
+| `tooling/build` | Sidecar and remote runner builds |
 | `tooling/release` | Signing, release and publishing |
 | `tooling/checks` | Structure checks, source audits and test runners |
 | `artifacts` | Generated build caches, screenshots and test results (ignored by Git) |
@@ -135,7 +135,6 @@ agent model requests are the calls that use `apiBase`.
 
 Open-source builds do not register the machine, upload workspace paths, or
 report usage to the product dashboard. They also do not download updates from
-the official feed unless `COLORIDE_OFFICIAL_UPDATE=1`, and they do not load the
-voice model until the microphone is used unless `COLORIDE_VOICE_PREWARM=1`.
+the official feed unless `COLORIDE_OFFICIAL_UPDATE=1`.
 
 Crash reporting is separate (`COLORIDE_SENTRY_DISABLED=1`).

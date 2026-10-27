@@ -102,8 +102,6 @@ interface Props {
   autoModel: boolean;
   llmCredits: LlmCreditsSnapshot | null;
   composerDisabled: boolean;
-  viewActive: boolean;
-  activeHeaderTerminal: string | null;
   composerReasoning: ComposerReasoning;
   contextUsage: { inputTokens: number; maxTokens: number; pct: number };
   composerDraftKey: number;
@@ -180,8 +178,6 @@ export function AgentComposerDock({
   autoModel,
   llmCredits,
   composerDisabled,
-  viewActive,
-  activeHeaderTerminal,
   composerReasoning,
   contextUsage,
   composerDraftKey,
@@ -565,7 +561,6 @@ export function AgentComposerDock({
               compact
               newTask={showNewTask}
               composerDisabled={composerDisabled}
-              voiceEnabled={viewActive && !activeHeaderTerminal}
               composerReasoning={composerReasoning}
               contextUsage={contextUsage}
               draftKey={composerDraftKey}

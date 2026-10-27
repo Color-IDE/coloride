@@ -20,8 +20,7 @@
     "dist:win": "electron-builder --win nsis --x64 --publish never",
     "dist:win:publish": "electron-builder --win nsis --x64 --publish always",
     "dist:linux": "electron-builder --linux",
-    "build:agent": "node src/agent-runtime/build.mjs",
-    "build:voice": "node ../../tooling/build/build-voice-runtime.cjs"
+    "build:agent": "node src/agent-runtime/build.mjs"
   },
   "dependencies": {
     "@sentry/electron": "^7.16.0",
@@ -68,13 +67,6 @@
         "filter": [
           "**/*"
         ]
-      },
-      {
-        "from": "resources/voice-runtime",
-        "to": "voice-runtime",
-        "filter": [
-          "**/*"
-        ]
       }
     ],
     "publish": [
@@ -90,7 +82,7 @@
       "gatekeeperAssess": false,
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.inherit.plist",
-      "notarize": true,
+      "notarize": false,
       "target": [
         {
           "target": "dmg",
@@ -105,10 +97,7 @@
           ]
         }
       ],
-      "artifactName": "Coloride-${version}-${arch}.${ext}",
-      "extendInfo": {
-        "NSMicrophoneUsageDescription": "Dictate text into your agent message."
-      }
+      "artifactName": "Coloride-${version}-${arch}.${ext}"
     },
     "dmg": {
       "sign": false,

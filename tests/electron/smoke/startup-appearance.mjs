@@ -134,7 +134,7 @@ async function run(appearance, reducedMotion) {
   await Promise.all([home, userData, project].map(folder => mkdir(folder, { recursive: true })));
   await writeFile(join(userData, 'window-appearance.json'), JSON.stringify({ appearance }));
   await writeFile(join(project, 'startup.txt'), 'Startup appearance fixture\n');
-  const env = { ...process.env, HOME: home, COLORIDE_TEST_USER_DATA: userData, COLORIDE_SENTRY_DISABLED: '1', COLORIDE_SKIP_UPDATE_CHECK: '1', COLORIDE_VOICE_PREWARM: '0', COLORIDE_DEV: '0' };
+  const env = { ...process.env, HOME: home, COLORIDE_TEST_USER_DATA: userData, COLORIDE_SENTRY_DISABLED: '1', COLORIDE_SKIP_UPDATE_CHECK: '1', COLORIDE_DEV: '0' };
   for (const key of ['ELECTRON_RUN_AS_NODE', 'COLORIDE_WEB_DEV_URL', 'COLORIDE_SIDECAR', 'COLORIDE_PYTHON']) delete env[key];
   const hostGate = join(directory, 'release-host');
   if (source) {

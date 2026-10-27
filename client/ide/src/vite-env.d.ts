@@ -133,11 +133,6 @@ interface Window {
   __COLORIDE__?: ColorideRuntimeConfig;
   colorideDesktop?: {
     cloudConfig?: ColorideCloudConfig;
-    dictation?: {
-      start: (id: string, locale: string) => Promise<{ url: string; cancelled?: false } | { cancelled: true }>;
-      stop: (id: string, abort?: boolean) => Promise<void>;
-      onEvent: (callback: (event: { id: string; type: "progress"; text?: string; message?: string }) => void) => () => void;
-    };
     getRuntime: () => Promise<ColorideRuntimeConfig>;
     getAppInfo: () => Promise<ColorideAppInfo>;
     openExternal: (externalUrl: string) => Promise<boolean>;

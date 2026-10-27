@@ -9,7 +9,7 @@ Coloride is a local desktop IDE. Opening files and using terminals must work wit
 - `core/ide-host`: Python execution host. Keep module names under `coloride_desktop` stable.
 - `packages/contracts`: shared OpenAPI and TypeScript payloads.
 - `tooling/dev`: development launch and environment setup.
-- `tooling/build`: sidecar, runner and voice-runtime builders.
+- `tooling/build`: sidecar and runner builders.
 - `tooling/release`: signing, release and publishing.
 - `tooling/checks`: structural checks, source audits and test runners.
 - `artifacts`: generated build caches, screenshots and test results; never source code.

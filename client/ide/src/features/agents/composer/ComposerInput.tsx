@@ -4,7 +4,6 @@ interface ComposerInputProps extends TextareaHTMLAttributes<HTMLTextAreaElement>
   compact?: boolean;
   hasChips?: boolean;
   newTask?: boolean;
-  provisional?: boolean;
 }
 
 export const ComposerInput = forwardRef<HTMLTextAreaElement, ComposerInputProps>(
@@ -14,7 +13,6 @@ export const ComposerInput = forwardRef<HTMLTextAreaElement, ComposerInputProps>
       compact = false,
       hasChips = false,
       newTask = false,
-      provisional = false,
       style,
       value,
       ...props
@@ -27,8 +25,6 @@ export const ComposerInput = forwardRef<HTMLTextAreaElement, ComposerInputProps>
       <textarea
         {...props}
         className={`agent-composer-input cursor-text resize-none bg-transparent outline-none${
-          provisional ? " is-voice-provisional" : ""
-        }${
           compact
             ? " agent-composer-input-compact w-full min-w-0 px-0.5 py-0 text-[13px] leading-[22px]"
             : " w-full px-1 py-1 text-sm leading-6"
