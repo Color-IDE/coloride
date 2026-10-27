@@ -98,7 +98,10 @@ async def test_fireworks_kimi_k3_uses_managed_llm_and_its_1m_context(tmp_path) -
         store = AgentConfigStore(
             path=tmp_path / "agent-config.json",
             secrets=InMemoryAgentSecretStore(),
-            environ={"COLORIDE_MANAGED_LLM": "1"},
+            environ={
+                "COLORIDE_MANAGED_LLM": "1",
+                "COLORIDE_CLOUD_AUTH_BASE": "https://api.coloride.com",
+            },
         )
         await store.update(
             provider="fireworks",
@@ -172,7 +175,10 @@ async def test_gemini_uses_managed_coloride_gateway_and_large_context(tmp_path) 
     store = AgentConfigStore(
         path=tmp_path / "agent-config.json",
         secrets=secrets,
-        environ={"COLORIDE_MANAGED_LLM": "1"},
+        environ={
+            "COLORIDE_MANAGED_LLM": "1",
+            "COLORIDE_CLOUD_AUTH_BASE": "https://api.coloride.com",
+        },
     )
     try:
         await store.update(provider="gemini", model="gemini-3.7-flash")

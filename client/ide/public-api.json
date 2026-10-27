@@ -34,7 +34,8 @@
   "server": [
     "ConnectServerModal",
     "ServerView",
-    "useServerWorkspace"
+    "useServerWorkspace",
+    "workspace/untitledFile"
   ],
   "settings": [
     "SettingsControls",
@@ -52,7 +53,7 @@
     "TerminalSessionManager",
     "XTerminal"
   ],
-  "welcome": [
-    "WelcomeView"
+  "start": [
+    "StartView"
   ]
 }
