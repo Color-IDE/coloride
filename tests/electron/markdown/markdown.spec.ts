@@ -61,33 +61,46 @@ test("display equations scroll inside narrow panels without widening the page",a
 });
 
 test("provider bursts reveal progressively, keep existing words and finish after done", async () => {
-  await page.emulateMedia({reducedMotion: "no-preference"});
-  const first = Array.from({length: 80}, (_, i) => `word${i}`).join(" ") + " ";
-  const final = first + "Final chunk stays intact: español, مرحبا, 👩‍💻.";
-  await page.evaluate(first => {
-    (window as any).streamFrames = [];
-    const record = () => {
-      (window as any).streamFrames.push(document.querySelector('.agent-markdown')?.textContent ?? '');
-      (window as any).streamRaf = requestAnimationFrame(record);
-    };
-    window.dispatchEvent(new CustomEvent('coloride:test-stream', {detail: {text: first, streaming: true, reset: true}}));
-    requestAnimationFrame(record);
-  }, first);
-  await expect(page.locator('.t-stream-w').first()).toBeVisible();
-  await page.evaluate(() => { (window as any).firstStreamWord = document.querySelector('.t-stream-w'); });
-  await page.evaluate(final => window.dispatchEvent(new CustomEvent('coloride:test-stream', {detail: {text: final, streaming: false}})), final);
-  await expect(page.locator('.agent-markdown')).toHaveText(final.trim());
-  await expect(page.locator('.t-stream-w').last()).toHaveCSS('opacity', '1');
-  const result = await page.evaluate(() => {
-    cancelAnimationFrame((window as any).streamRaf);
-    return {frames: (window as any).streamFrames as string[], sameWord: (window as any).firstStreamWord === document.querySelector('.t-stream-w')};
-  });
-  expect(result.sameWord).toBe(true);
-  expect(result.frames.some(text => text.length > 0 && text.length < first.length)).toBe(true);
-  expect(new Set(result.frames.map(text => text.length)).size).toBeGreaterThan(5);
-  for (let i = 1; i < result.frames.length; i++) expect(result.frames[i].length).toBeGreaterThanOrEqual(result.frames[i - 1].length);
-  await page.screenshot({path: resolve('artifacts/terminal-smoke/smooth-streaming.png')});
-  expect(errors).toEqual([]);
+  // A slow commit can leave the previous test's 230-character formula in the
+  // DOM for a frame. Exercise that scheduling gap without sampling another message.
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Emulation.setCPUThrottlingRate', {rate: 6});
+  try {
+    await page.emulateMedia({reducedMotion: "no-preference"});
+    const first = Array.from({length: 80}, (_, i) => `word${i}`).join(" ") + " ";
+    const final = first + "Final chunk stays intact: español, مرحبا, 👩‍💻.";
+    await page.evaluate(first => {
+      (window as any).streamFrames = [];
+      const previous = document.querySelector('[data-test-message-key]');
+      if (!previous) throw new Error('Missing markdown message fixture');
+      const nextKey = Number(previous.getAttribute('data-test-message-key')) + 1;
+      const streamSelector = `[data-test-message-key="${nextKey}"] .agent-markdown`;
+      const record = () => {
+        (window as any).streamFrames.push(document.querySelector(streamSelector)?.textContent ?? '');
+        (window as any).streamRaf = requestAnimationFrame(record);
+      };
+      window.dispatchEvent(new CustomEvent('coloride:test-stream', {detail: {text: first, streaming: true, reset: true}}));
+      requestAnimationFrame(record);
+    }, first);
+    await expect(page.locator('.t-stream-w').first()).toBeVisible();
+    await page.evaluate(() => { (window as any).firstStreamWord = document.querySelector('.t-stream-w'); });
+    await page.evaluate(final => window.dispatchEvent(new CustomEvent('coloride:test-stream', {detail: {text: final, streaming: false}})), final);
+    await expect(page.locator('.agent-markdown')).toHaveText(final.trim());
+    await expect(page.locator('.t-stream-w').last()).toHaveCSS('opacity', '1');
+    const result = await page.evaluate(() => {
+      cancelAnimationFrame((window as any).streamRaf);
+      return {frames: (window as any).streamFrames as string[], sameWord: (window as any).firstStreamWord === document.querySelector('.t-stream-w')};
+    });
+    expect(result.sameWord).toBe(true);
+    expect(result.frames.some(text => text.length > 0 && text.length < first.length)).toBe(true);
+    expect(new Set(result.frames.map(text => text.length)).size).toBeGreaterThan(5);
+    for (let i = 1; i < result.frames.length; i++) expect(result.frames[i].length).toBeGreaterThanOrEqual(result.frames[i - 1].length);
+    await page.screenshot({path: resolve('artifacts/terminal-smoke/smooth-streaming.png')});
+    expect(errors).toEqual([]);
+  } finally {
+    await cdp.send('Emulation.setCPUThrottlingRate', {rate: 1});
+    await cdp.detach();
+  }
 });
 
 test("live cards expand gradually and reduced motion shows complete text immediately", async () => {
