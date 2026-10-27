@@ -1,6 +1,16 @@
 name: Release Desktop
 
 on:
+  pull_request:
+    paths:
+      - '.github/workflows/release-*.yml'
+      - 'tooling/build/**'
+      - 'tooling/release/**'
+      - 'client/desktop/**'
+      - 'client/ide/public/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'THIRD_PARTY_NOTICES.md'
   push:
     tags: ['v*']
   workflow_dispatch:
@@ -78,11 +88,11 @@ jobs:
         id: package
         working-directory: client/desktop
         env:
-          CSC_LINK: ${{ secrets.MACOS_DEVELOPER_ID_P12_BASE64 }}
-          CSC_KEY_PASSWORD: ${{ secrets.MACOS_DEVELOPER_ID_P12_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          CSC_LINK: ${{ github.event_name != 'pull_request' && secrets.MACOS_DEVELOPER_ID_P12_BASE64 || '' }}
+          CSC_KEY_PASSWORD: ${{ github.event_name != 'pull_request' && secrets.MACOS_DEVELOPER_ID_P12_PASSWORD || '' }}
+          APPLE_ID: ${{ github.event_name != 'pull_request' && secrets.APPLE_ID || '' }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ github.event_name != 'pull_request' && secrets.APPLE_APP_SPECIFIC_PASSWORD || '' }}
+          APPLE_TEAM_ID: ${{ github.event_name != 'pull_request' && secrets.APPLE_TEAM_ID || '' }}
         run: |
           set -euo pipefail
           if [ -n "$CSC_LINK" ] && [ -n "$CSC_KEY_PASSWORD" ] && [ -n "$APPLE_ID" ] && [ -n "$APPLE_APP_SPECIFIC_PASSWORD" ] && [ -n "$APPLE_TEAM_ID" ]; then
@@ -154,7 +164,7 @@ jobs:
 
   publish:
     needs: [meta, mac, windows]
-    if: ${{ !cancelled() && needs.windows.result == 'success' && (needs.mac.result == 'success' || needs.mac.result == 'skipped') }}
+    if: ${{ github.event_name != 'pull_request' && !cancelled() && needs.windows.result == 'success' && (needs.mac.result == 'success' || needs.mac.result == 'skipped') }}
     runs-on: ubuntu-latest
     permissions:
       contents: write

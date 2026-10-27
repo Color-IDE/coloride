@@ -17,7 +17,7 @@
     "desktop:release:signed:publish": "./tooling/release/macos-sign-release.sh --publish",
     "desktop:dist:win": "pnpm build:web && pnpm --filter @coloride/electron dist:win",
     "desktop:release:win": "pnpm build:web && pnpm --filter @coloride/electron dist:win:publish",
-    "desktop:release:all": "echo 'Tag vX.Y.Z + push to build Mac and Windows. Set a publish URL before deploying downloads.'",
+    "desktop:release:all": "echo 'Push a vX.Y.Z tag or run Release Desktop in GitHub Actions to build draft release assets.'",
     "desktop:deploy-downloads": "./tooling/release/deploy-downloads.sh",
     "desktop:deploy-downloads:dry": "./tooling/release/deploy-downloads.sh --dry-run",
     "typecheck": "pnpm check:structure && pnpm --filter @coloride/contracts typecheck && pnpm --filter @coloride/web typecheck",

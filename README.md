@@ -151,3 +151,10 @@ For local signed macOS builds, use `pnpm desktop:release:signed` with the Apple
 credentials described in `tooling/release/macos-sign-release.sh`. VPS deployment
 is an optional administrator task via `tooling/release/deploy-downloads.sh`;
 its `--help` lists the required configuration.
+
+Local publish commands (`pnpm desktop:release`, `pnpm desktop:release:win`, and
+`pnpm desktop:release:signed:publish`) use the GitHub provider and create draft
+releases. Set `GH_TOKEN` with permission to publish releases. Forks must change
+`build.publish.owner` and `build.publish.repo` in `client/desktop/package.json`
+to their own repository before using these local commands. GitHub Actions
+always uses the repository running the workflow.

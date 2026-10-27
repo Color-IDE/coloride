@@ -79,8 +79,10 @@
     ],
     "publish": [
       {
-        "provider": "generic",
-        "url": "https://example.invalid/coloride/downloads/"
+        "provider": "github",
+        "owner": "Color-IDE",
+        "repo": "coloride",
+        "releaseType": "draft"
       }
     ],
     "mac": {

@@ -131,6 +131,7 @@ echo
 echo "==> Building web frontend…"
 cd "$ROOT"
 pnpm build:web
+bash tooling/build/build-sidecar.sh --out client/desktop/resources/sidecar
 
 # ── 4. electron-builder (sign + notarize) ───────────────────────────────────
 echo

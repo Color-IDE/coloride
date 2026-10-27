@@ -4,6 +4,7 @@ const path = require('node:path');
 const {execFileSync} = require('node:child_process');
 const root = path.resolve(__dirname, '../..');
 module.exports = function collectLicenses() {
+  const overrides = require('./licenses/manifest.json');
   const sections = [fs.readFileSync(path.join(root, 'THIRD_PARTY_NOTICES.md'), 'utf8')];
   const catalog = JSON.parse(execFileSync(process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm', ['licenses', 'list', '--prod', '--json'], {cwd: root, encoding: 'utf8', shell: process.platform === 'win32'}));
   for (const item of Object.values(catalog).flat()) {
@@ -19,25 +20,23 @@ module.exports = function collectLicenses() {
         }
       }
     }
-    if (!found) sections.push(`Upstream package supplies no separate license text. Declared license: ${item.license}. Source: ${item.homepage || item.repository || "see package registry"}.`);
+    if (!found) {
+      for (const version of item.versions) {
+        const override = overrides[`${item.name}@${version}`];
+        if (override) {
+          sections.push(`Source: ${override.source}\n\n${fs.readFileSync(path.join(__dirname, 'licenses', override.file), 'utf8')}`);
+        } else if (item.license === 'MIT') {
+          const metadata = item.paths.map(dir => JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8')));
+          sections.push(`Upstream declares MIT in package.json but supplies no separate license file. Package attribution: ${JSON.stringify(metadata.map(({name, version, author, contributors, repository}) => ({name, version, author, contributors, repository})))}\n\n${fs.readFileSync(path.join(__dirname, 'licenses/MIT.txt'), 'utf8')}`);
+        } else {
+          throw new Error(`Missing license text for ${item.name}@${version} (${item.license})`);
+        }
+      }
+    }
   }
   const localPython = path.join(root, 'core/ide-host/.venv', process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python');
   const python = process.env.COLORIDE_LICENSE_PYTHON || (fs.existsSync(localPython) ? localPython : 'python');
-  sections.push(execFileSync(python, ['-c', `
-import importlib.metadata as m
-m.distribution('coloride-desktop-backend')  # Reject an unrelated Python environment.
-for d in sorted(m.distributions(), key=lambda d: d.metadata['Name'].lower()):
-    if d.metadata['Name'] == 'coloride-desktop-backend': continue
-    texts = []
-    for f in d.files or []:
-        if any(str(p).lower().startswith(('license', 'licence', 'copying', 'notice')) for p in [f.name]):
-            p = d.locate_file(f)
-            if p.is_file(): texts.append((f.name, p.read_text(errors='replace')))
-    print('\\n## Python: ' + d.metadata['Name'] + ' ' + d.version)
-    if not texts:
-        print('No separate license file supplied. Declared license: ' + (d.metadata.get('License-Expression') or d.metadata.get('License') or 'not declared'))
-    for name, text in texts: print('\\n### ' + name + '\\n\\n' + text)
-`], {encoding: 'utf8', maxBuffer: 32 * 1024 * 1024}));
+  sections.push(execFileSync(python, [path.join(__dirname, 'collect-python-licenses.py')], {encoding: 'utf8', maxBuffer: 32 * 1024 * 1024}));
   const electron = path.join(root, 'node_modules/electron/dist');
   for (const name of ['LICENSE', 'LICENSES.chromium.html']) {
     sections.push(`\n## Electron: ${name}\n\n${fs.readFileSync(path.join(electron, name), 'utf8')}`);

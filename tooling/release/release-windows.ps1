@@ -1,5 +1,5 @@
 # Build + optionally publish the Windows NSIS installer (x64).
-# Run from a Windows machine with Node 20+, pnpm, and Python venv set up.
+# Run from a Windows machine with Node 22, pnpm, and Python venv set up.
 #
 # Usage:
 #   powershell -ExecutionPolicy Bypass -File tooling/release/release-windows.ps1
@@ -26,13 +26,9 @@ if (-not (Get-Command pnpm -ErrorAction SilentlyContinue)) {
   throw "pnpm not found. Install: npm install -g pnpm@9"
 }
 
-# Ensure backend venv exists (packaged app still expects sidecar deps in dev;
-# installer ships the frontend bundle; Python sidecar uses system/venv at runtime for now).
-$VenvPython = Join-Path $Root "core\ide-host\.venv\Scripts\python.exe"
-if (-not (Test-Path $VenvPython)) {
-  Write-Host "==> Backend venv missing — running setup-backend-windows.ps1"
-  & powershell -ExecutionPolicy Bypass -File (Join-Path $Root "tooling\dev\setup-backend-windows.ps1")
-}
+# Build the bundled Python host before creating the installer.
+& (Join-Path $Root "tooling\build\build-sidecar.ps1")
+if ($LASTEXITCODE -ne 0) { throw "Sidecar build failed" }
 
 Write-Host "==> Install JS deps"
 pnpm install --frozen-lockfile
