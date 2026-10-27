@@ -30,7 +30,7 @@ Coloride runs on **macOS with Apple Silicon**.
 - **Preview your work:** an embedded Chromium browser and pop-out windows. Localhost points to your computer.
 - **Start from a blank file:** New File opens an untitled buffer. Closing it asks whether to save if you changed it.
 
-Sign-in and the managed agent are off. `coloride.dev` does not have an API yet. SSH remote workspaces are still in the source and are not exposed in the interface. The [roadmap](./docs/roadmap.md) records priorities, not finished work.
+Sign-in and the managed agent are off. [coloride.dev](https://coloride.dev) points here until it has an API. SSH remote workspaces are still in the source and are not exposed in the interface. The [roadmap](./docs/roadmap.md) records priorities, not finished work.
 
 ## Checks
 

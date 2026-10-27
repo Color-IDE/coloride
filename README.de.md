@@ -16,40 +16,5 @@
 </div>
 
 ---
-Öffne einen Ordner und arbeite auf diesem Computer mit Code, Terminal und Browser. Nichts davon ruft einen Coloride-Server auf.
 
-Coloride ist eine Marke. Die MIT-Lizenz gilt für den Quelltext, nicht für Name, Logo oder Domains.
-
-## Was heute funktioniert
-
-Coloride läuft auf **macOS mit Apple Silicon**.
-
-- **Code bearbeiten:** Explorer, Tabs, CodeMirror-Sprachen, Vervollständigung, Diagnosen, Suche und Bildvorschau.
-- **Das Projekt ausführen:** lokale Terminals mit Jobsteuerung. Die Sitzung bleibt, solange der lokale Host läuft.
-- **Das Ergebnis sehen:** eingebetteter Chromium-Browser und eigene Fenster. Localhost zeigt auf deinen Computer.
-- **Mit einer leeren Datei starten:** New File öffnet einen unbenannten Puffer. Beim Schließen fragt er, ob Änderungen gespeichert werden sollen.
-
-Anmeldung und verwalteter Agent sind aus. `coloride.dev` hat noch keine API. SSH-Code liegt noch im Repository und erscheint nicht in der Oberfläche. Die [Roadmap](./docs/roadmap.md) nennt Prioritäten, keine fertige Arbeit.
-
-## Prüfungen
-
-Im Repository-Root, nach der Einrichtung unten:
-
-```sh
-corepack pnpm typecheck
-core/ide-host/.venv/bin/python -m pytest core/ide-host/tests -q
-```
-
-Oberflächentests stehen in [tests/README.md](./tests/README.md). Änderungen sendest du nach [CONTRIBUTING.md](./CONTRIBUTING.md).
-
-## Entwicklung und Dokumentation
-
-Einrichtung, Befehle und Beitragsregeln stehen in den verlinkten Anleitungen, damit die Übersetzungen nicht auseinanderlaufen.
-
-- [Coloride README](README.md)
-- [Architektur](README.md#architecture)
-- [Mit der Entwicklung beginnen](README.md#start-developing)
-- [Beitragen](CONTRIBUTING.md)
-- [Tests](tests/README.md)
-- [Sicherheit](SECURITY.md)
-- [MIT-Lizenz](LICENSE)
+Diese Seite behält nur die Überschrift. Beschreibung, Installation und Produktstatus stehen im [englischen README](README.md).
