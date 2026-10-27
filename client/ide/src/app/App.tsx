@@ -728,12 +728,15 @@ export function App() {
       terminalHeight,
       setTerminalHeight,
     });
-  const openSettings = useCallback((section?: SettingsSection) => {
+  const openSettings = useCallback((section?: string) => {
+    const known = new Set(["general", "appearance", "shortcuts", "editor", "terminal", "agent", "security", "updates", "diagnostics", "about"]);
+    const requested = section === "account" ? "general" : section;
+    const next = requested && known.has(requested) ? requested as SettingsSection : undefined;
     if (window.colorideDesktop?.openSettings) {
-      void window.colorideDesktop.openSettings(section);
+      void window.colorideDesktop.openSettings(next);
       return;
     }
-    setSettingsSection(section || "general");
+    setSettingsSection(next || "general");
     navigateTo({ activeTab: "settings", serverSubTab });
   }, [navigateTo, serverSubTab]);
 
@@ -764,8 +767,7 @@ export function App() {
 
   useEffect(() => {
     const onOpenSettings = (event: Event) => {
-      const section = (event as CustomEvent<{ section?: SettingsSection }>)
-        .detail?.section;
+      const section = (event as CustomEvent<{ section?: string }>).detail?.section;
       openSettings(section && section.trim() ? section : undefined);
     };
     const onOpenLogs = () => {

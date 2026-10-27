@@ -1869,7 +1869,9 @@ async function createWindow() {
 
 const settingsSections = new Set(["general", "appearance", "shortcuts", "editor", "terminal", "agent", "security", "updates", "diagnostics", "about"]);
 async function openSettingsWindow(section) {
-  const requestedSection = settingsSections.has(section) ? section : undefined;
+  // Old account links open General. Account is no longer a settings section.
+  const requested = section === "account" ? "general" : section;
+  const requestedSection = settingsSections.has(requested) ? requested : undefined;
   if (requestedSection) pendingSettingsSection = requestedSection;
   if (settingsWindow && !settingsWindow.isDestroyed()) {
     if (settingsWindow.isMinimized()) settingsWindow.restore();
