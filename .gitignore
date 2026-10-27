@@ -41,6 +41,8 @@ artifacts/
 # Bundled Python sidecar binaries (built in CI / locally)
 client/desktop/resources/sidecar/coloride-sidecar
 client/desktop/resources/sidecar/coloride-sidecar.exe
+client/desktop/resources/sidecar/rectury-sidecar
+client/desktop/resources/sidecar/rectury-sidecar.exe
 client/desktop/resources/sidecar/_internal/
 core/ide-host/build/
 core/ide-host/dist/

@@ -17,22 +17,31 @@
 
 ---
 
-Open a folder and work with your code, terminals and browser on this computer. Local editing does not call Coloride. Sign-in and the managed agent stay off until coloride.dev has an API. A model provider API key can be configured locally.
+Open a folder and work with your code, terminals and browser on this computer. Nothing in that path calls a Coloride server.
 
 Coloride is a trademark. The MIT license covers the source code, not the name, logo or domains.
 
-Coloride currently supports **macOS on Apple Silicon**. Remote SSH workspaces are optional; the local IDE is the core product. Where the product is going is in the [roadmap](./docs/roadmap.md): thirteen phases, from the local foundation through editor, performance, AI and release. It records priorities and exit criteria, not a claim that every phase is already finished.
+## What works today
 
-## What you can do
+Coloride runs on **macOS with Apple Silicon**.
 
-- **Edit code:** file explorer, multiple editor tabs, CodeMirror language support, completion, diagnostics, search and image previews.
-- **Run your project:** integrated local terminals with shell job control, reconnect and persistent sessions while the local host remains alive.
-- **Preview your work:** embedded Chromium browser and pop-out windows. In a local workspace, localhost points to your computer; in an SSH workspace, browser traffic uses the remote SOCKS tunnel.
-- **Work with an agent:** project context, model selection, tool execution, approvals, streamed responses and file-change review with Keep / Undo controls.
-- **Customize the workspace:** appearance, keyboard shortcuts, split terminals and native clipboard integration.
-- **Connect remotely when needed:** SSH/SFTP workspaces and server information, without making a server a prerequisite for local development.
+- **Edit code:** file explorer, editor tabs, CodeMirror language support, completion, diagnostics, search and image previews.
+- **Run your project:** local terminals with job control and sessions that stay up while the local host is alive.
+- **Preview your work:** an embedded Chromium browser and pop-out windows. Localhost points to your computer.
+- **Start from a blank file:** New File opens an untitled buffer. Closing it asks whether to save if you changed it.
 
-Local file and terminal features work independently of cloud login. Model requests and enabled integrations may send selected context to their configured services.
+Sign-in and the managed agent are off. `coloride.dev` does not have an API yet. SSH remote workspaces are still in the source and are not exposed in the interface. The [roadmap](./docs/roadmap.md) records priorities, not finished work.
+
+## Checks
+
+From the repository root, after the setup below:
+
+```sh
+corepack pnpm typecheck
+core/ide-host/.venv/bin/python -m pytest core/ide-host/tests -q
+```
+
+UI and Electron checks are in [tests/README.md](./tests/README.md). How to send a change is in [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Start developing
 

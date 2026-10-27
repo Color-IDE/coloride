@@ -1,0 +1,15 @@
+name: Idea
+description: A change to the local IDE.
+title: "idea: "
+labels: ["idea"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is missing
+    validations:
+      required: true
+  - type: textarea
+    id: approach
+    attributes:
+      label: How you would do it
