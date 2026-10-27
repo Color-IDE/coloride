@@ -38,7 +38,7 @@ export function GeneralSettings() {
           />
         </SettingsRow>
         <SettingsRow
-          description="Choose where Coloride takes you after the VPS is ready."
+          description="Choose where Coloride takes you after a workspace connects."
           label="After connecting"
         >
           <CompactSelect
@@ -54,7 +54,7 @@ export function GeneralSettings() {
 
       <SettingsGroup title="Session">
         <SettingsRow
-          description="Reopen the last VPS workspace folder, expanded tree folders, and app tab after restart (requires On startup → Restore last session)."
+          description="Reopen the last workspace folder, expanded tree folders, and app tab after restart (requires On startup → Restore last session)."
           label="Remember workspace"
         >
           <span className="text-[11px] text-[#878888]">
@@ -91,7 +91,7 @@ export function GeneralSettings() {
 
       <SettingsGroup title="Notifications">
         <SettingsRow
-          description="Notify when a VPS connects, disconnects or becomes unavailable."
+          description="Notify when a workspace connects, disconnects or becomes unavailable."
           label="Connection changes"
         >
           <SettingsSwitch

@@ -113,6 +113,12 @@ const readBindings = (): ShortcutBindings => {
 
 let bindings = readBindings();
 
+if (typeof window !== "undefined") window.addEventListener?.("storage", event => {
+  if (event.storageArea !== window.localStorage || (event.key !== STORAGE_KEY && event.key !== null)) return;
+  bindings = readBindings();
+  listeners.forEach(listener => listener());
+});
+
 const subscribe = (listener: () => void) => {
   listeners.add(listener);
   return () => listeners.delete(listener);

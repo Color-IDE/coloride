@@ -70,7 +70,7 @@ export function AppearanceSettings() {
             value={preferences.interfaceFontFamily}
           />
         </SettingsRow>
-        <SettingsRow description="Choose the monospace typeface used by Monaco and remote terminals." label="Code font">
+        <SettingsRow description="Choose the monospace typeface used by the editor and terminals." label="Code font">
           <CompactSelect
             ariaLabel="Code font"
             onChange={(value) => updateAppPreference("codeFontFamily", value)}
@@ -115,7 +115,7 @@ export function AppearanceSettings() {
             value={preferences.interfaceFontSize}
           />
         </SettingsRow>
-        <SettingsRow description="Adjust text in Monaco and every remote terminal." label="Code font size">
+        <SettingsRow description="Adjust text in the editor and terminals." label="Code font size">
           <NumberStepper
             label="Code font size"
             max={18}

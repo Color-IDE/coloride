@@ -184,6 +184,13 @@ const subscribe = (listener: () => void) => {
   return () => listeners.delete(listener);
 };
 
+// Native Settings and the workspace share this origin and persistent store.
+if (typeof window !== "undefined") window.addEventListener?.("storage", (event) => {
+  if (event.storageArea !== window.localStorage || (event.key !== STORAGE_KEY && event.key !== null)) return;
+  preferences = readPreferences();
+  listeners.forEach(listener => listener());
+});
+
 const getSnapshot = () => preferences;
 
 export function useAppPreferences() {
@@ -234,7 +241,11 @@ export function updateAppPreference<Key extends keyof AppPreferences>(
   key: Key,
   value: AppPreferences[Key],
 ) {
-  preferences = { ...preferences, [key]: value };
+  let latest = preferences;
+  try {
+    if (window.localStorage.getItem(STORAGE_KEY)) latest = readPreferences();
+  } catch { /* Keep session preferences when storage is unavailable. */ }
+  preferences = { ...latest, [key]: value };
 
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));

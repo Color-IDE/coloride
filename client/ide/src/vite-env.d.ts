@@ -58,6 +58,7 @@ type ColorideMenuAction =
   | "open-server"
   | "open-agents"
   | "open-settings"
+  | "edit-find"
   | "connect-server"
   | "open-file"
   | "open-folder"
@@ -133,6 +134,8 @@ interface Window {
   __COLORIDE__?: ColorideRuntimeConfig;
   colorideDesktop?: {
     cloudConfig?: ColorideCloudConfig;
+    openSettings?: (section?: string) => Promise<void>;
+    onSettingsSectionChange?: (callback: (section: string) => void) => () => void;
     getRuntime: () => Promise<ColorideRuntimeConfig>;
     getAppInfo: () => Promise<ColorideAppInfo>;
     openExternal: (externalUrl: string) => Promise<boolean>;

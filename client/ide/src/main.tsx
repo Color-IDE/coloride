@@ -1,4 +1,4 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import { captureMessage, init as initSentry } from "@sentry/electron/renderer";
 import "@fontsource/jetbrains-mono/400.css";
@@ -8,6 +8,9 @@ import { App } from "./app/App";
 import { installStartupTransition } from "./app/startup";
 import { hydrateRuntimeFromDesktop } from "./shared/api/client";
 import "./app/styles.css";
+
+const SettingsWindow = lazy(() => import("./app/SettingsWindow"));
+const isSettingsWindow = new URLSearchParams(location.search).get("window") === "settings";
 
 // Renderer-side Sentry (pairs with main-process init). DSN is configured in main.
 initSentry({
@@ -27,10 +30,16 @@ window.addEventListener("coloride:terminal-telemetry", (event) => {
 hydrateRuntimeFromDesktop()
   .catch(() => undefined)
   .finally(() => {
-    installStartupTransition();
+    if (isSettingsWindow) {
+      document.querySelector(".coloride-boot-splash")?.remove();
+      delete document.documentElement.dataset.startup;
+      delete document.documentElement.dataset.startupSurface;
+    } else {
+      installStartupTransition();
+    }
     ReactDOM.createRoot(document.getElementById("root")!).render(
       <React.StrictMode>
-        <App />
+        {isSettingsWindow ? <Suspense fallback={null}><SettingsWindow /></Suspense> : <App />}
       </React.StrictMode>
     );
   });

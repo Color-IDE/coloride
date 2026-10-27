@@ -54,6 +54,8 @@ node tests/electron/smoke/sidebar-submit-stability.mjs --source dark
 node tests/electron/smoke/sidebar-submit-stability.mjs --source light
 # Continuous native SVG and editor crossfade: light, dark and reduced motion:
 node tests/electron/smoke/startup-appearance.mjs --source
+# Independent Settings window, live preferences and workspace preservation:
+node tests/electron/smoke/settings-window.mjs
 # Fresh host, stopped discovery and persistent host/shell reuse (run alone):
 node tests/electron/smoke/host-startup.mjs
 # Same startup regression against an already running pnpm dev:web:
@@ -63,6 +65,8 @@ node tests/electron/smoke/host-startup.mjs --dev
 `test:electron` includes chat, Markdown and terminal scenarios; `test:terminal` selects only the terminal folder. CI runs the complete Electron suite in its zsh/bash matrix. Discovery uses nested `*.spec.ts` files.
 
 `corepack pnpm test:unit` discovers all renderer TypeScript/TSX unit suites and runs them with `tsx` and `node:test`, isolated by file. Test-only resource loading does not reproduce browser rendering. The frontend CI job executes this command. Use isolated projects and profiles for running-app checks; unit tests do not certify browser layout or packaged behavior.
+
+`settings-window.mjs` checks a separate reusable native Settings window, cross-category search, preferences applied live in both windows, editor and terminal preservation, light/dark themes, narrow layout and keyboard shortcuts. It uses an isolated profile and temporary workspace; screenshots are written to `artifacts/settings-window/`.
 
 `host-startup.mjs` opens and edits a local file and runs a real PTY command in each startup scenario. It checks that a stopped host adds less than two seconds versus a fresh host, and that healthy reuse preserves both host and shell PIDs. A fourth reused-host scenario holds saved-profile and SSH-state requests until a restored local file has been edited and saved, proving local restore does not wait for those probes. Timings, logs and screenshots are saved under `artifacts/host-startup/`; these checkout measurements include Playwright overhead and do not certify cold boot or packaged performance.
 

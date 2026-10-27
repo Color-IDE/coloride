@@ -723,6 +723,15 @@ export function App() {
       terminalHeight,
       setTerminalHeight,
     });
+  const openSettings = useCallback((section?: SettingsSection) => {
+    if (window.colorideDesktop?.openSettings) {
+      void window.colorideDesktop.openSettings(section);
+      return;
+    }
+    setSettingsSection(section || "general");
+    navigateTo({ activeTab: "settings", serverSubTab });
+  }, [navigateTo, serverSubTab]);
+
   const handleSelectTab = (tab: string) => {
     if (tab === "server" && workspace.workspaceKind === "local") {
       showLocalModeNotice("Server is only available for SSH workspaces.");
@@ -736,16 +745,13 @@ export function App() {
       return;
     }
     if (tab === "settings") {
-      setSettingsSection("general");
+      openSettings();
+      return;
     }
     navigateTo({ activeTab: tab, serverSubTab });
   };
 
-  const handleOpenSettings = () => {
-    // Avatar menu "Settings" → app settings (same as ⌘,)
-    setSettingsSection("general");
-    navigateTo({ activeTab: "settings", serverSubTab });
-  };
+  const handleOpenSettings = () => openSettings();
 
   const handleServerSubTabChange = (tab: ServerSubTab) => {
     navigateTo({ activeTab: "server", serverSubTab: tab });
@@ -755,13 +761,11 @@ export function App() {
     const onOpenSettings = (event: Event) => {
       const section = (event as CustomEvent<{ section?: SettingsSection }>)
         .detail?.section;
-      setSettingsSection(section && section.trim() ? section : "general");
-      navigateTo({ activeTab: "settings", serverSubTab });
+      openSettings(section && section.trim() ? section : undefined);
     };
     const onOpenLogs = () => {
       if (!serverConnectedRef.current || workspace.workspaceKind === "local") {
-        setSettingsSection("diagnostics");
-        navigateTo({ activeTab: "settings", serverSubTab });
+        openSettings("diagnostics");
         return;
       }
       navigateTo({ activeTab: "server", serverSubTab: "logs" });
@@ -772,7 +776,7 @@ export function App() {
       window.removeEventListener("coloride:open-settings", onOpenSettings);
       window.removeEventListener("coloride:open-server-logs", onOpenLogs);
     };
-  }, [navigateTo, serverSubTab, workspace.workspaceKind]);
+  }, [navigateTo, openSettings, serverSubTab, workspace.workspaceKind]);
 
   useEffect(() => {
     const onShortcut = (event: KeyboardEvent) => {
@@ -916,7 +920,7 @@ export function App() {
     setTerminalOpen,
     navigateTo,
     appPreferences,
-    setSettingsSection,
+    openSettings,
     serverSubTab,
     serverConnected,
     denyProtectedTab,
@@ -1259,9 +1263,7 @@ export function App() {
                       <Suspense fallback={null}>
                         <SettingsView
                           initialSection={settingsSection}
-                          onResizeStart={startPanelResize}
                           onSectionChange={setSettingsSection}
-                          settingsWidth={settingsWidth}
                           sidePanelOpen={sidePanelOpen}
                         />
                       </Suspense>
@@ -1276,8 +1278,7 @@ export function App() {
           <AppStatusBar
             filePath={activeTab === "explorer" ? editorStatus?.filePath : null}
             onInfo={() => {
-              setSettingsSection("about");
-              navigateTo({ activeTab: "settings", serverSubTab });
+              openSettings("about");
             }}
             onToggleTerminal={handleToggleTerminal}
             terminalOpen={terminalVisible}

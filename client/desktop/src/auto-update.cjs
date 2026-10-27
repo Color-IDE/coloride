@@ -37,6 +37,7 @@ const { getColorideVersion } = require("./app-version.cjs");
 
 /** @type {import('electron').BrowserWindow | null} */
 let mainWindowRef = null;
+let settingsWindowRef = null;
 /** @type {import('electron-updater').AppUpdater | null} */
 let updater = null;
 let listenersBound = false;
@@ -61,10 +62,10 @@ let snapshot = {
 };
 
 function broadcast() {
-  if (!mainWindowRef || mainWindowRef.isDestroyed() || mainWindowRef.webContents.isDestroyed()) {
-    return;
+  for (const win of [mainWindowRef, settingsWindowRef]) {
+    if (!win || win.isDestroyed() || win.webContents.isDestroyed()) continue;
+    win.webContents.send("coloride:updateEvent", { ...snapshot });
   }
-  mainWindowRef.webContents.send("coloride:updateEvent", { ...snapshot });
 }
 
 /**
@@ -439,6 +440,7 @@ function scheduleStartupCheck(channel = "stable") {
 
 module.exports = {
   setMainWindow,
+  setSettingsWindow: (win) => { settingsWindowRef = win; },
   getSnapshot,
   checkForUpdates,
   downloadUpdate,

@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type ComponentType,
-  type MouseEventHandler,
-} from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ComponentType } from "react";
 import { AboutSettings } from "./AboutSettings";
 import { AgentSettings } from "./AgentSettings";
 import { AppearanceSettings } from "./AppearanceSettings";
@@ -17,38 +10,15 @@ import { SecuritySettings } from "./SecuritySettings";
 import { TerminalSettings } from "./TerminalSettings";
 import { UpdatesSettings } from "./UpdatesSettings";
 
-export type SettingsSection =
-  | "general"
-  | "appearance"
-  | "shortcuts"
-  | "editor"
-  | "terminal"
-  | "agent"
-  | "security"
-  | "updates"
-  | "diagnostics"
-  | "about";
-
+export type SettingsSection = "general" | "appearance" | "shortcuts" | "editor" | "terminal" | "agent" | "security" | "updates" | "diagnostics" | "about";
 interface SettingsViewProps {
   initialSection?: SettingsSection;
-  onResizeStart: MouseEventHandler<HTMLDivElement>;
   onSectionChange?: (section: SettingsSection) => void;
-  sidePanelOpen: boolean;
-  settingsWidth: number;
+  sidePanelOpen?: boolean;
+  onShowNavigation?: () => void;
 }
-
-interface SettingsMenuItem {
-  icon?: ComponentType;
-  id: SettingsSection;
-  label: string;
-}
-
-interface SettingsMenuGroup {
-  id: string;
-  items: SettingsMenuItem[];
-  label: string;
-}
-
+interface SettingsMenuItem { icon?: ComponentType; id: SettingsSection; label: string; }
+interface SettingsMenuGroup { id: string; items: SettingsMenuItem[]; label: string; }
 const menuGroups: SettingsMenuGroup[] = [
   {
     id: "application",
@@ -88,190 +58,114 @@ const menuGroups: SettingsMenuGroup[] = [
   },
 ];
 
-const menuItems = menuGroups.flatMap((group) => group.items);
-const validSections = new Set(menuItems.map((item) => item.id));
+const menuItems = menuGroups.flatMap(group => group.items);
+const sections: Record<SettingsSection, ComponentType> = {
+  general: GeneralSettings, appearance: AppearanceSettings, shortcuts: KeyboardShortcutsSettings,
+  editor: EditorSettings, terminal: TerminalSettings, agent: AgentSettings,
+  security: SecuritySettings, updates: UpdatesSettings, diagnostics: DiagnosticsSettings, about: AboutSettings,
+};
+const descriptions: Record<SettingsSection, string> = {
+  general: "Startup, sessions and notifications.", appearance: "Colors, typography and the way Coloride feels.",
+  shortcuts: "Make your everyday actions a keystroke away.", editor: "Indentation, navigation and the details of your editor.",
+  terminal: "Your shell, text and terminal behavior.", agent: "Models and preferences for your coding assistant.",
+  security: "Control access to your workspace and tools.", updates: "Keep your desktop up to date.",
+  diagnostics: "Inspect activity and troubleshoot your desktop.", about: "Coloride, your local desktop IDE.",
+};
+const resolveSection = (section?: SettingsSection): SettingsSection => section && section in sections ? section : "general";
 
-function resolveSection(
-  section: SettingsSection | string | undefined,
-): SettingsSection {
-  if (section && validSections.has(section as SettingsSection)) {
-    return section as SettingsSection;
-  }
-  return "general";
-}
-
-export function SettingsView({
-  initialSection = "general",
-  onResizeStart,
-  onSectionChange,
-  settingsWidth,
-  sidePanelOpen,
-}: SettingsViewProps) {
-  const [activeSection, setActiveSection] = useState<SettingsSection>(() =>
-    resolveSection(initialSection),
-  );
-  const [contentFadeEdges, setContentFadeEdges] = useState({
-    top: false,
-    bottom: false,
-  });
-  const contentScrollRef = useRef<HTMLDivElement>(null);
-  const contentResizeObserverRef = useRef<ResizeObserver | null>(null);
-
+export function SettingsView({ initialSection = "general", onSectionChange, sidePanelOpen = true, onShowNavigation }: SettingsViewProps) {
+  const [activeSection, setActiveSection] = useState(() => resolveSection(initialSection));
+  const [query, setQuery] = useState("");
+  const [matches, setMatches] = useState(0);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const searching = query.trim().length > 0;
   useEffect(() => {
     setActiveSection(resolveSection(initialSection));
+    setQuery("");
+    contentRef.current?.scrollTo({ top: 0 });
   }, [initialSection]);
-
-  const selectSection = useCallback(
-    (section: SettingsSection) => {
-      const next = resolveSection(section);
-      setActiveSection(next);
-      onSectionChange?.(next);
-    },
-    [onSectionChange],
-  );
-
-  const activeItem =
-    menuItems.find((item) => item.id === activeSection) ?? menuItems[0];
-  const updateContentFadeEdges = useCallback(() => {
-    const element = contentScrollRef.current;
-    if (!element) return;
-    const maxScroll = Math.max(0, element.scrollHeight - element.clientHeight);
-    setContentFadeEdges({
-      top: element.scrollTop > 2,
-      bottom: maxScroll - element.scrollTop > 2,
-    });
-  }, []);
-
-  const observeContentSize = useCallback(
-    (element: HTMLDivElement | null) => {
-      contentResizeObserverRef.current?.disconnect();
-      contentResizeObserverRef.current = null;
-      if (!element) return;
-      const observer = new ResizeObserver(updateContentFadeEdges);
-      observer.observe(element);
-      contentResizeObserverRef.current = observer;
-      requestAnimationFrame(updateContentFadeEdges);
-    },
-    [updateContentFadeEdges],
-  );
-
+  const focusSearch = useCallback(() => {
+    if (!contentRef.current?.getClientRects().length) return;
+    onShowNavigation?.();
+    requestAnimationFrame(() => searchRef.current?.focus());
+  }, [onShowNavigation]);
   useEffect(() => {
-    const element = contentScrollRef.current;
-    if (element) element.scrollTop = 0;
-    const frame = requestAnimationFrame(updateContentFadeEdges);
-    return () => cancelAnimationFrame(frame);
-  }, [activeSection, updateContentFadeEdges]);
+    window.addEventListener("coloride:editor-find", focusSearch);
+    return () => window.removeEventListener("coloride:editor-find", focusSearch);
+  }, [focusSearch]);
+  const selectSection = useCallback((section: SettingsSection) => {
+    setQuery("");
+    setActiveSection(section);
+    onSectionChange?.(section);
+    contentRef.current?.scrollTo({ top: 0 });
+  }, [onSectionChange]);
 
-  useEffect(() => () => contentResizeObserverRef.current?.disconnect(), []);
+  // Search the rendered labels and descriptions, so new settings are included
+  // without maintaining a second, stale list of searchable preference names.
+  useLayoutEffect(() => {
+    const root = contentRef.current;
+    if (!root) return;
+    const needle = query.trim().toLocaleLowerCase();
+    let count = 0;
+    for (const category of root.querySelectorAll<HTMLElement>('[data-settings-category]')) {
+      const categoryMatch = (category.dataset.settingsCategory || "").toLocaleLowerCase().includes(needle);
+      const rows = [...category.querySelectorAll<HTMLElement>('.settings-preference-row')];
+      for (const row of rows) {
+        const groupMatch = row.closest('.settings-section-group')?.querySelector('h2')?.textContent?.toLocaleLowerCase().includes(needle);
+        row.hidden = Boolean(needle) && !categoryMatch && !groupMatch && !row.textContent?.toLocaleLowerCase().includes(needle);
+      }
+      for (const group of category.querySelectorAll<HTMLElement>('.settings-section-group')) {
+        const groupRows = [...group.querySelectorAll<HTMLElement>('.settings-preference-row')];
+        group.hidden = Boolean(needle) && (groupRows.length > 0
+          ? groupRows.every(row => row.hidden)
+          : !categoryMatch && !group.textContent?.toLocaleLowerCase().includes(needle));
+      }
+      category.hidden = Boolean(needle) && !categoryMatch && (rows.length ? rows.every(row => row.hidden) : !category.textContent?.toLocaleLowerCase().includes(needle));
+      if (!category.hidden) count += rows.length ? rows.filter(row => !row.hidden).length : 1;
+    }
+    setMatches(count);
+  }, [query, activeSection]);
 
+  const activeItem = menuItems.find(item => item.id === activeSection)!;
   return (
-    <div className="flex h-full min-h-0 min-w-0">
-      <div className="app-main-card flex h-full min-h-0 min-w-0 flex-1 overflow-hidden border border-b-0 border-r-0 border-[#333333] bg-[#212121]">
-        <div
-          aria-hidden={!sidePanelOpen}
-          className={`relative flex h-full min-h-0 flex-shrink-0 flex-col overflow-hidden transition-opacity duration-200 ease-out ${sidePanelOpen ? "opacity-100" : "pointer-events-none opacity-0"}`}
-          style={{ width: sidePanelOpen ? `${settingsWidth}px` : "0px" }}
-        >
-          <nav
-            aria-label="Settings sections"
-            className="app-side-surface flex h-full min-h-0 flex-col overflow-hidden bg-[#212121] px-2 pb-2 pt-4"
-          >
-            <div className="settings-menu-scroll min-h-0 flex-1 overflow-y-auto pr-0.5">
-              {menuGroups.map((group, groupIndex) => (
-                <section
-                  className={groupIndex === 0 ? "pb-3" : "py-3"}
-                  key={group.id}
-                >
-                  <h2 className="mb-1 px-2.5 text-xs font-medium text-[#77777c]">
-                    {group.label}
-                  </h2>
-                  {group.items.map(({ icon: Icon, id, label }) => {
-                    const selected = activeSection === id;
-                    return (
-                      <button
-                        aria-current={selected ? "page" : undefined}
-                        className={`settings-menu-item group mb-0.5 flex h-7 w-full items-center rounded-lg border-0 px-2 text-left text-[13px] transition-colors ${selected ? "bg-[#3a3a3a] text-[#f4f4f5]" : "text-[#b0b0b4] hover:bg-[#2a2a2a] hover:text-[#f0f4f8]"}`}
-                        key={id}
-                        onClick={() => selectSection(id)}
-                        type="button"
-                      >
-                        <span className="mr-2 flex h-4 w-4 shrink-0 items-center justify-center">
-                          {Icon && <Icon />}
-                        </span>
-                        <span className="truncate">{label}</span>
-                      </button>
-                    );
-                  })}
-                </section>
-              ))}
-            </div>
+    <div className="settings-workbench" onKeyDown={event => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "f") { event.preventDefault(); event.stopPropagation(); focusSearch(); }
+      if (event.key === "Escape" && query) { event.preventDefault(); setQuery(""); }
+    }}>
+      <div className="settings-layout">
+        <aside className="settings-navigation" hidden={!sidePanelOpen}>
+          <div className="settings-navigation-title"><SettingsGeneralIcon /><span>Settings</span></div>
+          <label className="settings-search">
+            <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4 4"/></svg>
+            <input ref={searchRef} aria-label="Search settings" placeholder="Search settings…" value={query} onChange={event => setQuery(event.target.value)} />
+            {query && <button type="button" aria-label="Clear settings search" onClick={() => { setQuery(""); searchRef.current?.focus(); }}>×</button>}
+          </label>
+          <nav aria-label="Settings sections" className="settings-categories">
+            {menuGroups.map(group => <section key={group.id}>
+              <h2>{group.label}</h2>
+              {group.items.map(({id, label, icon: Icon}) => <button type="button" key={id} aria-current={!searching && activeSection === id ? "page" : undefined} onClick={() => selectSection(id)}>
+                {Icon && <Icon />}<span>{label}</span><span className="settings-category-arrow" aria-hidden="true">›</span>
+              </button>)}
+            </section>)}
           </nav>
-        </div>
-
-        <div
-          aria-hidden={!sidePanelOpen}
-          className={`app-split-seam relative z-10 flex-shrink-0 self-stretch transition-opacity duration-200 ease-out ${
-            sidePanelOpen
-              ? "w-px opacity-100"
-              : "pointer-events-none w-0 opacity-0"
-          }`}
-        >
-          <div
-            className="absolute inset-y-0 -left-1.5 z-20 w-3 cursor-ew-resize"
-            onMouseDown={onResizeStart}
-            title="Drag to resize settings panel"
-          />
-        </div>
-
-        <section
-          aria-labelledby="settings-section-title"
-          className="settings-content-surface flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[#212121]"
-        >
-          <header className="settings-content-header relative z-30 shrink-0 bg-[#212121] px-7 pb-3 pt-6">
-            <div className="mx-auto w-full max-w-4xl">
-              <h1
-                className="settings-content-title text-xl font-semibold text-white"
-                id="settings-section-title"
-              >
-                {activeItem.label}
-              </h1>
-            </div>
+          <div className="settings-navigation-footer"><span>On this device</span><kbd>⌘ ,</kbd></div>
+        </aside>
+        <section className="settings-main" aria-labelledby="settings-section-title">
+          <header className="settings-page-header">
+            <div><span className="settings-scope">User</span><span className="settings-save-hint">Changes save automatically</span></div>
+            <h1 id="settings-section-title">{searching ? "Search settings" : activeItem.label}</h1>
+            <p>{searching ? `Results for “${query.trim()}”` : descriptions[activeSection]}</p>
           </header>
-
-          <div className="relative min-h-0 flex-1">
-            <div
-              className="settings-content-scroll h-full min-h-0 overflow-y-auto px-7 pb-6"
-              onScroll={updateContentFadeEdges}
-              ref={contentScrollRef}
-            >
-              <div key={activeSection} ref={observeContentSize}>
-                <div className="mx-auto w-full max-w-4xl">
-                  {activeSection === "general" && <GeneralSettings />}
-                  {activeSection === "appearance" && <AppearanceSettings />}
-                  {activeSection === "shortcuts" && (
-                    <KeyboardShortcutsSettings />
-                  )}
-                  {activeSection === "editor" && <EditorSettings />}
-                  {activeSection === "terminal" && <TerminalSettings />}
-                  {activeSection === "agent" && <AgentSettings />}
-                  {activeSection === "security" && <SecuritySettings />}
-                  {activeSection === "updates" && <UpdatesSettings />}
-                  {activeSection === "diagnostics" && <DiagnosticsSettings />}
-                  {activeSection === "about" && <AboutSettings />}
-                </div>
-              </div>
-            </div>
-
-            <span
-              aria-hidden="true"
-              className={`scroll-edge-fade settings-content-fade pointer-events-none absolute left-0 right-[5px] top-0 z-20 h-7 transition-opacity duration-150 ${contentFadeEdges.top ? "opacity-100" : "opacity-0"}`}
-              data-edge="top"
-            />
-            <span
-              aria-hidden="true"
-              className={`scroll-edge-fade settings-content-fade pointer-events-none absolute bottom-0 left-0 right-[5px] z-20 h-7 transition-opacity duration-150 ${contentFadeEdges.bottom ? "opacity-100" : "opacity-0"}`}
-              data-edge="bottom"
-            />
+          <div className="settings-page-scroll" ref={contentRef}>
+            {(searching ? menuItems : [activeItem]).map(item => {
+              const Content = sections[item.id];
+              return <div className="settings-category-content" data-settings-category={item.label} key={item.id}>
+                {searching && <h2 className="settings-result-category">{item.label}</h2>}
+                <Content />
+              </div>;
+            })}
+            {searching && matches === 0 && <div className="settings-no-results" role="status"><h2>No settings found</h2><p>Try a preference such as font, minimap or scrollback.</p><button type="button" onClick={() => setQuery("")}>Clear search</button></div>}
           </div>
         </section>
       </div>

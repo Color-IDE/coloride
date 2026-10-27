@@ -182,6 +182,8 @@ function applyAppIcon() {
 let sidecar = null;
 let sidecarConfig = null;
 let mainWindow = null;
+let settingsWindow = null;
+let pendingSettingsSection;
 let keyboardShortcuts = {
   "files.new-file": "mod+n",
   "files.new-folder": "mod+shift+n",
@@ -1120,6 +1122,16 @@ function sendMenuAction(action) {
     }
     return;
   }
+  if (action === "open-settings" || action === "open-shortcuts" || action === "open-diagnostics") {
+    void openSettingsWindow(action === "open-shortcuts" ? "shortcuts" : action === "open-diagnostics" ? "diagnostics" : undefined).catch(console.error);
+    return;
+  }
+  if (settingsWindow && !settingsWindow.isDestroyed() && settingsWindow.isFocused() &&
+      ["close-editor", "window-close", "edit-find"].includes(action)) {
+    if (action === "close-editor" || action === "window-close") settingsWindow.close();
+    else settingsWindow.webContents.send("coloride:menuAction", action);
+    return;
+  }
   // Always route app-menu actions to the main workspace window.
   if (!mainWindow || mainWindow.isDestroyed() || mainWindow.webContents.isDestroyed()) {
     return;
@@ -1854,6 +1866,75 @@ async function createWindow() {
   });
   await mainWindow.loadURL(url);
 }
+
+const settingsSections = new Set(["general", "appearance", "shortcuts", "editor", "terminal", "agent", "security", "updates", "diagnostics", "about"]);
+async function openSettingsWindow(section) {
+  const requestedSection = settingsSections.has(section) ? section : undefined;
+  if (requestedSection) pendingSettingsSection = requestedSection;
+  if (settingsWindow && !settingsWindow.isDestroyed()) {
+    if (settingsWindow.isMinimized()) settingsWindow.restore();
+    if (requestedSection) {
+      settingsWindow.webContents.send("coloride:settingsSection", requestedSection);
+    }
+    settingsWindow.show();
+    settingsWindow.focus();
+    settingsWindow.webContents.focus();
+    return;
+  }
+  if (!sidecarConfig) return;
+  const url = new URL(appUrlFromSidecar(sidecarConfig));
+  url.searchParams.set("window", "settings");
+  url.searchParams.set("section", requestedSection || "general");
+  const appearance = readStartupAppearance();
+  const win = new BrowserWindow({
+    title: "Settings — Coloride",
+    width: 1120, height: 800, minWidth: 700, minHeight: 500,
+    show: false,
+    backgroundColor: appearance === "light" ? WINDOW_BACKGROUND_LIGHT : WINDOW_BACKGROUND_DARK,
+    webPreferences: {
+      preload: preloadPath, contextIsolation: true, nodeIntegration: false,
+      sandbox: true, devTools: allowDevTools(),
+      additionalArguments: [`--coloride-startup-theme=${appearance}`],
+    },
+  });
+  settingsWindow = win;
+  autoUpdate.setSettingsWindow(win);
+  win.webContents.once("did-finish-load", () => {
+    if (pendingSettingsSection) win.webContents.send("coloride:settingsSection", pendingSettingsSection);
+  });
+  win.setMenuBarVisibility(false);
+  lockDownDevTools(win.webContents);
+  lockPageZoom(win.webContents);
+  win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  win.webContents.on("will-navigate", (event, destination) => {
+    if (destination !== url.href) event.preventDefault();
+  });
+  win.webContents.on("before-input-event", (event, input) => {
+    const mod = process.platform === "darwin" ? input.meta : input.control;
+    if (input.type !== "keyDown" || !mod) return;
+    if (input.key.toLowerCase() === "w") {
+      event.preventDefault(); win.close();
+    } else if (input.key.toLowerCase() === "f") {
+      event.preventDefault(); win.webContents.send("coloride:menuAction", "edit-find");
+    }
+  });
+  win.on("closed", () => { if (settingsWindow === win) { settingsWindow = null; pendingSettingsSection = undefined; autoUpdate.setSettingsWindow(null); } });
+  try {
+    await win.loadURL(url.href);
+    if (!win.isDestroyed()) { win.show(); win.focus(); win.webContents.focus(); }
+  } catch (error) {
+    if (!win.isDestroyed()) win.destroy();
+    throw error;
+  }
+}
+
+ipcMain.handle("coloride:openSettings", (event, section) => {
+  if (event.senderFrame !== event.sender.mainFrame ||
+      (event.sender !== mainWindow?.webContents && event.sender !== settingsWindow?.webContents)) {
+    throw new Error("Settings is only available to application windows");
+  }
+  return openSettingsWindow(section);
+});
 
 ipcMain.handle("coloride:getRuntime", () => sidecarConfig);
 
@@ -4238,7 +4319,7 @@ app.whenReady().then(async () => {
   }
 
   app.on("activate", async () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
+    if (!mainWindow || mainWindow.isDestroyed()) {
       await createWindow();
     }
   });

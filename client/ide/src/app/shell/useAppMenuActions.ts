@@ -19,7 +19,7 @@ interface Dependencies {
   setTerminalOpen: Dispatch<SetStateAction<boolean>>;
   navigateTo: (location: NavigationLocation) => void;
   appPreferences: AppPreferences;
-  setSettingsSection: Dispatch<SetStateAction<SettingsSection>>;
+  openSettings: (section?: SettingsSection) => void;
   serverSubTab: ServerSubTab;
   serverConnected: boolean;
   denyProtectedTab: (_tab: "explorer" | "server" | "agents") => void;
@@ -50,7 +50,7 @@ export function useAppMenuActions({
   setTerminalOpen,
   navigateTo,
   appPreferences,
-  setSettingsSection,
+  openSettings,
   serverSubTab,
   serverConnected,
   denyProtectedTab,
@@ -120,8 +120,7 @@ export function useAppMenuActions({
           updateAppPreference("interfaceFontSize", 13);
           break;
         case "open-settings":
-          setSettingsSection("general");
-          navigateTo({ activeTab: "settings", serverSubTab });
+          openSettings();
           break;
         case "open-server":
           if (!serverConnected) {
@@ -334,12 +333,10 @@ export function useAppMenuActions({
           navigateTo({ activeTab: "server", serverSubTab: "settings" });
           break;
         case "open-shortcuts":
-          setSettingsSection("shortcuts");
-          navigateTo({ activeTab: "settings", serverSubTab });
+          openSettings("shortcuts");
           break;
         case "open-diagnostics":
-          setSettingsSection("diagnostics");
-          navigateTo({ activeTab: "settings", serverSubTab });
+          openSettings("diagnostics");
           break;
         case "help-report-bug":
           window.dispatchEvent(new CustomEvent("coloride:report-bug"));
@@ -384,6 +381,7 @@ export function useAppMenuActions({
     handleNewTerminal,
     handleToggleTerminal,
     navigateTo,
+    openSettings,
     openLocalFolderPicker,
     openRemoteFilePicker,
     resetToWelcome,
