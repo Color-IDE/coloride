@@ -2,25 +2,34 @@
 import importlib.metadata as metadata
 from packaging.requirements import Requirement
 
-pending = ['coloride-desktop-backend']
+pending = [('coloride-desktop-backend', frozenset())]
 seen = set()
+distributions = {}
 while pending:
-    name = pending.pop()
+    name, extras = pending.pop()
     distribution = metadata.distribution(name)
     canonical = distribution.metadata['Name'].lower().replace('_', '-')
-    if canonical in seen:
+    state = (canonical, extras)
+    if state in seen:
         continue
-    seen.add(canonical)
+    seen.add(state)
+    distributions[canonical] = distribution
     for raw in distribution.requires or []:
         requirement = Requirement(raw)
-        if not requirement.marker or requirement.marker.evaluate({'extra': ''}):
-            pending.append(requirement.name)
+        if not requirement.marker or any(
+            requirement.marker.evaluate({'extra': extra}) for extra in {'', *extras}
+        ):
+            pending.append((requirement.name, frozenset(requirement.extras)))
+
+for canonical, distribution in sorted(distributions.items()):
     if canonical == 'coloride-desktop-backend':
         continue
     print('\n## Python: ' + distribution.metadata['Name'] + ' ' + distribution.version)
     found = False
     for entry in distribution.files or []:
         if not entry.name.lower().startswith(('license', 'licence', 'copying', 'notice')):
+            continue
+        if entry.suffix in {'.py', '.pyc', '.so', '.pyd'}:
             continue
         file = distribution.locate_file(entry)
         if not file.is_file():
