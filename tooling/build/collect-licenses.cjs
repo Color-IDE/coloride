@@ -36,7 +36,7 @@ module.exports = function collectLicenses() {
   }
   const localPython = path.join(root, 'core/ide-host/.venv', process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python');
   const python = process.env.COLORIDE_LICENSE_PYTHON || (fs.existsSync(localPython) ? localPython : 'python');
-  sections.push(execFileSync(python, [path.join(__dirname, 'collect-python-licenses.py')], {encoding: 'utf8', maxBuffer: 32 * 1024 * 1024}));
+  sections.push(execFileSync(python, [path.join(__dirname, 'collect-python-licenses.py')], {encoding: 'utf8', env: {...process.env, PYTHONIOENCODING: 'utf-8'}, maxBuffer: 32 * 1024 * 1024}));
   const electron = path.join(path.dirname(require.resolve('electron/package.json')), 'dist');
   for (const name of ['LICENSE', 'LICENSES.chromium.html']) {
     sections.push(`\n## Electron: ${name}\n\n${fs.readFileSync(path.join(electron, name), 'utf8')}`);
