@@ -40,12 +40,13 @@ await hydrateRuntimeFromDesktop();
 const params = new URLSearchParams(location.search);
 function Harness() {
   const [split, setSplit] = useState(false);
+  const [focusedPane, setFocusedPane] = useState(0);
   const [epoch, setEpoch] = useState(0);
   const [shown, setShown] = useState(true);
   const ref = useRef<XTerminalHandle>(null);
   return <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
     <div style={{height: 40, flexShrink: 0}}>
-      <button onClick={() => setSplit(!split)}>Split terminal</button>
+      <button onClick={() => { setFocusedPane(split ? 0 : 1); setSplit(!split); }}>Split terminal</button>
       <button onClick={() => setEpoch(epoch + 1)}>Remount terminal</button>
       <button onClick={() => setShown(!shown)}>Toggle terminal</button>
       <button onClick={() => ref.current?.clear()}>Clear terminal</button>
@@ -55,12 +56,12 @@ function Harness() {
       <button onClick={() => ref.current?.pasteFromClipboard()}>Paste</button>
     </div>
     <div style={{ flex: 1, minHeight: 0, display: shown ? "flex" : "none" }}>
-      <div style={{ flex: 1, minWidth: 0 }}><XTerminal key={epoch} ref={ref} active={shown} focused connected workspaceKind="local"
+      <div style={{ flex: 1, minWidth: 0 }} onFocusCapture={() => setFocusedPane(0)}><XTerminal key={epoch} ref={ref} active={shown} focused={focusedPane === 0} connected workspaceKind="local"
         renderer={params.get("renderer") === "webgl" ? "webgl" : undefined}
         workspaceId={params.get("cwd")!} cwd={params.get("cwd")!}
         sessionId={params.get("session") ?? "terminal-test"}
         onOpenBrowserUrl={(url) => { ((window as any).openedTerminalLinks ??= []).push(url); }} /></div>
-      {split && <div style={{ flex: 1, minWidth: 0 }}><XTerminal active={shown} focused connected workspaceKind="local"
+      {split && <div style={{ flex: 1, minWidth: 0 }} onFocusCapture={() => setFocusedPane(1)}><XTerminal active={shown} focused={focusedPane === 1} connected workspaceKind="local"
         renderer={params.get("renderer") === "webgl" ? "webgl" : undefined}
         workspaceId={params.get("cwd")!} cwd={params.get("cwd")!} sessionId={`${params.get("session")}-split`} /></div>}
     </div>

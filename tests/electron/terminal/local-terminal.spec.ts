@@ -142,8 +142,13 @@ test("50,000 lines remain ordered; scroll, selection and visibility", async () =
   await page.mouse.up();
   await expect.poll(position).toBeLessThan(before/2);
   await scroll.evaluate(el => {el.scrollTop=el.scrollHeight;});
-  await command("(sleep 1; printf '\\nASYNC_%s\\n' OUTPUT) & printf '\\nWAIT_%s\\n' READY", "WAIT_READY");
-  await scroll.evaluate(el => {el.scrollTop=0;});
+  // Release background output only after both the terminal buffer and native
+  // viewport have reached the top; runner speed must not decide event order.
+  await command("(while [ ! -f release-async-output ]; do sleep 0.05; done; printf '\\nASYNC_%s\\n' OUTPUT) & printf '\\nWAIT_%s\\n' READY", "WAIT_READY");
+  await page.evaluate(() => (window as any).terminalUnderTest.scrollToTop());
+  await expect.poll(() => page.evaluate(() => (window as any).terminalUnderTest.buffer.active.viewportY)).toBe(0);
+  await expect.poll(position).toBe(0);
+  await writeFile(join(sandbox, "release-async-output"), "ready");
   await expect.poll(async () => (await text()).split("\n").includes("ASYNC_OUTPUT")).toBe(true);
   await expect.poll(position).toBe(0);
   await page.getByText("Toggle terminal", {exact:true}).click();
