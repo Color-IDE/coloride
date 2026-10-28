@@ -42,6 +42,42 @@ Do not recreate `backend`, `frontend`, `desktop`, `shared`, `apps`, `services` o
 
 The Python host owns execution and terminal processes. The renderer consumes API responses and events. Agent tools pass through Coloride's policy and approval layer. Keep module names under `coloride_desktop` stable.
 
+## What has to be done
+
+Coloride is being built incrementally. The [current contribution focus](./docs/roadmap.md#current-contribution-focus)
+sets out the product work we want help with:
+
+- Git connected to the file tree, editor and agent change review.
+- A reliable SSH connector for complete remote project workflows.
+- An integrated debugger using DAP.
+- A more adaptive agent, with a stronger agent interface and backend.
+- An extension format, public API, permissions and isolated extension host.
+- Connections to agent and browser sessions on other computers.
+- Team collaboration with explicit sharing and execution permissions.
+- Better code navigation, project intelligence and reproducible performance benchmarks.
+
+Some of these areas already have a foundation. Before proposing work, inspect the
+current implementation and identify a concrete gap. The roadmap owns product
+scope; issues track individual tasks and their status.
+
+### Where to propose work
+
+- **Roadmap:** product direction and expected outcomes.
+- **Discussions, when available:** open questions and substantial architecture proposals.
+- **Issues:** reproducible bugs or scoped tasks with dependencies and testable acceptance criteria. Search existing issues first; broad tracking issues should link smaller tasks.
+- **Pull requests:** focused implementations linked to the relevant issue, with verification evidence.
+
+For a substantial feature, agree on its scope in an issue or design discussion
+before investing in a large implementation. Include the user problem, current
+behavior, proposed change and how it will be verified. Distinguish mocked checks
+from live-service results. UI changes need running-app verification; performance
+claims need hardware, workload and measurement conditions.
+
+macOS Apple Silicon remains the supported target until another platform has its
+own tested development, packaging and release workflow. Bug reports should
+include the OS, hardware, revision, reproduction steps and sanitized logs; never
+post API keys, account tokens or private workspace data.
+
 ## Change rules
 
 - Preserve unrelated worktree changes and third-party licenses and notices.
