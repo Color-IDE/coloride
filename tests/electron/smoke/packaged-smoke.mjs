@@ -62,7 +62,7 @@ try {
   await expect(page.locator('.agent-chat-column.is-empty-chat')).toBeVisible();
   const composerBeforeModelChange = await page.locator('textarea.agent-composer-input').boundingBox();
   await page.locator('.agent-composer-model-trigger').click();
-  await page.locator('.agent-model-submenu-trigger').click();
+  await page.getByRole('menuitem', {name: /Grok 4\.5|Gemini 3\.8 Flash/}).click();
   await page.getByRole('menuitemradio', {name:'Gemini 3.8 Flash', exact:true}).click();
   await expect(notices.getByRole('alert')).toContainText('Configure a Gemini API key');
   const composerAfterModelChange = await page.locator('textarea.agent-composer-input').boundingBox();
