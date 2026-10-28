@@ -1656,13 +1656,13 @@ export function AgentView(props: AgentViewProps) {
   // Chat chrome (footer composer) for an open chat, a restore, or a blank new task.
   // Sidebar dock always keeps the compact footer composer.
   const showChatShell =
+    isSidebar ||
     hasOpenSession ||
     Boolean(selectedSession) ||
     timeline.length > 0 ||
     restoringStoredSession ||
     historyLoading ||
-    showNewTask ||
-    (isSidebar && providerReady);
+    showNewTask;
   const openWorkspaceKind = (kind: AgentWorkspaceToolKind) => {
     setWorkspaceOpenRequest({ kind, nonce: Date.now() });
   };

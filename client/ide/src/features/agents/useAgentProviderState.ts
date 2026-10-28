@@ -85,20 +85,19 @@ export function useAgentProviderState({ configSeqRef, viewActive }: Dependencies
     return () => { active = false; };
   }, [providerRevision, savingProvider, configSeqRef]);
 
-  // A saved key is enough to connect. Discovery runs once per open panel, so
-  // the composer appears when a model is actually available.
+  // A saved key is enough to connect. Reuse the config already loaded for this
+  // panel so restore does not spend a second read before the model list exists.
+  const autoConnectKey = !viewActive || savingProvider ? "" : (providerConfig?.providers || [])
+    .filter(entry => entry.configured && !entry.availableModels?.length)
+    .map(entry => entry.provider).sort().join(",");
   useEffect(() => {
-    if (!viewActive || savingProvider) return;
+    if (!autoConnectKey) return;
     let active = true;
-    void api.agentConfig(true).then(async value => {
-      if (!active) return;
-      const pending = value.providers?.filter(entry => entry.configured && !entry.availableModels?.length) || [];
-      if (!pending.length) return;
-      await Promise.allSettled(pending.map(entry => api.connectAgentProvider(entry.provider)));
+    void Promise.allSettled(autoConnectKey.split(",").map(provider => api.connectAgentProvider(provider))).then(() => {
       if (active) notifyAgentConfigChanged();
-    }).catch(() => {});
+    });
     return () => { active = false; };
-  }, [viewActive, savingProvider]);
+  }, [autoConnectKey]);
 
   // Subscribe to shared credits cache (other refresh paths).
   useEffect(
