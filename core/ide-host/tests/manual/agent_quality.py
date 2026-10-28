@@ -23,7 +23,8 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from coloride_desktop.agents.cloud_token import cloud_access_token_needs_refresh
-from coloride_desktop.agents.config import PROVIDER_DEFAULTS, AgentConfigStore, AgentProviderSettings
+from coloride_desktop.agents.config import AgentConfigStore, AgentProviderSettings
+from coloride_desktop.agents.provider_registry import PROVIDER_DEFAULTS
 from coloride_desktop.agents.domain import AgentMode, AgentSession
 from coloride_desktop.agents.engine import ColorideAgentEngine
 from coloride_desktop.agents.provider import (

@@ -41,11 +41,7 @@ from .policy import COMMAND_CAPABILITIES, ScopedGrant
 from .project_memory import ProjectMemoryRegistry
 from .provider import (
     AgentModelProvider,
-    FireworksResponsesProvider,
-    GeminiResponsesProvider,
     ModelToolCall,
-    OpenAIResponsesProvider,
-    XAIResponsesProvider,
 )
 from .store import AgentSessionStore
 from .task import AgentTaskStatus, TaskBudget
@@ -1197,16 +1193,11 @@ class AgentProxyClient:
             api_key=settings.api_key,
             credential_source=settings.credential_source,
             reasoning_effort=normalize_reasoning_effort(reasoning_effort),
+            protocol=settings.protocol,
+            model_capabilities=settings.model_capabilities,
         )
-        if settings.provider == "openai":
-            return OpenAIResponsesProvider(settings)
-        if settings.provider == "xai":
-            return XAIResponsesProvider(settings)
-        if settings.provider == "fireworks":
-            return FireworksResponsesProvider(settings)
-        if settings.provider == "gemini":
-            return GeminiResponsesProvider(settings)
-        raise RuntimeError(f"Unsupported model provider: {settings.provider}")
+        from .provider_registry import create_provider
+        return create_provider(settings)
 
     async def _run_turn(
         self,

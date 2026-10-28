@@ -25,24 +25,6 @@
   color: var(--agent-muted);
 }
 
-.agent-config-field {
-  background: var(--agent-control);
-  color: var(--agent-text);
-  transition: background 120ms ease;
-}
-
-.agent-config-field:focus-within {
-  background: var(--agent-control-hover);
-}
-
-.agent-config-field input {
-  color: var(--agent-text);
-}
-
-.agent-config-field input::placeholder {
-  color: var(--agent-muted);
-}
-
 /* ——— Agent timeline enter: quick fade and a slight rise ——— */
 @keyframes agent-timeline-enter {
   from {

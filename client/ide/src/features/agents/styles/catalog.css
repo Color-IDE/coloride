@@ -717,26 +717,6 @@
   color: var(--agent-text);
 }
 
-.agent-provider-select {
-  background: var(--agent-control);
-}
-
-.agent-provider-select button {
-  height: 27px;
-  border: 0;
-  border-radius: 7px;
-  background: transparent;
-  color: var(--agent-muted);
-  font-size: 11px;
-  transition: background 120ms ease, color 120ms ease;
-}
-
-.agent-provider-select button:hover,
-.agent-provider-select button.is-active {
-  background: var(--agent-control-hover);
-  color: var(--agent-text);
-}
-
 .agent-mode-switch {
   gap: 2px;
 }

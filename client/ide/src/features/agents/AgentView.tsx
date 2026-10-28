@@ -290,12 +290,10 @@ export function AgentView(props: AgentViewProps) {
     providerConfig,
     provider,
     providerModel,
-    providerKey,
     savingProvider,
     setProviderConfig,
     setProvider,
     setProviderModel,
-    setProviderKey,
     setSavingProvider,
   } = useAgentProviderState({ configSeqRef, viewActive: props.active !== false });
   const [error, setError] = useAgentErrorNotification({ suppressed: outOfCreditsOpen });
@@ -1124,23 +1122,17 @@ export function AgentView(props: AgentViewProps) {
     eventsRef,
   });
   const {
-    saveProvider,
-    selectProvider,
     selectComposerModel,
     changeMode,
     changeAccess,
   } = useAgentProviderActions({
-    providerModel,
-    providerKey,
     providerConfig,
-    provider,
     setError,
     configSeqRef,
     setSavingProvider,
     setProviderConfig,
     setProvider,
     setProviderModel,
-    setProviderKey,
     messageFromError,
     savingProvider,
     hasModelCredits,
@@ -1434,7 +1426,9 @@ export function AgentView(props: AgentViewProps) {
 
   // Context meter — fill of the published model window (Grok 4.5 = 500k), not the 40k working set.
   const contextUsage = useMemo(() => {
-    const windowTokens = modelContextWindow(providerModel);
+    const windowTokens = providerConfig?.model === providerModel
+      ? providerConfig.capabilities.maxContextTokens || modelContextWindow(providerModel)
+      : modelContextWindow(providerModel);
 
     const asNum = (value: unknown): number | null => {
       const n = typeof value === "number" ? value : Number(value);
@@ -1442,7 +1436,7 @@ export function AgentView(props: AgentViewProps) {
     };
 
     const meterFor = (tokens: number, modelHint?: string | null) => {
-      const maxTok = modelContextWindow(modelHint) || windowTokens;
+      const maxTok = !modelHint || modelHint === providerModel ? windowTokens : modelContextWindow(modelHint) || windowTokens;
       const clamped = Math.min(Math.max(0, Math.floor(tokens)), maxTok);
       return {
         tokens: clamped,
@@ -1540,7 +1534,7 @@ export function AgentView(props: AgentViewProps) {
       maxTokens: best.maxTokens,
       pct: best.pct,
     };
-  }, [events, providerModel]);
+  }, [events, providerModel, providerConfig]);
 
   // Internal recovery stays in the agent. A credits pause requires user
   // action and survives restarts, so always expose its resolution controls.
@@ -2123,14 +2117,6 @@ export function AgentView(props: AgentViewProps) {
                           configured={providerReady}
                           connected={props.connected}
                           managedLlm={providerConfig?.managedLlm !== false}
-                          model={providerModel}
-                          onKeyChange={setProviderKey}
-                          onModelChange={setProviderModel}
-                          onProviderChange={selectProvider}
-                          onSave={() => void saveProvider()}
-                          provider={provider}
-                          providerKey={providerKey}
-                          saving={savingProvider}
                           workspacePath={agentWorkspacePath}
                         />
                       ) : (

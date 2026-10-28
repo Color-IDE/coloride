@@ -27,6 +27,10 @@ async def test_agent_config_keeps_api_key_out_of_json(tmp_path) -> None:
         "baseUrl": "https://api.openai.com/v1",
         "model": "gpt-5.3-codex",
         "provider": "openai",
+        "providers": {
+            "xai": {"model": "grok-4.5", "baseUrl": "https://api.x.ai/v1"},
+            "openai": {"model": "gpt-5.3-codex", "baseUrl": "https://api.openai.com/v1"},
+        },
     }
     assert path.stat().st_mode & 0o777 == 0o600
     resolved = await store.resolve()
@@ -78,6 +82,8 @@ async def test_xai_uses_separate_credentials_and_defaults(tmp_path) -> None:
         "capabilities": {
             "tools": True,
             "streaming": True,
+            "images": True,
+            "reasoning": True,
             "encryptedReasoning": True,
             "maxContextCharacters": 1_360_000,
             "maxContextTokens": 500_000,
@@ -116,6 +122,8 @@ async def test_fireworks_kimi_k3_uses_managed_llm_and_its_1m_context(tmp_path) -
         assert status["capabilities"] == {
             "tools": True,
             "streaming": True,
+            "images": True,
+            "reasoning": True,
             "encryptedReasoning": False,
             "maxContextCharacters": 2_720_000,
             "maxContextTokens": 1_000_000,
@@ -207,3 +215,43 @@ async def test_gemini_environment_credential_accepts_google_ai_studio_name(tmp_p
 
     assert resolved.api_key == "gemini-environment"
     assert resolved.credential_source == "environment"
+
+
+async def test_multiple_provider_profiles_survive_reload_without_activation(tmp_path) -> None:
+    path = tmp_path / "agent-config.json"
+    secrets = InMemoryAgentSecretStore()
+    store = AgentConfigStore(path=path, secrets=secrets, environ={"COLORIDE_MANAGED_LLM": "0"})
+    await store.update(provider="openai", model="custom-openai", api_key="openai-private", activate=False)
+    await store.update(provider="gemini", model="custom-gemini", api_key="gemini-private", activate=False)
+    assert store.public_settings()["provider"] == "xai"
+    reloaded = AgentConfigStore(path=path, secrets=secrets, environ={"COLORIDE_MANAGED_LLM": "0"})
+    public = await reloaded.status(include_providers=True)
+    entries = {entry["provider"]: entry for entry in public["providers"]}
+    assert entries["openai"]["model"] == "custom-openai"
+    assert entries["gemini"]["model"] == "custom-gemini"
+    assert entries["openai"]["configured"] and entries["gemini"]["configured"]
+    assert entries["xai"]["active"] and not entries["openai"]["active"]
+    for secret in ("openai-private", "gemini-private"):
+        assert secret not in json.dumps(public)
+        assert secret not in path.read_text()
+    await reloaded.update(provider="openai", model=entries["openai"]["model"])
+    assert (await reloaded.resolve()).api_key == "openai-private"
+    assert await secrets.get_api_key("gemini") == "gemini-private"
+    await reloaded.update(provider="gemini", model=entries["gemini"]["model"])
+    assert (await reloaded.resolve()).api_key == "gemini-private"
+
+
+async def test_failed_key_save_preserves_all_provider_settings(tmp_path, monkeypatch) -> None:
+    import pytest
+    path = tmp_path / "agent-config.json"
+    secrets = InMemoryAgentSecretStore()
+    store = AgentConfigStore(path=path, secrets=secrets, environ={"COLORIDE_MANAGED_LLM": "0"})
+    await store.update(provider="openai", model="original", api_key="original-key")
+    before = path.read_bytes()
+    async def fail_save(provider, key):
+        raise RuntimeError("credential store unavailable")
+    monkeypatch.setattr(secrets, "save_api_key", fail_save)
+    with pytest.raises(RuntimeError, match="credential store unavailable"):
+        await store.update(provider="gemini", model="other", api_key="new-key", activate=False)
+    assert path.read_bytes() == before
+    assert (await store.resolve()).api_key == "original-key"

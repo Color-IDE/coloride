@@ -3,7 +3,8 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from typing import Any, cast
 
-from .provider import AgentModelProvider, ModelResponse
+from .provider import AgentModelProvider, ModelResponse, AgentProviderError
+from .vision import count_vision_parts
 
 
 class ModelGateway:
@@ -35,9 +36,17 @@ class ModelGateway:
         complete_stream: Callable[..., Awaitable[ModelResponse]] | None = None,
         stream_kwargs: dict[str, Any] | None = None,
     ) -> ModelResponse:
+        caps = getattr(self.provider, "capabilities", None)
+        if not getattr(caps, "images", True) and count_vision_parts(input_items):
+            raise AgentProviderError("This model does not declare image support. Select an image-capable model.")
+        if not getattr(caps, "tools", True):
+            tools = []
+            tool_choice = None
+            if stream_kwargs:
+                stream_kwargs = {**stream_kwargs, "tools": [], "tool_choice": None}
         cache_key = (prompt_cache_key or "").strip()
         stream = complete_stream or getattr(self.provider, "complete_stream", None)
-        if callable(stream) and on_text_delta is not None and on_reasoning_delta is not None:
+        if getattr(caps, "streaming", True) and callable(stream) and on_text_delta is not None and on_reasoning_delta is not None:
             kwargs: dict[str, Any] = {
                 "instructions": instructions,
                 "input_items": input_items,

@@ -23,17 +23,13 @@ import {
 } from "./composer/modelReasoning";
 
 interface Dependencies {
-  providerModel: string;
-  providerKey: string;
   providerConfig: AgentProviderConfig | null;
-  provider: AgentProvider;
   setError: Dispatch<SetStateAction<string>>;
   configSeqRef: RefObject<number>;
   setSavingProvider: Dispatch<SetStateAction<boolean>>;
   setProviderConfig: Dispatch<SetStateAction<AgentProviderConfig | null>>;
   setProvider: Dispatch<SetStateAction<AgentProvider>>;
   setProviderModel: Dispatch<SetStateAction<string>>;
-  setProviderKey: Dispatch<SetStateAction<string>>;
   messageFromError: (error: unknown) => string;
   savingProvider: boolean;
   hasModelCredits: (snapshot: LlmCreditsSnapshot | null | undefined) => boolean;
@@ -53,17 +49,13 @@ interface Dependencies {
   setNewTaskAccessLevel: Dispatch<SetStateAction<AgentAccessLevel>>;
 }
 export function useAgentProviderActions({
-  providerModel,
-  providerKey,
   providerConfig,
-  provider,
   setError,
   configSeqRef,
   setSavingProvider,
   setProviderConfig,
   setProvider,
   setProviderModel,
-  setProviderKey,
   messageFromError,
   savingProvider,
   hasModelCredits,
@@ -82,50 +74,6 @@ export function useAgentProviderActions({
   effectiveAccessLevel,
   setNewTaskAccessLevel,
 }: Dependencies) {
-  const saveProvider = async () => {
-    const model = providerModel.trim();
-    const apiKey = providerKey.trim();
-    const needsNewKey =
-      !providerConfig?.configured || providerConfig.provider !== provider;
-    if (!model || (needsNewKey && !apiKey)) {
-      setError(`Enter a model and a ${PROVIDER_OPTIONS[provider].keyLabel}.`);
-      return;
-    }
-    const seq = ++configSeqRef.current;
-    setSavingProvider(true);
-    setError("");
-    try {
-      const updated = await api.updateAgentConfig({
-        provider,
-        model,
-        ...(apiKey ? { apiKey } : {}),
-      });
-      if (seq < configSeqRef.current) return;
-      setProviderConfig(updated);
-      setProvider(updated.provider);
-      setProviderModel(updated.model);
-      setProviderKey("");
-    } catch (reason) {
-      if (seq < configSeqRef.current) return;
-      setError(messageFromError(reason));
-    } finally {
-      if (seq >= configSeqRef.current) {
-        setSavingProvider(false);
-      }
-    }
-  };
-
-  const selectProvider = (nextProvider: AgentProvider) => {
-    if (nextProvider === provider) return;
-    setProvider(nextProvider);
-    setProviderModel(
-      nextProvider === providerConfig?.provider
-        ? providerConfig.model
-        : PROVIDER_OPTIONS[nextProvider].model,
-    );
-    setProviderKey("");
-  };
-
   const selectComposerModel = async (option: ComposerModelOption) => {
     if (!option.provider || savingProvider) return;
     if (option.requiresPaidPlan && !hasModelCredits(llmCredits)) {
@@ -145,7 +93,6 @@ export function useAgentProviderActions({
       setComposerReasoning(snapped);
       writeStoredComposerReasoning(sessionPane, snapped);
     }
-    setProviderKey("");
     try {
       const updated = await api.updateAgentConfig({
         provider: option.provider,
@@ -157,7 +104,7 @@ export function useAgentProviderActions({
       setProviderModel(updated.model);
       if (!updated.configured) {
         setError(
-          `Configure a ${PROVIDER_OPTIONS[updated.provider].label} API key to use ${option.label}.`,
+          `Configure a ${(PROVIDER_OPTIONS[updated.provider]?.label || updated.provider)} API key to use ${option.label}.`,
         );
       }
     } catch (reason) {
@@ -239,8 +186,6 @@ export function useAgentProviderActions({
   };
 
   return {
-    saveProvider,
-    selectProvider,
     selectComposerModel,
     changeMode,
     changeAccess,

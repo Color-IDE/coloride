@@ -1,3 +1,4 @@
+import { useAvailableComposerModels } from "./useAvailableComposerModels";
 
 import { MenuCheck } from "../../settings/SettingsControls";
 import { motion } from "motion/react";
@@ -7,7 +8,6 @@ import { PaidModelIcon } from "./ComposerModelDetails";
 import { ComposerModelHoverTip } from "./ComposerModelHoverTip";
 import { ComposerModelIcon } from "./ComposerModelIcon";
 import {
-  COMPOSER_MODEL_GROUPS,
   COMPOSER_MODELS,
   type ComposerModelOption,
 } from "./modelCatalog";
@@ -57,6 +57,9 @@ export function ComposerModelSelector({
   onSelectModel,
   setAttachMenuOpen,
 }: SelectorProps) {
+  const groups = useAvailableComposerModels(composerModelOpen);
+  const models = [...groups.flatMap(group => group.models), ...COMPOSER_MODELS];
+  const reasoningAllowed = models.find(item => item.model === providerModel)?.capabilities?.reasoning !== false;
   return (
     <div className="relative" ref={composerModelRef}>
       <button
@@ -86,7 +89,7 @@ export function ComposerModelSelector({
           model={providerModel}
         />
         <span className="truncate">
-          {COMPOSER_MODELS.find((item) => item.model === providerModel)
+          {models.find((item) => item.model === providerModel)
             ?.label ?? providerModel}
         </span>
         <ComposerChevron className={composerModelOpen ? "rotate-180" : ""} />
@@ -137,7 +140,7 @@ export function ComposerModelSelector({
                 </div>
                 {!autoModel && (
                   <>
-                    {reasoningLevelsForModel(providerModel).length > 0 && (
+                    {reasoningAllowed && reasoningLevelsForModel(providerModel).length > 0 && (
                       <>
                         <div className="agent-model-divider" />
                         <div className="agent-model-label px-2 py-1 text-[11px] font-medium">
@@ -188,7 +191,7 @@ export function ComposerModelSelector({
                     model={providerModel}
                   />
                   <span className="min-w-0 flex-1 truncate font-medium">
-                    {COMPOSER_MODELS.find(
+                    {models.find(
                       (item) => item.model === providerModel,
                     )?.label ?? providerModel}
                   </span>
@@ -215,7 +218,8 @@ export function ComposerModelSelector({
                   }}
                   transition={{ duration: 0.12, ease: "easeOut" }}
                 >
-                  {COMPOSER_MODEL_GROUPS.map((group, groupIndex) => (
+                  {!groups.length && <p className="px-2 py-2 text-xs opacity-60">Add an API key in Settings to load models.</p>}
+                  {groups.map((group, groupIndex) => (
                     <div className="flex flex-col gap-px" key={group.label}>
                       {groupIndex > 0 ? (
                         <div className="agent-model-divider my-1" />

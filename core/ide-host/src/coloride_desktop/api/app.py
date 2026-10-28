@@ -21,7 +21,7 @@ except ImportError:  # Windows — local PTY terminals are Unix-only.
 
 import asyncssh
 import httpx
-from fastapi import Depends, FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect, status
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, WebSocket, WebSocketDisconnect, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -49,12 +49,15 @@ from ..files.service import (
 from ..git.safe_deploy import SafeGitDeployService
 from ..lsp import LspRegistry
 from ..lsp.local import open_local_lsp_process, run_local_command
+from ..agents.model_discovery import ModelDiscoveryError
 from ..models import (
     AgentApprovalRequest,
     AgentApprovalResponse,
     AgentCheckpointRestoreRequest,
     AgentConfigResponse,
     AgentConfigUpdateRequest,
+    AgentProviderConnectRequest,
+    AgentProviderRegistrationRequest,
     AgentEvaluationResponse,
     AgentEventResponse,
     AgentGuardResolveRequest,
@@ -2712,11 +2715,11 @@ def create_app(config: LaunchConfig) -> FastAPI:
         app.state.terminals.close(term_id)
         return {"ok": True}
 
-    @app.get("/api/agents/config", response_model=AgentConfigResponse, dependencies=[auth])
-    async def agent_config() -> AgentConfigResponse:
-        return AgentConfigResponse.model_validate(await app.state.agent_config.status())
+    @app.get("/api/agents/config", response_model=AgentConfigResponse, response_model_exclude_unset=True, dependencies=[auth])
+    async def agent_config(include_providers: bool = Query(False, alias="includeProviders")) -> AgentConfigResponse:
+        return AgentConfigResponse.model_validate(await app.state.agent_config.status(include_providers=include_providers))
 
-    @app.put("/api/agents/config", response_model=AgentConfigResponse, dependencies=[auth])
+    @app.put("/api/agents/config", response_model=AgentConfigResponse, response_model_exclude_unset=True, dependencies=[auth])
     async def agent_config_update(request: AgentConfigUpdateRequest) -> AgentConfigResponse:
         try:
             value = await app.state.agent_config.update(
@@ -2724,6 +2727,7 @@ def create_app(config: LaunchConfig) -> FastAPI:
                 model=request.model,
                 api_key=request.api_key,
                 base_url=request.base_url,
+                activate=request.activate,
             )
         except ValueError as exc:
             raise _http_error(
@@ -2737,6 +2741,27 @@ def create_app(config: LaunchConfig) -> FastAPI:
                 "agents.config_failed",
                 f"Unable to save the agent credential in the system Keychain: {exc}",
             ) from exc
+        return AgentConfigResponse.model_validate(value)
+
+    @app.get("/api/agents/providers", dependencies=[auth])
+    async def agent_provider_registry() -> list[dict[str, object]]:
+        return [item.public() for item in app.state.agent_config.registry().all()]
+
+    @app.post("/api/agents/providers", dependencies=[auth], status_code=201)
+    async def agent_provider_register(request: AgentProviderRegistrationRequest) -> dict[str, object]:
+        try:
+            return app.state.agent_config.register_provider(request.model_dump(by_alias=True))
+        except ValueError as exc:
+            raise _http_error(status.HTTP_400_BAD_REQUEST, "agents.invalid_provider", str(exc)) from None
+
+    @app.post("/api/agents/providers/{provider}/connect", response_model=AgentConfigResponse, dependencies=[auth])
+    async def agent_provider_connect(provider: str, request: AgentProviderConnectRequest) -> AgentConfigResponse:
+        try:
+            value = await app.state.agent_config.connect_provider(provider, request.api_key)
+        except ModelDiscoveryError as exc:
+            raise _http_error(status.HTTP_400_BAD_REQUEST, "agents.provider_connection_failed", str(exc)) from None
+        except Exception:
+            raise _http_error(status.HTTP_409_CONFLICT, "agents.provider_save_failed", "Could not save the API key securely. Your previous configuration has been retained.") from None
         return AgentConfigResponse.model_validate(value)
 
     @app.get("/api/agents/available", response_model=list[AgentInfo], dependencies=[auth])

@@ -729,7 +729,7 @@ export function App() {
       setTerminalHeight,
     });
   const openSettings = useCallback((section?: string) => {
-    const known = new Set(["general", "appearance", "shortcuts", "editor", "terminal", "agent", "security", "updates", "diagnostics", "about"]);
+    const known = new Set(["general", "appearance", "shortcuts", "editor", "terminal", "agent", "providers", "security", "updates", "diagnostics", "about"]);
     const requested = section === "account" ? "general" : section;
     const next = requested && known.has(requested) ? requested as SettingsSection : undefined;
     if (window.colorideDesktop?.openSettings) {

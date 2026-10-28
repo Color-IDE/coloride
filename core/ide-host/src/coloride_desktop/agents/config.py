@@ -4,6 +4,7 @@ import asyncio
 import contextlib
 import json
 import os
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
@@ -18,20 +19,7 @@ DEFAULT_PROVIDER = "xai"
 DEFAULT_MODEL = "grok-4.5"
 DEFAULT_BASE_URL = "https://api.x.ai/v1"
 
-PROVIDER_DEFAULTS: dict[str, tuple[str, str]] = {
-    "fireworks": (
-        "accounts/fireworks/models/kimi-k3",
-        "https://api.fireworks.ai/inference/v1",
-    ),
-    # Native generateContent (not the OpenAI-compat shim) so thought
-    # signatures survive the tool loop.
-    "gemini": (
-        "gemini-3.8-flash",
-        "https://generativelanguage.googleapis.com/v1beta",
-    ),
-    "openai": ("gpt-5.3-codex", "https://api.openai.com/v1"),
-    "xai": ("grok-4.5", "https://api.x.ai/v1"),
-}
+from .provider_registry import ProviderRegistry, ModelCapabilities, custom_definition
 
 # Coloride's hosted gateway holds credentials for every product provider. BYOK
 # remains an explicit development/enterprise fallback, never a normal user flow.
@@ -104,6 +92,8 @@ class AgentProviderSettings:
     api_key: str
     credential_source: str
     reasoning_effort: str = "medium"
+    protocol: str | None = None
+    model_capabilities: ModelCapabilities | None = None
 
 
 class AgentConfigStore:
@@ -115,22 +105,46 @@ class AgentConfigStore:
         secrets: AgentSecretStore | None = None,
         environ: dict[str, str] | None = None,
     ) -> None:
+        self._connect_lock = asyncio.Lock()
         self.path = path or Path.home() / ".coloride" / "desktop" / "agent-config.json"
         self.secrets = secrets or KeyringAgentSecretStore()
         self.environ = environ if environ is not None else os.environ
 
+    def registry(self) -> ProviderRegistry:
+        stored = self._read()
+        custom = stored.get("customProviders", [])
+        profiles = stored.get("providers", {})
+        return ProviderRegistry(custom if isinstance(custom, list) else [], profiles if isinstance(profiles, dict) else {})
+
+    def register_provider(self, value: dict[str, object]) -> dict[str, object]:
+        definition = custom_definition(value)
+        registry = self.registry()
+        registry.register(definition)
+        stored = self._read()
+        stored["customProviders"] = [*stored.get("customProviders", []), {**value, "baseUrl": definition.base_url}]
+        self._write(stored)
+        return definition.public()
+
     def public_settings(self) -> dict[str, str]:
         stored = self._read()
         provider = str(stored.get("provider") or DEFAULT_PROVIDER).strip().lower()
-        if provider not in PROVIDER_DEFAULTS:
+        registry = self.registry()
+        try:
+            definition = registry.get(provider)
+        except ValueError:
             provider = DEFAULT_PROVIDER
-        default_model, default_base_url = PROVIDER_DEFAULTS[provider]
+            definition = registry.get(provider)
+        default_model, default_base_url = definition.default_model, definition.base_url
         provider_base_url_env = {
             "fireworks": "COLORIDE_FIREWORKS_BASE_URL",
             "gemini": "COLORIDE_GEMINI_BASE_URL",
             "openai": "COLORIDE_OPENAI_BASE_URL",
             "xai": "COLORIDE_XAI_BASE_URL",
-        }[provider]
+            "deepseek": "COLORIDE_DEEPSEEK_BASE_URL",
+            "mistral": "COLORIDE_MISTRAL_BASE_URL",
+            "groq": "COLORIDE_GROQ_BASE_URL",
+            "ollama": "COLORIDE_OLLAMA_BASE_URL",
+        }.get(provider, "")
         return {
             "provider": provider,
             "model": str(
@@ -146,20 +160,53 @@ class AgentConfigStore:
             ),
         }
 
-    async def status(self) -> dict[str, object]:
+    def _stored_provider_settings(self, provider: str, stored: dict[str, object] | None = None) -> dict[str, str]:
+        stored = self._read() if stored is None else stored
+        profiles = stored.get("providers")
+        profile = profiles.get(provider) if isinstance(profiles, dict) else None
+        if not isinstance(profile, dict):
+            profile = stored if stored.get("provider", DEFAULT_PROVIDER) == provider else {}
+        definition = self.registry().get(provider)
+        model, base_url = definition.default_model, definition.base_url
+        return {"model": str(profile.get("model") or model), "baseUrl": str(profile.get("baseUrl") or base_url)}
+
+    async def provider_configurations(self) -> list[dict[str, object]]:
+        stored = self._read()
+        active = self.public_settings()
+        providers: list[dict[str, object]] = []
+        registry = self.registry()
+        for definition in registry.all():
+            provider = definition.id
+            source = "environment" if self._environment_key(provider) else "none"
+            if not definition.requires_key:
+                source = "local"
+            if source == "none" and await self.secrets.get_api_key(provider):
+                source = "keychain"
+            values = self._stored_provider_settings(provider, stored)
+            if active["provider"] == provider:
+                values = {"model": active["model"], "baseUrl": active["baseUrl"]}
+            profiles = stored.get("providers", {})
+            profile = profiles.get(provider, {}) if isinstance(profiles, dict) else {}
+            models = profile.get("availableModels", []) if isinstance(profile, dict) else []
+            if not definition.builtin:
+                from dataclasses import asdict
+                models = [{**model, "capabilities": asdict(registry.capabilities(provider, str(model["id"])))} for model in models]
+            providers.append({"label": definition.label, "protocol": definition.protocol, "requiresKey": definition.requires_key, "showInSettings": definition.show_in_settings, "availableModels": models, "provider": provider, **values, "configured": source != "none",
+                              "credentialSource": source, "active": active["provider"] == provider})
+        return providers
+
+    async def status(self, *, include_providers: bool = False) -> dict[str, object]:
         # Lazy import avoids config ↔ provider circular dependency.
-        from .provider import _max_context_characters, _max_context_tokens
-        from .model_capabilities import supports_tools
         from .cloud_token import cloud_access_token_needs_refresh
 
         settings = self.public_settings()
+        caps = self.registry().capabilities(str(settings["provider"]), str(settings["model"]))
         provider = str(settings["provider"])
-        model = str(settings.get("model") or "")
         managed_llm = self._managed_llm_enabled() and provider in MANAGED_LLM_PROVIDERS
         source, _ = await self._resolve_credentials(provider)
         # When using managed LLM, public baseUrl still shows the logical provider
         # default — actual requests go to api.coloride.com/v1/llm.
-        return {
+        result: dict[str, object] = {
             **settings,
             "configured": source != "none",
             "availability": ("missing_credentials" if source == "none" else "auth_expired" if source == "coloride" and cloud_access_token_needs_refresh() else "available"),
@@ -167,21 +214,27 @@ class AgentConfigStore:
             # True whenever product path is on (even before sign-in) so UI hides BYOK.
             "managedLlm": managed_llm,
             "capabilities": {
-                "tools": supports_tools(provider, model),
-                "streaming": True,
-                "encryptedReasoning": provider in {"openai", "xai"},
+                "tools": caps.tools,
+                "streaming": caps.streaming,
+                "images": caps.images,
+                "reasoning": caps.reasoning,
+                "encryptedReasoning": caps.encrypted_reasoning,
                 # Derived from real token windows (Grok 4.5 ≈ 500K) — see provider.
-                "maxContextCharacters": _max_context_characters(provider, model),
-                "maxContextTokens": _max_context_tokens(provider, model),
+                "maxContextCharacters": caps.context_characters,
+                "maxContextTokens": caps.context_tokens,
                 "maxRetries": 3,
             },
         }
+
+        if include_providers:
+            result["providers"] = await self.provider_configurations()
+        return result
 
     async def resolve(self) -> AgentProviderSettings:
         public = self.public_settings()
         provider = str(public["provider"])
         source, api_key = await self._resolve_credentials(provider)
-        if not api_key or source == "none":
+        if (not api_key and source != "local") or source == "none":
             if self._managed_llm_enabled():
                 raise RuntimeError(
                     "Sign in to your Coloride account to use the agent. "
@@ -198,13 +251,18 @@ class AgentConfigStore:
             provider=provider,
             model=str(public["model"]),
             base_url=base_url,
-            api_key=api_key,
+            api_key=api_key or "",
             credential_source=source,
+            protocol=self.registry().get(provider).protocol,
+            model_capabilities=self.registry().capabilities(provider, str(public["model"])),
         )
 
     async def _resolve_credentials(self, provider: str) -> tuple[str, str | None]:
         """Return (credential_source, secret). Prefer managed Coloride LLM."""
-        managed_llm = self._managed_llm_enabled() and provider in MANAGED_LLM_PROVIDERS
+        definition = self.registry().get(provider)
+        if not definition.requires_key:
+            return "local", ""
+        managed_llm = self._managed_llm_enabled() and definition.managed
         # 1) Managed: user JWT → api.coloride.com holds provider keys.
         if managed_llm:
             cloud_token = get_cloud_access_token()
@@ -254,11 +312,12 @@ class AgentConfigStore:
         model: str,
         api_key: str | None = None,
         base_url: str | None = None,
+        activate: bool = True,
+        available_models: list[dict[str, object]] | None = None,
     ) -> dict[str, object]:
         provider = provider.strip().lower()
         model = model.strip()
-        if provider not in PROVIDER_DEFAULTS:
-            raise ValueError("Choose a supported model provider")
+        self.registry().get(provider)
         if not model or len(model) > 120:
             raise ValueError("Choose a valid model name")
         current = self.public_settings()
@@ -267,25 +326,83 @@ class AgentConfigStore:
             selected_base_url = (
                 str(current["baseUrl"])
                 if current["provider"] == provider
-                else PROVIDER_DEFAULTS[provider][1]
+                else self._stored_provider_settings(provider)["baseUrl"]
             )
         normalized_base_url = selected_base_url.strip().rstrip("/")
-        if not normalized_base_url.startswith("https://"):
-            raise ValueError("The provider base URL must use HTTPS")
+        from .provider_registry import validate_endpoint
+        normalized_base_url = validate_endpoint(normalized_base_url)
 
-        self._write(
-            {
-                "provider": provider,
-                "model": model,
-                "baseUrl": normalized_base_url,
-            }
-        )
+        previous_key = None
+        # A failed credential save must not change the selected provider or model.
         if api_key is not None:
             normalized_key = api_key.strip()
             if not normalized_key:
                 raise ValueError("The API key cannot be empty")
+            previous_key = await self.secrets.get_api_key(provider)
             await self.secrets.save_api_key(provider, normalized_key)
-        return await self.status()
+        # Read after the async credential write to preserve other provider edits.
+        stored = self._read()
+        raw_profiles = stored.get("providers")
+        profiles = dict(raw_profiles) if isinstance(raw_profiles, dict) else {}
+        previous = str(stored.get("provider") or DEFAULT_PROVIDER)
+        if previous not in profiles:
+            profiles[previous] = self._stored_provider_settings(previous, stored)
+        profiles[provider] = {**(profiles.get(provider) if isinstance(profiles.get(provider), dict) else {}), "model": model, "baseUrl": normalized_base_url}
+        if api_key is not None:
+            profiles[provider].pop("availableModels", None)
+            profiles[provider].pop("modelsCheckedAt", None)
+        if available_models is not None:
+            profiles[provider].update({"availableModels": available_models, "modelsCheckedAt": time.time()})
+        value = {**stored, "providers": profiles}
+        if activate or self.public_settings()["provider"] == provider:
+            value.update({"provider": provider, "model": model, "baseUrl": normalized_base_url})
+        try:
+            self._write(value)
+        except Exception:
+            if api_key is not None:
+                if previous_key:
+                    await self.secrets.save_api_key(provider, previous_key)
+                else:
+                    await self.secrets.delete_api_key(provider)
+            raise
+        return await self.status(include_providers=not activate)
+
+    async def connect_provider(self, provider: str, api_key: str | None = None) -> dict[str, object]:
+        from .model_discovery import discover_models, ModelDiscoveryError
+
+        try:
+            definition = self.registry().get(provider)
+        except ValueError:
+            raise ModelDiscoveryError("Choose a registered provider.") from None
+        key = api_key.strip() if api_key is not None else None
+        if api_key is not None and not key:
+            raise ModelDiscoveryError("The API key cannot be empty.")
+        environment_key = self._environment_key(provider)
+        if key and environment_key:
+            raise ModelDiscoveryError("This provider uses an environment API key. Update that environment variable instead.")
+        key = key or environment_key or await self.secrets.get_api_key(provider)
+        if not key and definition.requires_key:
+            raise ModelDiscoveryError("Enter an API key to discover available models.")
+        stored = self._read()
+        profiles = stored.get("providers", {})
+        profile = profiles.get(provider, {}) if isinstance(profiles, dict) else {}
+        checked_at = profile.get("modelsCheckedAt", 0) if isinstance(profile, dict) else 0
+        if api_key is None and isinstance(checked_at, (float, int)) and time.time() - checked_at < 600 and profile.get("availableModels"):
+            return await self.status(include_providers=True)
+        models = await discover_models(provider, key) if definition.builtin else await self._discover_custom(definition, key or "")
+        async with self._connect_lock:
+            current = await self.status()
+            selected = self._stored_provider_settings(provider)["model"]
+            model = selected if api_key is None and any(item["id"] == selected for item in models) else models[0]["id"]
+            # Preserve a working selection; the first connected key makes an
+            # otherwise unconfigured agent ready without another manual action.
+            await self.update(provider=provider, model=model, api_key=api_key,
+                              base_url=definition.base_url, activate=not current["configured"], available_models=models)
+            return await self.status(include_providers=True)
+
+    async def _discover_custom(self, definition, key: str):
+        from .model_discovery import discover_custom_models
+        return await discover_custom_models(definition, key)
 
     def _environment_key(self, provider: str) -> str | None:
         if provider == "fireworks":
@@ -309,15 +426,22 @@ class AgentConfigStore:
             return self.environ.get("XAI_API_KEY") or self.environ.get(
                 "COLORIDE_XAI_API_KEY"
             )
+        if provider == "deepseek":
+            return self.environ.get("DEEPSEEK_API_KEY") or self.environ.get(
+                "COLORIDE_DEEPSEEK_API_KEY"
+            )
+        if provider == "mistral":
+            return self.environ.get("MISTRAL_API_KEY") or self.environ.get(
+                "COLORIDE_MISTRAL_API_KEY"
+            )
+        if provider == "groq":
+            return self.environ.get("GROQ_API_KEY") or self.environ.get(
+                "COLORIDE_GROQ_API_KEY"
+            )
         return None
 
-    @staticmethod
-    def _provider_label(provider: str) -> str:
-        if provider == "fireworks":
-            return "Fireworks"
-        if provider == "gemini":
-            return "Gemini"
-        return "xAI" if provider == "xai" else "OpenAI"
+    def _provider_label(self, provider: str) -> str:
+        return self.registry().get(provider).label
 
     def _read(self) -> dict[str, object]:
         if not self.path.exists():

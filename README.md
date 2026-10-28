@@ -54,7 +54,7 @@ corepack pnpm install --frozen-lockfile
 corepack pnpm dev
 ```
 
-This starts Vite and Electron, which starts or reconnects to the local Python host. No server provisioning is needed. React changes use Vite HMR. Electron main/preload changes require an Electron restart; a persistent Python host may retain older code while sessions are active. Do not terminate user sessions for validation.
+This starts Vite and Electron, which starts or reconnects to the local Python host. No server provisioning is needed. React changes use Vite HMR. Electron main/preload changes require an Electron restart; a compatible persistent Python host is reused while terminal sessions are active. To load Python changes, close those terminal tabs and restart Electron. Do not terminate user sessions for validation.
 
 ## Architecture
 
@@ -91,6 +91,8 @@ The renderer is grouped into `src/app` (composition), `src/features` (IDE functi
 | [Contributing](./CONTRIBUTING.md) | Setup, placement, checks and pull requests |
 | [Phased roadmap](./docs/roadmap.md) | Objectives, scope and exit criteria for phases 0–12 |
 | [Tests](./tests/README.md) | Suite folders, coverage and commands |
+| [Performance](./docs/performance.md) | Warm-start and file-open checks, and what is not measured |
+| [Local work](./docs/local-first.md) | What works offline, and what a crash keeps |
 | [Security](./SECURITY.md) | Security boundaries, threat model and reporting |
 
 ## Status
@@ -120,6 +122,16 @@ with different cloud settings. Refresh tokens for alternate API endpoints use
 separate files so the official account token is not sent to a fork's server.
 When cloud is disabled, provider API keys can still be used directly; external
 model providers require their own credentials and network connection.
+Configure API keys in **Settings → LLM Providers**. Paste a key into its provider’s
+section: Coloride validates access, saves it in the OS credential store, discovers
+available models and selects a coding default automatically. The agent menu only
+shows discovered models from Coloride’s supported coding shortlist. Discovery
+uses model-list endpoints, not billable generation requests; it does not verify
+remaining quota. Invalid replacement keys preserve the saved configuration.
+A working provider stays selected when connecting additional providers. You can
+also register compatible endpoints or local servers in Settings. The agent uses
+a [provider registry](docs/providers.md) with explicit model capabilities; unknown
+models do not automatically gain tools, vision or reasoning support.
 
 This setting controls account and managed-agent access. Editing, terminals,
 search, the embedded browser and local files do not call Coloride. Sign-in and

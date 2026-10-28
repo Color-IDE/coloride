@@ -1,6 +1,8 @@
 import type { AgentProvider } from "@coloride/contracts";
 
 export interface ComposerModelOption {
+  detailsUnavailable?: boolean;
+  capabilities?: { tools: boolean; streaming: boolean; images: boolean; reasoning: boolean };
   label: string;
   model: string;
   provider: AgentProvider | null;
@@ -29,6 +31,26 @@ export const PROVIDER_OPTIONS: Record<AgentProvider, ProviderOption> = {
     label: "Fireworks",
     model: "accounts/fireworks/models/kimi-k3",
     keyLabel: "Fireworks API key",
+  },
+  deepseek: {
+    label: "DeepSeek",
+    model: "deepseek-flash",
+    keyLabel: "DeepSeek API key",
+  },
+  mistral: {
+    label: "Mistral",
+    model: "mistral-large-latest",
+    keyLabel: "Mistral API key",
+  },
+  groq: {
+    label: "Groq",
+    model: "openai/gpt-oss-120b",
+    keyLabel: "Groq API key",
+  },
+  ollama: {
+    label: "Ollama",
+    model: "qwen2.5-coder",
+    keyLabel: "No API key",
   },
   gemini: {
     label: "Gemini",
@@ -195,6 +217,9 @@ export function modelContextWindow(model: string | null | undefined): number {
   if (normalized.startsWith("grok-build-0.1")) return 256_000;
   if (normalized.startsWith("grok-4.3") || normalized.startsWith("grok4.3")) return 1_000_000;
   if (normalized.includes("deepseek-v4") || normalized.includes("kimi-k3")) return 1_000_000;
+  if (normalized.startsWith("mistral-large") || normalized.startsWith("codestral")) return 1_000_000;
+  if (normalized.startsWith("mistral-")) return 128_000;
+  if (normalized.includes("llama-3.3") || normalized.includes("gpt-oss") || normalized.includes("qwen3")) return 131_072;
   if (normalized.includes("minimax-m3")) return 512_000;
   if (normalized.startsWith("gemini-4-argon")) return 1_048_576;
   if (normalized.startsWith("gemini-3") || normalized.startsWith("gemini-2.5")) return 1_000_000;

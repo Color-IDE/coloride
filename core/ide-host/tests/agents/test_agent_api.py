@@ -52,6 +52,8 @@ def test_agent_config_api_persists_secret_outside_json(tmp_path) -> None:
         "capabilities": {
             "tools": False,
             "streaming": True,
+            "images": False,
+            "reasoning": False,
             "encryptedReasoning": True,
             # Unknown OpenAI model name → default 128k window.
             "maxContextCharacters": 348_160,
@@ -140,6 +142,8 @@ def test_agent_config_api_supports_xai(tmp_path) -> None:
         "capabilities": {
             "tools": True,
             "streaming": True,
+            "images": True,
+            "reasoning": True,
             "encryptedReasoning": True,
             "maxContextCharacters": 1_360_000,
             "maxContextTokens": 500_000,
@@ -798,3 +802,55 @@ def test_chat_history_api_is_authenticated_scoped_and_searches_content(tmp_path)
         assert response.json()[0]["sessionId"] == local.session_id
         assert response.json()[0]["firstMessage"] == "Investigate OpenSky"
         assert response.json()[0]["matches"] is True
+
+
+def test_provider_profiles_can_be_saved_without_selecting_them(tmp_path) -> None:
+    app = create_app(LaunchConfig(host="127.0.0.1", port=8788, bearer_token="test-token"))
+    app.state.agent_config = AgentConfigStore(path=tmp_path / "config.json", secrets=InMemoryAgentSecretStore(), environ={"COLORIDE_MANAGED_LLM": "0"})
+    headers = {"authorization": "Bearer test-token"}
+    with TestClient(app) as client:
+        denied = client.get("/api/agents/config?includeProviders=true")
+        assert denied.status_code == 401
+        saved = client.put("/api/agents/config", headers=headers, json={"provider":"openai", "model":"personal-model", "apiKey":"never-expose", "activate":False})
+        assert saved.status_code == 200
+        assert saved.json()["provider"] == "xai"
+        listed = client.get("/api/agents/config?includeProviders=true", headers=headers)
+        assert listed.status_code == 200
+        entries = {entry["provider"]: entry for entry in listed.json()["providers"]}
+        assert entries["openai"]["configured"] is True
+        assert entries["openai"]["model"] == "personal-model"
+        assert entries["openai"]["active"] is False
+        assert "never-expose" not in listed.text and "never-expose" not in saved.text
+        selected = client.put("/api/agents/config", headers=headers, json={"provider":"openai", "model":"personal-model"})
+        assert selected.status_code == 200
+        assert selected.json()["provider"] == "openai"
+        assert selected.json()["configured"] is True
+
+
+def test_automatic_provider_connection_is_authenticated_and_redacts_storage_errors(tmp_path, monkeypatch):
+    from coloride_desktop.agents import model_discovery
+    async def discover(provider, key):
+        return [{'id': 'gpt-6.1-sol', 'label': 'GPT-6.1 Sol'}]
+    monkeypatch.setattr(model_discovery, 'discover_models', discover)
+    secrets = InMemoryAgentSecretStore()
+    store = AgentConfigStore(path=tmp_path/'automatic-config.json', secrets=secrets, environ={'COLORIDE_MANAGED_LLM': '0'})
+    app = create_app(LaunchConfig(host='127.0.0.1', port=8788, bearer_token='test-token'))
+    app.state.agent_config = store
+    headers = {'authorization': 'Bearer test-token'}
+    with TestClient(app) as client:
+        url = '/api/agents/providers/openai/connect'
+        assert client.post(url, json={'apiKey': 'private-secret'}).status_code == 401
+        result = client.post(url, headers=headers, json={'apiKey': 'private-secret'})
+        assert result.status_code == 200
+        assert result.json()['provider'] == 'openai'
+        assert result.json()['model'] == 'gpt-6.1-sol'
+        assert 'private-secret' not in result.text
+        assert client.post('/api/agents/providers/unknown/connect', headers=headers, json={}).status_code == 400
+        before = store.path.read_bytes()
+        async def fail_save(provider, key):
+            raise ValueError('storage failed for private-secret')
+        monkeypatch.setattr(secrets, 'save_api_key', fail_save)
+        failed = client.post(url, headers=headers, json={'apiKey': 'private-secret'})
+        assert failed.status_code == 409
+        assert 'private-secret' not in failed.text
+        assert store.path.read_bytes() == before

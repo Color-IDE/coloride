@@ -163,7 +163,6 @@ export function SettingsSelectChevron({ open }: { open: boolean }) {
       width="12"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <path d="M0 0h24v24H0z" fill="none" />
       <path d="m4 9 8 8 8-8" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
     </svg>
   );

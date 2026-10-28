@@ -26,6 +26,7 @@ export function ComposerModelHoverTip({
       style={style}
     >
       <p className="agent-model-tip-desc">{option.description}</p>
+      {!option.detailsUnavailable && <>
       <div className="agent-model-tip-stats">
         <div className="agent-model-tip-row">
           <span className="agent-model-tip-key">Price</span>
@@ -46,6 +47,7 @@ export function ComposerModelHoverTip({
         <span>In: {formatPerM(option.inputPerM)}</span>
         <span>Out: {formatPerM(option.outputPerM)}</span>
       </div>
+      </>}
       <span
         aria-hidden="true"
         className="agent-model-hover-tip-caret"

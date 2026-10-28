@@ -127,6 +127,8 @@ class ProviderCapabilities:
     max_context_tokens: int = 128_000
     max_retries: int = 3
     tools: bool = True
+    images: bool = True
+    reasoning: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -200,16 +202,16 @@ class ResponsesAPIProvider:
 
     @property
     def capabilities(self) -> ProviderCapabilities:
-        provider = self.settings.provider
-        model = self.settings.model
-        from .model_capabilities import supports_tools
-        return ProviderCapabilities(
-            tools=supports_tools(provider, model),
-            streaming=True,
-            encrypted_reasoning=provider in {"openai", "xai"},
-            max_context_characters=_max_context_characters(provider, model),
-            max_context_tokens=_max_context_tokens(provider, model),
-        )
+        from .provider_registry import ProviderRegistry, ModelCapabilities
+        caps = self.settings.model_capabilities
+        if caps is None:
+            try:
+                caps = ProviderRegistry().capabilities(self.settings.provider, self.settings.model)
+            except ValueError:
+                caps = ModelCapabilities()
+        return ProviderCapabilities(tools=caps.tools, streaming=caps.streaming, images=caps.images,
+            reasoning=caps.reasoning, encrypted_reasoning=caps.encrypted_reasoning,
+            max_context_characters=caps.context_characters, max_context_tokens=caps.context_tokens)
 
     async def complete(
         self,
@@ -409,7 +411,7 @@ class ResponsesAPIProvider:
             payload["tool_choice"] = tool_choice
         if self.capabilities.encrypted_reasoning:
             payload["include"] = ["reasoning.encrypted_content"]
-        if _supports_reasoning(self.settings.provider, self.settings.model):
+        if self.capabilities.reasoning:
             effort = _provider_reasoning_effort(
                 self.settings.provider,
                 self.settings.model,
@@ -434,7 +436,7 @@ class ResponsesAPIProvider:
             if live:
                 token = live
         headers = {
-            "Authorization": f"Bearer {token}",
+            **({"Authorization": f"Bearer {token}"} if token else {}),
             "Content-Type": "application/json",
             "Accept": "text/event-stream" if stream else "application/json",
         }
@@ -574,7 +576,7 @@ class XAIResponsesProvider(ResponsesAPIProvider):
     """xAI Responses API adapter for Grok models."""
 
 
-class FireworksResponsesProvider(ResponsesAPIProvider):
+class OpenAIChatCompletionsProvider(ResponsesAPIProvider):
     """Fireworks Chat Completions adapter.
 
     Fireworks is OpenAI-compatible, but its serverless inference endpoint is
@@ -614,13 +616,16 @@ class FireworksResponsesProvider(ResponsesAPIProvider):
         chat_tools = _fireworks_tools(tools)
         if chat_tools:
             payload["tools"] = chat_tools
-            payload["parallel_tool_calls"] = True
+            # Groq rejects parallel tool calls on several production models, and
+            # Ollama ignores the flag. Keep it for the servers that accept it.
+            if self.settings.provider not in {"groq", "ollama"}:
+                payload["parallel_tool_calls"] = True
         mapped_choice = _fireworks_tool_choice(tool_choice)
         if mapped_choice is not None:
             payload["tool_choice"] = mapped_choice
-        # Fireworks exposes chain-of-thought as `reasoning_content`, separately
-        # from final text. Effort is snapped to the levels that model advertises.
-        if _supports_reasoning("fireworks", self.settings.model):
+        # Fireworks and DeepSeek expose chain-of-thought as `reasoning_content`.
+        # Groq, Mistral and Ollama reject reasoning_effort on this endpoint.
+        if self.capabilities.reasoning and self.settings.provider in {"fireworks", "deepseek"}:
             effort = _fireworks_reasoning_effort(
                 self.settings.model,
                 getattr(self.settings, "reasoning_effort", "medium"),
@@ -790,6 +795,10 @@ class FireworksResponsesProvider(ResponsesAPIProvider):
             raise AgentProviderError(
                 f"{_provider_label(self.settings.provider)} stream failed: {_format_exc(exc)}"
             ) from exc
+
+
+class FireworksResponsesProvider(OpenAIChatCompletionsProvider):
+    """Compatibility alias for the generic Chat Completions adapter."""
 
 
 class GeminiResponsesProvider(ResponsesAPIProvider):
@@ -2356,18 +2365,20 @@ def _provider_reasoning_effort(provider: str, model: str, effort: object) -> str
 def _supports_reasoning(provider: str, model: str) -> bool:
     normalized = model.strip().lower()
     if provider == "openai":
-        return normalized.startswith(("gpt-5", "o1", "o3", "o4"))
+        return normalized.startswith(("gpt-6", "gpt-5", "o1", "o3", "o4"))
     if provider == "xai":
         # Grok Build 0.1 rejects the reasoningEffort parameter (xAI HTTP 400).
         # It reasons with its own model default, so omit the parameter entirely.
         return normalized.startswith(("grok-3-mini", "grok-4"))
-    if provider == "fireworks":
-        # These exact serverless models accept reasoning_effort and stream their
-        # thought process in reasoning_content.
+    if provider in {"fireworks", "deepseek"}:
+        # These models accept reasoning_effort and stream their thought process
+        # in reasoning_content.
         return any(
             family in normalized
-            for family in ("deepseek-v4", "minimax-m3", "kimi-k3")
+            for family in ("deepseek", "minimax-m3", "kimi-k3")
         )
+    if provider == "mistral":
+        return normalized.startswith(("mistral-large", "mistral-medium", "magistral"))
     if provider == "gemini":
         return normalized.startswith("gemini-")
     return False
@@ -2422,8 +2433,14 @@ def _max_context_tokens(provider: str, model: str) -> int:
             return _GROK_3_CONTEXT_TOKENS
         # Unknown xAI model — assume current flagship class.
         return _GROK_4_5_CONTEXT_TOKENS
-    if provider == "fireworks":
-        if "deepseek-v4-flash" in normalized or "deepseek-v4p1-flash" in normalized:
+    if provider in {"fireworks", "deepseek", "mistral", "groq", "ollama"}:
+        if provider == "mistral":
+            return 1_000_000 if "large" in normalized or "codestral" in normalized else 128_000
+        if provider == "groq":
+            return 131_072
+        if provider == "ollama":
+            return 32_768
+        if provider == "deepseek" or "deepseek-v4-flash" in normalized or "deepseek-v4p1-flash" in normalized:
             return _DEEPSEEK_V4_FLASH_CONTEXT_TOKENS
         if "kimi-k3" in normalized:
             return _KIMI_K3_CONTEXT_TOKENS
@@ -2460,6 +2477,14 @@ def _max_context_characters(provider: str, model: str) -> int:
 def _provider_label(provider: str) -> str:
     if provider == "fireworks":
         return "Fireworks"
+    if provider == "deepseek":
+        return "DeepSeek"
+    if provider == "mistral":
+        return "Mistral"
+    if provider == "groq":
+        return "Groq"
+    if provider == "ollama":
+        return "Ollama"
     if provider == "gemini":
         return "Google Gemini"
-    return "xAI" if provider == "xai" else "OpenAI"
+    return "xAI" if provider == "xai" else "OpenAI" if provider == "openai" else provider
