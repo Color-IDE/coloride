@@ -70,7 +70,7 @@ Or export a .p12 from another Mac and:
 EOF
     exit 1
   fi
-  echo "    Using CSC_LINK=$CSC_LINK"
+  echo "    Using the certificate supplied through CSC_LINK."
 else
   echo "    Found Developer ID Application identity."
   if [[ -z "${CSC_NAME:-}" ]]; then
@@ -131,6 +131,7 @@ echo
 echo "==> Building web frontend…"
 cd "$ROOT"
 pnpm build:web
+bash tooling/build/build-sidecar.sh --out client/desktop/resources/sidecar
 
 # ── 4. electron-builder (sign + notarize) ───────────────────────────────────
 echo
@@ -145,7 +146,7 @@ else
   EB_ARCH=x64
 fi
 
-pnpm exec electron-builder --mac dmg zip --"$EB_ARCH" --publish "$PUBLISH"
+pnpm exec electron-builder --mac dmg zip --"$EB_ARCH" --publish "$PUBLISH" -c.mac.notarize=true -c.forceCodeSigning=true
 
 echo
 echo "==> Done."
@@ -154,9 +155,12 @@ ls -la "$ELECTRON_DIR/release" | head -30
 echo
 echo "Verify Gatekeeper (should say 'accepted' after notarize stapling):"
 APP_PATH="$(find "$ELECTRON_DIR/release" -name 'Coloride.app' -type d | head -1 || true)"
+test -n "$APP_PATH"
 if [[ -n "$APP_PATH" ]]; then
   echo "    app: $APP_PATH"
-  spctl --assess --type execute -v "$APP_PATH" || true
+  codesign --verify --deep --strict "$APP_PATH"
+  spctl --assess --type execute -v "$APP_PATH"
+  xcrun stapler validate "$APP_PATH"
   codesign -dv --verbose=2 "$APP_PATH" 2>&1 | head -20 || true
 fi
 echo

@@ -32,7 +32,9 @@ function Harness() {
     <textarea style={{display:"block",width:"100%",height:100,marginBottom:12}} aria-label="Markdown source" value={input} onChange={event => setInput(event.target.value)} />
     <button onClick={() => setText(input)}>Render message</button>
     <button onClick={() => setStreaming(!streaming)}>Toggle streaming</button>
-    <AgentMessageText key={messageKey} text={text} streaming={streaming} />
+    <div data-test-message-key={messageKey}>
+      <AgentMessageText key={messageKey} text={text} streaming={streaming} />
+    </div>
     {card ? <AgentTimelineItem entry={{id: "live-card", kind: "error", text: "A new activity card"}} turnActive /> : null}
   </main>;
 }

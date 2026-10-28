@@ -17,4 +17,17 @@
 
 ---
 
-本页只保留标题。说明、安装和产品状态见 [英文 README](README.md)。
+Coloride 是适用于 Apple Silicon Mac 的本地 IDE，包含编辑器、文件资源管理器、终端和内置浏览器。无需账号即可使用，云服务默认关闭。
+
+## 快速开始
+
+需要 Node.js 22、pnpm 9.15.4 和 Python 3.12。
+
+```sh
+python3.12 -m venv core/ide-host/.venv
+core/ide-host/.venv/bin/python -m pip install -e 'core/ide-host[dev]'
+corepack pnpm install --frozen-lockfile
+corepack pnpm dev
+```
+
+详情请参阅[英文 README](README.md)、[贡献指南](CONTRIBUTING.md)和[安全政策](SECURITY.md)。

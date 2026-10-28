@@ -17,4 +17,17 @@
 
 ---
 
-이 페이지는 제목만 둡니다. 설명, 설치, 제품 상태는 [영어 README](README.md)에 있습니다.
+Coloride는 Apple Silicon Mac용 로컬 IDE입니다. 편집기, 파일 탐색기, 터미널, 내장 브라우저를 제공합니다. 계정 없이 사용할 수 있으며 클라우드 서비스는 기본적으로 비활성화되어 있습니다.
+
+## 빠른 시작
+
+Node.js 22, pnpm 9.15.4, Python 3.12가 필요합니다.
+
+```sh
+python3.12 -m venv core/ide-host/.venv
+core/ide-host/.venv/bin/python -m pip install -e 'core/ide-host[dev]'
+corepack pnpm install --frozen-lockfile
+corepack pnpm dev
+```
+
+자세한 내용은 [영문 README](README.md), [기여 안내](CONTRIBUTING.md), [보안 정책](SECURITY.md)을 참고하세요.

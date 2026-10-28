@@ -14,7 +14,7 @@ Coloride is a desktop IDE that can read files and execute commands with the perm
 
 ## Reporting
 
-Report vulnerabilities through private GitHub security advisories on this repository. Include the affected commit, reproduction steps and impact, with tokens, keys and personal project data removed. Do not open a public issue for an unfixed vulnerability.
+Report vulnerabilities through [private vulnerability reporting](https://github.com/Color-IDE/coloride/security/advisories/new) on this repository. Include the affected commit, reproduction steps and impact, with tokens, keys and personal project data removed. Do not open a public issue for an unfixed vulnerability.
 
 ## Assets
 

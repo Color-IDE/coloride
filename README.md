@@ -99,21 +99,13 @@ The project is licensed under the [MIT License](./LICENSE). The supported deskto
 
 ### Optional cloud services and community builds
 
-Files, editing and local terminals work without an account. Sign-in is only for
-cloud features. To run the desktop without cloud authentication, dashboard sync
-or managed AI:
-
-```sh
-COLORIDE_CLOUD_ENABLED=0 pnpm dev
-```
-
-For a community installer, set `enabled` to `false` in
-`client/desktop/src/cloud-config.json` before building the renderer and desktop.
-That file is packaged with Electron, so users do not need environment variables.
-The existing distribution defaults remain enabled.
+Files, editing and local terminals work without an account. This repository ships
+with cloud services disabled: `client/desktop/src/cloud-config.json` contains
+`enabled: false` and empty endpoints. Run `pnpm dev` without additional cloud
+configuration. Community installers inherit these defaults.
 
 Forks operating a compatible cloud service can set `appBase` and `apiBase` in the
-same file. Runtime overrides are `COLORIDE_CLOUD_ENABLED`,
+same file and enable cloud services explicitly. Runtime overrides are `COLORIDE_CLOUD_ENABLED`,
 `COLORIDE_CLOUD_APP_BASE` (browser login) and `COLORIDE_CLOUD_AUTH_BASE` (API);
 `COLORIDE_CLOUD_API_BASE` is an API alias. Endpoints must use HTTPS without embedded
 credentials, query strings or fragments. An alternate server must implement the
@@ -138,3 +130,31 @@ report usage to the product dashboard. They also do not download updates from
 the official feed unless `COLORIDE_OFFICIAL_UPDATE=1`.
 
 Crash reporting is separate (`COLORIDE_SENTRY_DISABLED=1`).
+
+### Building installers
+
+Tag pushes (`vX.Y.Z`, matching the desktop package version) and the **Release
+Desktop** workflow build macOS arm64 and experimental Windows x64 installers.
+**Release Windows** runs the same pipeline for Windows only. Both use Node.js 22
+and publish assets to a draft GitHub Release in the current repository using
+`GITHUB_TOKEN`; no VPS or external release repository is required. Review the
+artifacts and signing results before publishing the draft.
+
+macOS builds are unsigned and not notarized unless all five repository secrets
+are configured: `MACOS_DEVELOPER_ID_P12_BASE64`,
+`MACOS_DEVELOPER_ID_P12_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`,
+and `APPLE_TEAM_ID`. Partial credentials fail the build. Signed builds require
+successful signature, Gatekeeper and stapling checks. Windows installers are
+unsigned. Neither workflow includes voice models or a voice runtime.
+
+For local signed macOS builds, use `pnpm desktop:release:signed` with the Apple
+credentials described in `tooling/release/macos-sign-release.sh`. VPS deployment
+is an optional administrator task via `tooling/release/deploy-downloads.sh`;
+its `--help` lists the required configuration.
+
+Local publish commands (`pnpm desktop:release`, `pnpm desktop:release:win`, and
+`pnpm desktop:release:signed:publish`) use the GitHub provider and create draft
+releases. Set `GH_TOKEN` with permission to publish releases. Forks must change
+`build.publish.owner` and `build.publish.repo` in `client/desktop/package.json`
+to their own repository before using these local commands. GitHub Actions
+always uses the repository running the workflow.

@@ -1,0 +1,22 @@
+{
+  "@sentry/server-utils@10.67.0": {
+    "file": "sentry-server-utils.txt",
+    "source": "https://github.com/getsentry/sentry-javascript/blob/10.67.0/LICENSE",
+    "blob": "84d8d8c065fc3a4eac80fc9d171cebc06220692f"
+  },
+  "rehype-katex@7.0.1": {
+    "file": "rehype-katex.txt",
+    "source": "https://github.com/remarkjs/remark-math/blob/88a9497e1ede93b958237c85edbf5651faeca7af/license",
+    "blob": "ea3803784aa58da6fa7cd6e196948608def87bf9"
+  },
+  "remark-math@6.0.0": {
+    "file": "remark-math.txt",
+    "source": "https://github.com/remarkjs/remark-math/blob/d5d0660b150810a535bbb07eac6cc96a4510aa24/license",
+    "blob": "ea3803784aa58da6fa7cd6e196948608def87bf9"
+  },
+  "@hugeicons/core-free-icons@4.2.3": {
+    "file": "hugeicons.txt",
+    "source": "https://github.com/hugeicons/hugeicons/blob/main/LICENSE.md",
+    "blob": "302d211baae1fe925d171278bd2e0235ec363909"
+  }
+}

@@ -17,4 +17,17 @@
 
 ---
 
-Diese Seite behält nur die Überschrift. Beschreibung, Installation und Produktstatus stehen im [englischen README](README.md).
+Coloride ist eine lokale IDE für macOS mit Apple Silicon, mit Editor, Dateiexplorer, Terminals und integriertem Browser. Ein Konto ist nicht erforderlich. Cloud-Dienste sind standardmäßig deaktiviert.
+
+## Schnellstart
+
+Voraussetzungen: Node.js 22, pnpm 9.15.4 und Python 3.12.
+
+```sh
+python3.12 -m venv core/ide-host/.venv
+core/ide-host/.venv/bin/python -m pip install -e 'core/ide-host[dev]'
+corepack pnpm install --frozen-lockfile
+corepack pnpm dev
+```
+
+Weitere Informationen: [Englisches README](README.md), [Beiträge](CONTRIBUTING.md), [Sicherheit](SECURITY.md).
