@@ -83,6 +83,24 @@ test.afterAll(async () => {
 
 test.afterEach(() => expect(errors).toEqual([]));
 
+test("closing the last chat stays empty after losing the renderer session storage", async () => {
+  await page.goto(base + "/tests/agent-restore.html");
+  await expect(page.locator('.agent-user-message-text')).toContainText('Restored local conversation');
+  await page.getByRole('button', { name: 'Close chat: Local task', exact: true }).click();
+  await expect(page.getByRole('tab', { name: 'New chat', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await page.evaluate(() => sessionStorage.clear());
+  await page.reload();
+  await expect(page.getByRole('tab', { name: 'New chat', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await expect.poll(() => configReads).toBeGreaterThan(0);
+  await expect(page.locator('.agent-user-message-text')).toHaveCount(0);
+  // Reset only this test's isolated preference for the restore scenarios below.
+  await page.evaluate(() => {
+    localStorage.removeItem('coloride.agent.prefer-new-task.agent');
+    sessionStorage.clear();
+  });
+  configReads = 0;
+});
+
 test("local conversation and composer restore while cloud refresh stays pending", async () => {
   await page.goto(base + "/tests/agent-restore.html");
   await expect.poll(() => page.evaluate(() => (window as any).agentRestoreTest?.pending.length ?? 0)).toBeGreaterThan(0);

@@ -22,9 +22,9 @@ export const sameLocation = (
 export const tabRequiresVps = (tab: string | null | undefined) =>
   tab === "explorer" || tab === "server" || tab === "agents";
 
-export const readStoredNavigation = (): NavigationLocation => {
+export const readStoredNavigation = (fallback: NavigationLocation = { activeTab: null, serverSubTab: "health" }): NavigationLocation => {
   if (typeof window === "undefined")
-    return { activeTab: null, serverSubTab: "health" };
+    return fallback;
   try {
     const stored = JSON.parse(
       window.localStorage.getItem(NAVIGATION_STORAGE_KEY) ?? "null",
@@ -51,5 +51,5 @@ export const readStoredNavigation = (): NavigationLocation => {
     )
       return stored;
   } catch {}
-  return { activeTab: null, serverSubTab: "health" };
+  return fallback;
 };

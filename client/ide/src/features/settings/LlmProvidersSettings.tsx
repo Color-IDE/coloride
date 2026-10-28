@@ -24,7 +24,12 @@ export function LlmProvidersSettings({ onProvidersChange }: { onProvidersChange?
     const load = () => { void api.agentConfig(true).then(value => {
       if (!mounted) return;
       setConfig(value);
-      setError("");
+      if (!value.providers?.length) {
+        setError("The running host needs an update to configure providers. Close your terminal tabs and restart Coloride. Your key has not been sent.");
+        retryTimer = setTimeout(load, 5000);
+      } else {
+        setError("");
+      }
     }).catch(() => {
       if (!mounted) return;
       setError("Could not load providers. Retrying automatically…");
@@ -145,6 +150,7 @@ function ProviderSection({ provider, entry, loading, onConnected }: {
   const initialized = useRef(false);
   const pasted = useRef(false);
   const busy = phase === "checking";
+  const available = !!entry;
   useEffect(() => {
     if (loading || !entry) return;
     const submittedKey = key.trim();
@@ -183,13 +189,13 @@ function ProviderSection({ provider, entry, loading, onConnected }: {
     return () => { mounted = false; clearTimeout(timer); clearTimeout(retryTimer); };
     // entry updates from other providers must not interrupt an in-flight save.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, loading, provider, retry]);
+  }, [key, loading, available, provider, retry]);
   const models = entry?.availableModels || [];
   return <section className="settings-section-group llm-provider-section" data-settings-group={label} id={`settings-group-${label.toLocaleLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`}>
     <header className="llm-provider-heading">
       <ProviderIcon provider={provider} label={label} />
       <h2>{label}</h2>
-      <span className="llm-provider-key-status" data-configured={!!entry?.configured}>{busy ? "Connecting…" : entry?.configured ? (models.length ? "Connected" : entry.requiresKey === false ? "No key required" : "Key saved") : "No API key"}</span>
+      <span className="llm-provider-key-status" data-configured={!!entry?.configured}>{loading ? "Loading…" : !entry ? "Host update required" : busy ? "Connecting…" : entry.configured ? (models.length ? "Connected" : entry.requiresKey === false ? "No key required" : "Key saved") : "No API key"}</span>
       {entry?.active && entry.configured && <span className="llm-provider-active">In use</span>}
     </header>
     <div role="group" aria-label={`${label} configuration`}>
@@ -203,7 +209,7 @@ function ProviderSection({ provider, entry, loading, onConnected }: {
               if (!text.trim()) return;
               event.preventDefault(); pasted.current = true; setKey(text); setError(""); setPhase("idle");
             }}
-            value={key} onChange={event => { setKey(event.target.value); setError(""); setPhase("idle"); }} disabled={loading || !entry || busy || entry.requiresKey === false || entry.credentialSource === "environment"}
+            value={key} onChange={event => { setKey(event.target.value); setError(""); setPhase("idle"); }} disabled={busy || entry?.requiresKey === false || entry?.credentialSource === "environment"}
             placeholder={entry?.requiresKey === false ? "No API key required" : entry?.credentialSource === "environment" ? "Using environment API key" : "Paste API key"} />
         )}
       </SettingsRow>

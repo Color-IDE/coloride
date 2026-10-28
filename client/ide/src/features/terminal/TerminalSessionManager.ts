@@ -63,6 +63,12 @@ export async function closeManagedTerminalSession(sessionId: string) {
       return true;
     }
   }
+  // A renderer restart loses its in-memory managers, not the persistent PTYs.
+  const terminal = (await api.listTerminals()).find(terminal => terminal.sessionId === sessionId);
+  if (terminal) {
+    await api.closeTerminal(terminal.termId);
+    return true;
+  }
   return false;
 }
 
@@ -153,9 +159,16 @@ export class TerminalSessionManager {
     const session = this.sessions.get(sessionId);
     if (!session) return;
     session.closing = true;
+    try {
+      // A quick close must also close a PTY whose creation is still in flight.
+      if (session.createPromise) await session.createPromise;
+      if (session.termId) await api.closeTerminal(session.termId);
+    } catch (error) {
+      session.closing = false;
+      throw error;
+    }
     session.socket?.close();
     if (session.reconnectTimer !== null) window.clearTimeout(session.reconnectTimer);
-    if (session.termId) await api.closeTerminal(session.termId);
     this.sessions.delete(sessionId);
     this.emitTelemetry("closed", sessionId);
   }

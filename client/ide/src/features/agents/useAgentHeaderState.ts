@@ -10,6 +10,10 @@ import {
   useState
 } from "react";
 import { useContextMenuPosition } from "../../shared/ui/useContextMenuPosition";
+import { api } from "../../shared/api/client";
+import { readChatTabs } from "./agentStorage";
+import { normalizeWorkspaceCwd } from "./agentWorkspacePaths";
+import type { AgentViewProps } from "./agentViewTypes";
 
 interface Dependencies {
   openChatTabs: (string | null)[];
@@ -17,12 +21,41 @@ interface Dependencies {
   isSidebar: boolean;
   setOpenChatTabs: Dispatch<SetStateAction<(string | null)[]>>;
   selectedSessionId: string | null;
+  chatTabsKey: string;
+  props: AgentViewProps;
 }
 
-export function useAgentHeaderState({ openChatTabs, sessions, isSidebar, setOpenChatTabs, selectedSessionId }: Dependencies) {
+export function useAgentHeaderState({ openChatTabs, sessions, isSidebar, setOpenChatTabs, selectedSessionId, chatTabsKey, props }: Dependencies) {
   const [activeHeaderTerminal, setActiveHeaderTerminal] = useState<
     string | null
-  >(null);
+  >(() => readChatTabs(chatTabsKey)?.terminal ?? null);
+  const storedKey = useRef(chatTabsKey);
+  useEffect(() => {
+    if (storedKey.current !== chatTabsKey) {
+      storedKey.current = chatTabsKey;
+      const saved = readChatTabs(chatTabsKey);
+      setOpenChatTabs(saved?.tabs ?? [selectedSessionId]);
+      setActiveHeaderTerminal(saved?.terminal ?? null);
+      return;
+    }
+    try { window.localStorage.setItem(chatTabsKey, JSON.stringify({ tabs: openChatTabs, terminal: activeHeaderTerminal })); } catch { /* Storage may be unavailable. */ }
+  }, [chatTabsKey, openChatTabs, activeHeaderTerminal]);
+  // Recover terminals left by older renderers even when their tab list was lost.
+  useEffect(() => {
+    if (!props.connected) return;
+    let cancelled = false;
+    const savedTabs = new Set(openChatTabs);
+    void api.listTerminals({ workspaceKind: props.workspaceKind ?? "ssh", connectionId: props.connectionId }).then(terminals => {
+      if (cancelled) return;
+      const recovered = terminals.filter(terminal => terminal.status !== "exited" && terminal.sessionId.startsWith("header-terminal-") && normalizeWorkspaceCwd(terminal.cwd) === normalizeWorkspaceCwd(props.workspacePath)).map(terminal => terminal.sessionId);
+      setOpenChatTabs(tabs => {
+        const chats = tabs.filter(id => !id?.startsWith("header-terminal-") || !savedTabs.has(id) || recovered.includes(id));
+        return [...new Set([...chats, ...recovered])];
+      });
+      setActiveHeaderTerminal(current => current && savedTabs.has(current) && !recovered.includes(current) ? null : current);
+    }).catch(() => { /* Preserve saved tabs on a temporary host failure. */ });
+    return () => { cancelled = true; };
+  }, [props.connected, props.workspaceKind, props.connectionId, props.workspacePath]);
   const agentContextRootRef = useRef<HTMLDivElement>(null);
   const [headerTabMenu, setHeaderTabMenu] = useState<{
     x: number;

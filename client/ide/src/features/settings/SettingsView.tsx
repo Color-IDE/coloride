@@ -84,6 +84,9 @@ const resolveSection = (section?: SettingsSection): SettingsSection => section &
 
 export function SettingsView({ initialSection = "general", onSectionChange, sidePanelOpen = true, onShowNavigation }: SettingsViewProps) {
   const [activeSection, setActiveSection] = useState(() => resolveSection(initialSection));
+  useEffect(() => {
+    try { localStorage.setItem("coloride.settings.section.v1", activeSection); } catch { /* Storage may be unavailable. */ }
+  }, [activeSection]);
   const [expandedSections, setExpandedSections] = useState<SettingsSection[]>(() => [resolveSection(initialSection)]);
   const [providerGroups, setProviderGroups] = useState(settingsSubgroups.providers);
   const [activeGroup, setActiveGroup] = useState<string | null>(null);

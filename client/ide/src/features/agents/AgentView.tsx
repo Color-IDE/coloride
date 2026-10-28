@@ -138,6 +138,7 @@ export function AgentView(props: AgentViewProps) {
   // session, scope, history and command behavior instead of acting as a second
   // workspace-bound agent.
   const sessionPane = props.sessionPane ?? "agent";
+  const chatTabsKey = `coloride.agent.open-tabs.v1.${JSON.stringify([sessionPane, props.workspaceKind, props.connectionId, normalizeWorkspaceCwd(props.workspacePath)])}`;
   const filesystemScope = props.filesystemScope ?? "server";
   const preferences = useAppPreferences();
   const shortcutBindings = useShortcutBindings();
@@ -173,7 +174,7 @@ export function AgentView(props: AgentViewProps) {
     historyLoading,
     complementsOpen,
     historyLoadingOlder,
-  } = useAgentSessionState({ sessionPane });
+  } = useAgentSessionState({ sessionPane, chatTabsKey });
   const [newTaskWorkspacePath, setNewTaskWorkspacePath] = useState<
     string | null
   >(props.workspacePath);
@@ -198,7 +199,7 @@ export function AgentView(props: AgentViewProps) {
     chatTabsScrollRef,
     chatTabScroll,
     updateChatTabScroll,
-  } = useAgentHeaderState({ openChatTabs, sessions, isSidebar, setOpenChatTabs, selectedSessionId });
+  } = useAgentHeaderState({ openChatTabs, sessions, isSidebar, setOpenChatTabs, selectedSessionId, chatTabsKey, props });
   const {
     chatHistoryOpen,
     setChatHistoryOpen,

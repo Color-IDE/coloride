@@ -1898,7 +1898,7 @@ async function openSettingsWindow(section) {
   if (!sidecarConfig) return;
   const url = new URL(appUrlFromSidecar(sidecarConfig));
   url.searchParams.set("window", "settings");
-  url.searchParams.set("section", requestedSection || "general");
+  if (requestedSection) url.searchParams.set("section", requestedSection);
   const appearance = readStartupAppearance();
   const win = new BrowserWindow({
     title: "Settings — Coloride",

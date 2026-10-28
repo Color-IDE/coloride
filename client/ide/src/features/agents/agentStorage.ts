@@ -46,7 +46,7 @@ export function readAgentProjects(): AgentProject[] {
 
 export const SELECTED_SESSION_KEY = "coloride.agent.selected-session";
 export const COMPOSER_REASONING_KEY = "coloride.agent.composer-reasoning";
-/** User chose New task — keep empty selection across tab switches / AgentView remounts. */
+/** User chose New task — keep empty selection across remounts and app restarts. */
 export const NEW_TASK_FLAG_KEY = "coloride.agent.prefer-new-task";
 /** Kept checkpoint ids per session so "Keep all" survives chat switches. */
 export const KEPT_CHECKPOINTS_KEY = "coloride.agent.kept-checkpoints";
@@ -70,6 +70,15 @@ export const newTaskNoRepoStorageKey = (pane: "agent" | "sidebar") =>
   `coloride.agent.new-task-no-repo.${pane}`;
 export const composerReasoningStorageKey = (pane: "agent" | "sidebar") =>
   `${COMPOSER_REASONING_KEY}.${pane}`;
+
+export function readChatTabs(key: string): { tabs: (string | null)[]; terminal: string | null } | null {
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(key) || "null");
+    if (!stored || !Array.isArray(stored.tabs)) return null;
+    const tabs = [...new Set<string | null>(stored.tabs.filter((id: unknown) => id === null || (typeof id === "string" && id.length > 0)))];
+    return { tabs: tabs.length ? tabs : [null], terminal: typeof stored.terminal === "string" && tabs.includes(stored.terminal) && stored.terminal.startsWith("header-terminal-") ? stored.terminal : null };
+  } catch { return null; }
+}
 
 export const readNewTaskNoRepo = (pane: "agent" | "sidebar"): boolean => {
   try {
@@ -128,6 +137,8 @@ export const writeStoredComposerReasoning = (
 
 export const readPreferNewTask = (pane: "agent" | "sidebar"): boolean => {
   try {
+    const persisted = window.localStorage.getItem(preferNewTaskStorageKey(pane));
+    if (persisted !== null) return persisted === "1";
     if (window.sessionStorage.getItem(preferNewTaskStorageKey(pane)) === "1")
       return true;
     // Older builds used one flag for both panes.
@@ -145,6 +156,7 @@ export const writePreferNewTask = (
   prefer: boolean,
 ) => {
   try {
+    window.localStorage.setItem(preferNewTaskStorageKey(pane), prefer ? "1" : "0");
     if (prefer)
       window.sessionStorage.setItem(preferNewTaskStorageKey(pane), "1");
     else window.sessionStorage.removeItem(preferNewTaskStorageKey(pane));

@@ -1,21 +1,23 @@
 import type { AgentEvent, AgentSessionSummary } from "@coloride/contracts";
 import { useRef, useState } from "react";
-import { readStoredSessionId } from "./agentStorage";
+import { readChatTabs, readStoredSessionId } from "./agentStorage";
 
 /** Session state and its async-generation refs have one owner for both agent presentations. */
 export function useAgentSessionState({
   sessionPane,
+  chatTabsKey,
 }: {
   sessionPane: "agent" | "sidebar";
+  chatTabsKey: string;
 }) {
   const configSeqRef = useRef(0);
   const [sessions, setSessions] = useState<AgentSessionSummary[]>([]);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(
     () => readStoredSessionId(sessionPane),
   );
-  const [openChatTabs, setOpenChatTabs] = useState<(string | null)[]>(() => [
-    readStoredSessionId(sessionPane),
-  ]);
+  const [openChatTabs, setOpenChatTabs] = useState<(string | null)[]>(() =>
+    readChatTabs(chatTabsKey)?.tabs ?? [readStoredSessionId(sessionPane)],
+  );
   const [complementsOpen, setComplementsOpen] = useState(false);
   const [events, setEvents] = useState<AgentEvent[]>([]);
   const timelineRef = useRef<HTMLDivElement>(null);
