@@ -66,7 +66,7 @@ export const getLocalApiToken = () => runtime().token;
 const apiBase = () => getLocalApiBase();
 const wsBase = () => `ws://${runtime().host ?? "127.0.0.1"}:${runtime().port}`;
 
-async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(`${apiBase()}${path}`, {
     ...init,
     headers: {

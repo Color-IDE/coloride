@@ -1,7 +1,11 @@
 {
   "agents": [
     "AgentView",
+    "agentViewTypes",
     "providerSettings"
+  ],
+  "external-agents": [
+    "index"
   ],
   "auth": [
     "LoginGate",

@@ -10,9 +10,10 @@ import { GeneralSettings } from "./GeneralSettings";
 import { KeyboardShortcutsSettings } from "./KeyboardShortcutsSettings";
 import { SecuritySettings } from "./SecuritySettings";
 import { TerminalSettings } from "./TerminalSettings";
+import { ExternalAgentsSettings } from "./ExternalAgentsSettings";
 import { UpdatesSettings } from "./UpdatesSettings";
 
-export type SettingsSection = "general" | "appearance" | "shortcuts" | "editor" | "terminal" | "agent" | "providers" | "security" | "updates" | "diagnostics" | "about";
+export type SettingsSection = "general" | "appearance" | "shortcuts" | "editor" | "terminal" | "agent" | "external-agents" | "providers" | "security" | "updates" | "diagnostics" | "about";
 interface SettingsViewProps {
   initialSection?: SettingsSection;
   onSectionChange?: (section: SettingsSection) => void;
@@ -42,6 +43,7 @@ const menuGroups: SettingsMenuGroup[] = [
       { id: "editor", label: "Editor", icon: SettingsEditorIcon },
       { id: "terminal", label: "Terminal", icon: SettingsTerminalIcon },
       { id: "agent", label: "Agent", icon: SettingsAgentIcon },
+      { id: "external-agents", label: "External Agents", icon: SettingsAgentIcon },
       { id: "providers", label: "LLM Providers", icon: SettingsAgentIcon },
     ],
   },
@@ -69,6 +71,7 @@ const settingsSubgroups: Record<SettingsSection, string[]> = {
   editor: ["Layout", "Indentation", "Display", "Files", "Interaction"],
   terminal: ["Cursor", "Buffer", "Interaction"],
   agent: ["Autonomy", "Activity"],
+  "external-agents": ["Catalog", "Installed"],
   providers: ["OpenAI", "Gemini", "xAI", "DeepSeek", "Mistral", "Groq", "Ollama"],
   security: ["Workspace protection", "SSH connections", "Issue reports", "Local privacy"],
   updates: ["Updates", "Installed version", "Available release"],
@@ -78,6 +81,7 @@ const settingsSubgroups: Record<SettingsSection, string[]> = {
 const sections: Record<SettingsSection, ComponentType> = {
   general: GeneralSettings, appearance: AppearanceSettings, shortcuts: KeyboardShortcutsSettings,
   editor: EditorSettings, terminal: TerminalSettings, agent: AgentSettings,
+  "external-agents": ExternalAgentsSettings,
   providers: LlmProvidersSettings, security: SecuritySettings, updates: UpdatesSettings, diagnostics: DiagnosticsSettings, about: AboutSettings,
 };
 const resolveSection = (section?: SettingsSection): SettingsSection => section && section in sections ? section : "general";
