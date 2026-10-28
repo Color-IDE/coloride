@@ -1,6 +1,7 @@
 {
   "agents": [
-    "AgentView"
+    "AgentView",
+    "providerSettings"
   ],
   "auth": [
     "LoginGate",

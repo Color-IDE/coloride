@@ -461,21 +461,56 @@ class AgentInfo(BaseModel):
     supported: bool = True
 
 
+class AgentDiscoveredModel(BaseModel):
+    capabilities: dict[str, object] | None = None
+    id: str
+    label: str
+
+
+class AgentProviderConnectRequest(BaseModel):
+    api_key: str | None = Field(default=None, alias="apiKey", min_length=1, max_length=500, repr=False)
+
+
+class AgentProviderRegistrationRequest(BaseModel):
+    id: str = Field(pattern=r"^custom:[a-z0-9][a-z0-9-]{0,47}$")
+    label: str = Field(min_length=1, max_length=80)
+    protocol: Literal["responses", "chat-completions", "gemini"] = "chat-completions"
+    base_url: str = Field(alias="baseUrl", max_length=500)
+    requires_key: bool = Field(default=True, alias="requiresKey")
+    models: dict[str, dict[str, object]] = Field(default_factory=dict)
+
+
+class AgentProviderConfiguration(BaseModel):
+    label: str = ""
+    protocol: str = "responses"
+    requires_key: bool = Field(default=True, alias="requiresKey")
+    show_in_settings: bool = Field(default=True, alias="showInSettings")
+    available_models: list[AgentDiscoveredModel] = Field(default_factory=list, alias="availableModels")
+    provider: str
+    model: str
+    base_url: str = Field(alias="baseUrl")
+    configured: bool
+    credential_source: Literal["environment", "keychain", "local", "none"] = Field(alias="credentialSource")
+    active: bool
+
+
 class AgentConfigResponse(BaseModel):
-    provider: Literal["fireworks", "gemini", "openai", "xai"]
+    provider: str
     model: str
     base_url: str = Field(alias="baseUrl")
     configured: bool
     availability: str | None = None
-    credential_source: Literal["environment", "keychain", "coloride", "none"] = Field(
+    credential_source: Literal["environment", "keychain", "coloride", "local", "none"] = Field(
         alias="credentialSource"
     )
     managed_llm: bool = Field(default=False, alias="managedLlm")
     capabilities: dict[str, object]
+    providers: list[AgentProviderConfiguration] = Field(default_factory=list)
 
 
 class AgentConfigUpdateRequest(BaseModel):
-    provider: Literal["fireworks", "gemini", "openai", "xai"] = "openai"
+    activate: bool = True
+    provider: str = "openai"
     model: str = Field(min_length=1, max_length=120)
     api_key: str | None = Field(default=None, alias="apiKey", min_length=1, max_length=500)
     base_url: str | None = Field(default=None, alias="baseUrl", max_length=500)

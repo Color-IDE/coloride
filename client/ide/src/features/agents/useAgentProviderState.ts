@@ -7,6 +7,7 @@ import {
   useEffect, useRef,
   useState
 } from "react";
+import { notifyAgentConfigChanged, subscribeAgentConfigChanges } from "./providerConfigEvents";
 import { api } from "../../shared/api/client";
 import { getValidAccessToken, subscribeCloudAuth } from "../auth/cloudAuth";
 import { getCachedLlmCredits, refreshLlmCredits, subscribeLlmCredits, type LlmCreditsSnapshot } from "../auth/llmCredits";
@@ -30,7 +31,6 @@ export function useAgentProviderState({ configSeqRef, viewActive }: Dependencies
 
   const [providerModel, setProviderModel] = useState("grok-4.5");
 
-  const [providerKey, setProviderKey] = useState("");
 
   const [savingProvider, setSavingProvider] = useState(false);
   // Keep sidecar JWT in sync so managed LLM calls work after login/refresh.
@@ -65,6 +65,41 @@ export function useAgentProviderState({ configSeqRef, viewActive }: Dependencies
     return () => { cancelled = true; unsubscribe(); };
   }, []);
 
+  const [providerRevision, setProviderRevision] = useState(0);
+  useEffect(() => {
+    const invalidate = () => setProviderRevision(value => value + 1);
+    const unsubscribe = subscribeAgentConfigChanges(invalidate);
+    window.addEventListener("focus", invalidate);
+    return () => { unsubscribe(); window.removeEventListener("focus", invalidate); };
+  }, []);
+  useEffect(() => {
+    if (!providerRevision || savingProvider) return;
+    let active = true;
+    const seq = ++configSeqRef.current;
+    void api.agentConfig().then(value => {
+      if (!active || seq < configSeqRef.current) return;
+      setProviderConfig(value);
+      setProvider(value.provider);
+      setProviderModel(value.model);
+    }).catch(() => { /* Preserve the last configuration if the host is unavailable. */ });
+    return () => { active = false; };
+  }, [providerRevision, savingProvider, configSeqRef]);
+
+  // A saved key is enough to connect. Discovery runs once per open panel, so
+  // the composer appears when a model is actually available.
+  useEffect(() => {
+    if (!viewActive || savingProvider) return;
+    let active = true;
+    void api.agentConfig(true).then(async value => {
+      if (!active) return;
+      const pending = value.providers?.filter(entry => entry.configured && !entry.availableModels?.length) || [];
+      if (!pending.length) return;
+      await Promise.allSettled(pending.map(entry => api.connectAgentProvider(entry.provider)));
+      if (active) notifyAgentConfigChanged();
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [viewActive, savingProvider]);
+
   // Subscribe to shared credits cache (other refresh paths).
   useEffect(
     () =>
@@ -97,12 +132,10 @@ export function useAgentProviderState({ configSeqRef, viewActive }: Dependencies
     providerConfig,
     provider,
     providerModel,
-    providerKey,
     savingProvider,
     setProviderConfig,
     setProvider,
     setProviderModel,
-    setProviderKey,
     setSavingProvider,
     setOutOfCreditsPeriodEnd,
     llmCreditsRefreshAfterTurnRef,

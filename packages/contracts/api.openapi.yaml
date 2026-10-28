@@ -63,13 +63,74 @@ components:
           type: boolean
         supported:
           type: boolean
-    AgentProviderConfig:
+    AgentDiscoveredModel:
       type: object
-      required: [provider, model, baseUrl, configured, credentialSource, capabilities]
+      required: [id, label]
       properties:
+        capabilities:
+          type: object
+          nullable: true
+          properties:
+            tools:
+              type: boolean
+            streaming:
+              type: boolean
+            images:
+              type: boolean
+            reasoning:
+              type: boolean
+            encrypted_reasoning:
+              type: boolean
+            context_tokens:
+              type: integer
+            context_characters:
+              type: integer
+            source:
+              type: string
+              enum: [unknown, declared, catalog, reviewed]
+        id:
+          type: string
+        label:
+          type: string
+    AgentProviderDefinition:
+      type: object
+      required: [id, label, protocol, baseUrl, requiresKey, builtin, showInSettings]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        protocol:
+          type: string
+          enum: [responses, chat-completions, gemini]
+        baseUrl:
+          type: string
+          format: uri
+        requiresKey:
+          type: boolean
+        builtin:
+          type: boolean
+        showInSettings:
+          type: boolean
+    AgentProviderConfiguration:
+      type: object
+      required: [provider, model, baseUrl, configured, credentialSource, active]
+      properties:
+        label:
+          type: string
+        protocol:
+          type: string
+        requiresKey:
+          type: boolean
+        showInSettings:
+          type: boolean
+        availableModels:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentDiscoveredModel'
         provider:
           type: string
-          enum: [openai, xai, fireworks, gemini]
+          description: Registered built-in provider ID or custom:name.
         model:
           type: string
         baseUrl:
@@ -79,11 +140,43 @@ components:
           type: boolean
         credentialSource:
           type: string
-          enum: [environment, keychain, none]
+          enum: [environment, keychain, local, none]
+        active:
+          type: boolean
+    AgentProviderConfig:
+      type: object
+      required: [provider, model, baseUrl, configured, credentialSource, capabilities]
+      properties:
+        providers:
+          type: array
+          description: Included when includeProviders is true or an inactive configuration is saved; contains no keys.
+          items:
+            $ref: "#/components/schemas/AgentProviderConfiguration"
+        provider:
+          type: string
+          description: Registered built-in provider ID or custom:name.
+        model:
+          type: string
+        baseUrl:
+          type: string
+          format: uri
+        configured:
+          type: boolean
+        credentialSource:
+          type: string
+          enum: [environment, keychain, coloride, local, none]
+        managedLlm:
+          type: boolean
         capabilities:
           type: object
           required: [streaming, encryptedReasoning, maxContextCharacters, maxContextTokens, maxRetries]
           properties:
+            tools:
+              type: boolean
+            images:
+              type: boolean
+            reasoning:
+              type: boolean
             streaming:
               type: boolean
             encryptedReasoning:
@@ -827,9 +920,119 @@ paths:
       responses:
         "200":
           description: Local SSH host identity pin removed.
+  /api/agents/providers:
+    get:
+      summary: List registered provider definitions and API protocols
+      responses:
+        '200':
+          description: Provider definitions without credentials.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AgentProviderDefinition'
+    post:
+      summary: Register a compatible provider without changing the agent engine
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id, label, baseUrl]
+              properties:
+                id:
+                  type: string
+                  pattern: '^custom:[a-z0-9][a-z0-9-]{0,47}$'
+                label:
+                  type: string
+                  maxLength: 80
+                baseUrl:
+                  type: string
+                  maxLength: 500
+                  description: HTTPS or loopback HTTP; no credentials, query or fragment.
+                protocol:
+                  type: string
+                  enum: [responses, chat-completions, gemini]
+                  default: chat-completions
+                requiresKey:
+                  type: boolean
+                  default: true
+                models:
+                  type: object
+                  description: Optional per-model declared capabilities; omitted abilities remain disabled.
+                  additionalProperties:
+                    type: object
+                    properties:
+                      tools:
+                        type: boolean
+                      streaming:
+                        type: boolean
+                      images:
+                        type: boolean
+                      reasoning:
+                        type: boolean
+                      encrypted_reasoning:
+                        type: boolean
+                      context_tokens:
+                        type: integer
+                      context_characters:
+                        type: integer
+      responses:
+        '201':
+          description: Provider registered. Connect separately to discover models and store a key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentProviderDefinition'
+        '400':
+          description: Invalid endpoint, duplicate ID or capability definition.
+  /api/agents/providers/{provider}/connect:
+    post:
+      summary: Validate a provider key, save it securely and discover recommended coding models
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema:
+            type: string
+            description: Registered built-in provider ID or custom:name.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                apiKey:
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+                  writeOnly: true
+                  description: Omit to refresh models using the saved or environment key.
+      responses:
+        '200':
+          description: Provider configuration with discovered models; an unconfigured agent is activated automatically.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentProviderConfig'
+        '400':
+          description: Key rejected, models unavailable or provider discovery failed; saved key retained.
+        '409':
+          description: Secure credential storage failed.
   /api/agents/config:
     get:
       operationId: agentConfig
+      parameters:
+        - in: query
+          name: includeProviders
+          schema:
+            type: boolean
+            default: false
       responses:
         "200":
           description: Active Coloride Agent provider configuration without secret material.
@@ -847,9 +1050,13 @@ paths:
               type: object
               required: [provider, model]
               properties:
+                activate:
+                  type: boolean
+                  default: true
+                  description: Set false to save a provider without selecting it for agent requests.
                 provider:
                   type: string
-                  enum: [openai, xai, fireworks]
+                  description: Registered built-in provider ID or custom:name.
                 model:
                   type: string
                 apiKey:

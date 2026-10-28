@@ -51,7 +51,7 @@ export type AgentInfo = {
   supported: boolean;
 };
 
-export type AgentProvider = "openai" | "xai" | "fireworks" | "gemini";
+export type AgentProvider = string;
 
 export type AgentProviderAvailability =
   | "loading"
@@ -70,16 +70,44 @@ export type AgentTaskOutcome =
   | "running"
   | "unknown";
 
+export type AgentDiscoveredModel = { id: string; label: string; capabilities?: {
+  tools: boolean; streaming: boolean; images: boolean; reasoning: boolean;
+  encrypted_reasoning: boolean; context_tokens: number; context_characters: number;
+  source: "unknown" | "declared" | "catalog" | "reviewed";
+} | null };
+
+export type AgentProviderDefinition = {
+  id: string; label: string; protocol: "responses" | "chat-completions" | "gemini";
+  baseUrl: string; requiresKey: boolean; builtin: boolean; showInSettings: boolean;
+};
+
+export type AgentProviderConfiguration = {
+  label?: string;
+  protocol?: string;
+  requiresKey?: boolean;
+  showInSettings?: boolean;
+  availableModels?: AgentDiscoveredModel[];
+  provider: AgentProvider;
+  model: string;
+  baseUrl: string;
+  configured: boolean;
+  credentialSource: "environment" | "keychain" | "local" | "none";
+  active: boolean;
+};
+
 export type AgentProviderConfig = {
+  providers?: AgentProviderConfiguration[];
   provider: AgentProvider;
   model: string;
   baseUrl: string;
   configured: boolean;
   availability?: AgentProviderAvailability;
-  credentialSource: "environment" | "keychain" | "coloride" | "none";
+  credentialSource: "environment" | "keychain" | "coloride" | "local" | "none";
   /** True when calls go through api.coloride.com (plan credits), not BYOK. */
   managedLlm?: boolean;
   capabilities: {
+    images?: boolean;
+    reasoning?: boolean;
     tools?: boolean;
     streaming: boolean;
     encryptedReasoning: boolean;

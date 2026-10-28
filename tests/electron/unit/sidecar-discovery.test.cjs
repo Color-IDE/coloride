@@ -16,7 +16,7 @@ const functionEnd = mainSource.indexOf('\nasync function startSidecar()', functi
 assert(functionStart >= 0 && functionEnd > functionStart);
 const discoverySource = mainSource.slice(functionStart, functionEnd);
 
-async function fixture(handler) {
+async function fixture(handler, overrides = {}) {
   const server = http.createServer(handler);
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'coloride-discovery-test-'));
@@ -28,7 +28,8 @@ async function fixture(handler) {
     waitForSidecarHealth: (config, options) => waitForSidecarHealth(config, {
       timeoutMs: 200, requestTimeoutMs: 40, retryIntervalMs: 10, ...options,
     }),
-    sidecarDiscoveryPath: () => discovery, isDev: () => false, TERMINAL_HOST_VERSION: 5 };
+    cloudConfig: { enabled: false, appBase: "", apiBase: "" },
+    sidecarDiscoveryPath: () => discovery, isDev: () => false, TERMINAL_HOST_VERSION: 5, console, ...overrides };
   vm.runInNewContext(`${discoverySource}; this.readReusable = readReusableSidecar;`, context);
   let stopped = false;
   const stop = async () => {
@@ -119,6 +120,43 @@ test('a discovered host can recover after a reset health connection', async () =
   try {
     assert.deepEqual(JSON.parse(JSON.stringify(await host.read())), host.config);
     assert.equal(requests, 2);
+    assert.equal(fs.existsSync(host.discovery), true);
+  } finally { await host.cleanup(); }
+});
+
+for (const active of [true, false]) test(`changed development sources ${active ? 'reuse active terminals' : 'refresh an idle host'}`, async () => {
+  const host = await fixture((request, response) => {
+    response.setHeader('Content-Type', 'application/json');
+    response.end(request.url === '/api/term' ? JSON.stringify([{ status: active ? 'running' : 'exited' }]) : '{}');
+  }, { isDev: () => true, developmentSidecarStamp: () => 'new-source' });
+  try {
+    const result = await host.read();
+    if (active) {
+      assert.deepEqual(JSON.parse(JSON.stringify(result)), host.config);
+      assert.deepEqual(JSON.parse(fs.readFileSync(host.discovery, 'utf8')), host.config);
+    } else {
+      assert.equal(result, null);
+      assert.equal(fs.existsSync(host.discovery), false);
+    }
+  } finally { await host.cleanup(); }
+});
+
+test('disabled legacy cloud endpoints do not block reopening active terminals', async () => {
+  const host = await fixture((_request, response) => response.end('{}'));
+  try {
+    const config = { ...host.config, cloudConfiguration: { enabled: false, appBase: '', apiBase: 'https://api.coloride.com' } };
+    fs.writeFileSync(host.discovery, JSON.stringify(config));
+    assert.deepEqual(JSON.parse(JSON.stringify(await host.read())), config);
+  } finally { await host.cleanup(); }
+});
+
+test('enabled cloud configuration changes still protect active terminals', async () => {
+  const host = await fixture((request, response) => {
+    response.setHeader('Content-Type', 'application/json');
+    response.end(request.url === '/api/term' ? JSON.stringify([{ status: 'running' }]) : '{}');
+  }, { cloudConfig: { enabled: true, appBase: 'https://coloride.com', apiBase: 'https://api.coloride.com' } });
+  try {
+    await assert.rejects(host.read(), { preserveTerminalHost: true });
     assert.equal(fs.existsSync(host.discovery), true);
   } finally { await host.cleanup(); }
 });

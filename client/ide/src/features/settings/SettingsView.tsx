@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ComponentType } from "react";
 import { VerticalScrollHairline } from "../../shared/ui/VerticalScrollHairline";
 import { AboutSettings } from "./AboutSettings";
+import { LlmProvidersSettings } from "./LlmProvidersSettings";
 import { AgentSettings } from "./AgentSettings";
 import { AppearanceSettings } from "./AppearanceSettings";
 import { DiagnosticsSettings } from "./DiagnosticsSettings";
@@ -11,7 +12,7 @@ import { SecuritySettings } from "./SecuritySettings";
 import { TerminalSettings } from "./TerminalSettings";
 import { UpdatesSettings } from "./UpdatesSettings";
 
-export type SettingsSection = "general" | "appearance" | "shortcuts" | "editor" | "terminal" | "agent" | "security" | "updates" | "diagnostics" | "about";
+export type SettingsSection = "general" | "appearance" | "shortcuts" | "editor" | "terminal" | "agent" | "providers" | "security" | "updates" | "diagnostics" | "about";
 interface SettingsViewProps {
   initialSection?: SettingsSection;
   onSectionChange?: (section: SettingsSection) => void;
@@ -41,6 +42,7 @@ const menuGroups: SettingsMenuGroup[] = [
       { id: "editor", label: "Editor", icon: SettingsEditorIcon },
       { id: "terminal", label: "Terminal", icon: SettingsTerminalIcon },
       { id: "agent", label: "Agent", icon: SettingsAgentIcon },
+      { id: "providers", label: "LLM Providers", icon: SettingsAgentIcon },
     ],
   },
   {
@@ -67,6 +69,7 @@ const settingsSubgroups: Record<SettingsSection, string[]> = {
   editor: ["Layout", "Indentation", "Display", "Files", "Interaction"],
   terminal: ["Cursor", "Buffer", "Interaction"],
   agent: ["Autonomy", "Activity"],
+  providers: ["OpenAI", "Gemini", "xAI", "DeepSeek", "Mistral", "Groq", "Ollama"],
   security: ["Workspace protection", "SSH connections", "Issue reports", "Local privacy"],
   updates: ["Updates", "Installed version", "Available release"],
   diagnostics: ["System checks", "Runtime", "Diagnostic report"],
@@ -75,13 +78,14 @@ const settingsSubgroups: Record<SettingsSection, string[]> = {
 const sections: Record<SettingsSection, ComponentType> = {
   general: GeneralSettings, appearance: AppearanceSettings, shortcuts: KeyboardShortcutsSettings,
   editor: EditorSettings, terminal: TerminalSettings, agent: AgentSettings,
-  security: SecuritySettings, updates: UpdatesSettings, diagnostics: DiagnosticsSettings, about: AboutSettings,
+  providers: LlmProvidersSettings, security: SecuritySettings, updates: UpdatesSettings, diagnostics: DiagnosticsSettings, about: AboutSettings,
 };
 const resolveSection = (section?: SettingsSection): SettingsSection => section && section in sections ? section : "general";
 
 export function SettingsView({ initialSection = "general", onSectionChange, sidePanelOpen = true, onShowNavigation }: SettingsViewProps) {
   const [activeSection, setActiveSection] = useState(() => resolveSection(initialSection));
   const [expandedSections, setExpandedSections] = useState<SettingsSection[]>(() => [resolveSection(initialSection)]);
+  const [providerGroups, setProviderGroups] = useState(settingsSubgroups.providers);
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [matches, setMatches] = useState(0);
@@ -90,7 +94,9 @@ export function SettingsView({ initialSection = "general", onSectionChange, side
   const searchRef = useRef<HTMLInputElement>(null);
   const searching = query.trim().length > 0;
   useEffect(() => {
-    setActiveSection(resolveSection(initialSection));
+    const next = resolveSection(initialSection);
+    setActiveSection(next);
+    setExpandedSections(current => current.includes(next) ? current : [...current, next]);
     setQuery("");
     contentRef.current?.scrollTo({ top: 0 });
   }, [initialSection]);
@@ -171,7 +177,7 @@ export function SettingsView({ initialSection = "general", onSectionChange, side
             <nav ref={navigationRef} aria-label="Settings sections" className="settings-categories filetree-scroll">
               {menuItems.map(({id, label}) => {
                 const open = !searching && expandedSections.includes(id);
-                const groups = settingsSubgroups[id];
+                const groups = id === "providers" ? providerGroups : settingsSubgroups[id];
                 return <div className={`settings-nav-item${open ? " is-open" : ""}`} key={id}>
                   <div className="settings-nav-row">
                     <button type="button" className="settings-nav-label" aria-current={!searching && activeSection === id && !activeGroup ? "page" : undefined} onClick={() => selectSection(id)}>
@@ -182,8 +188,7 @@ export function SettingsView({ initialSection = "general", onSectionChange, side
                     </button>
                   </div>
                   {open && groups.length > 0 && <div className="settings-subnav">
-                    <span className="settings-subnav-guide" aria-hidden="true" />
-                    {groups.map(title => <button type="button" key={title} aria-current={!searching && activeSection === id && activeGroup === title ? "page" : undefined} onClick={() => openGroup(id, title)}>{title}</button>)}
+                    {groups.map(title => <button type="button" key={title} aria-current={!searching && activeSection === id && activeGroup === title ? "page" : undefined} onClick={() => openGroup(id, title)}><span className="settings-subnav-guide" aria-hidden="true" />{title}</button>)}
                   </div>}
                 </div>;
               })}
@@ -196,9 +201,9 @@ export function SettingsView({ initialSection = "general", onSectionChange, side
             <div className="settings-page-scroll filetree-scroll" ref={contentRef}>
               {(searching ? menuItems : [activeItem]).map(item => {
                 const Content = sections[item.id];
-                return <div className="settings-category-content" data-settings-category={item.label} key={item.id}>
+                return <div className={`settings-category-content${item.id === "providers" ? " is-wide" : ""}`} data-settings-category={item.label} key={item.id}>
                   {searching && <h2 className="settings-result-category">{item.label}</h2>}
-                  <Content />
+                  {item.id === "providers" ? <LlmProvidersSettings onProvidersChange={setProviderGroups} /> : <Content />}
                 </div>;
               })}
               {searching && matches === 0 && <div className="settings-no-results" role="status"><h2>No settings found</h2><p>Try a preference such as font, minimap or scrollback.</p><button type="button" onClick={() => setQuery("")}>Clear search</button></div>}

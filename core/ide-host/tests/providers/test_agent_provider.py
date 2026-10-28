@@ -12,6 +12,7 @@ from coloride_desktop.agents.provider import (
     AgentProviderError,
     FireworksResponsesProvider,
     GeminiResponsesProvider,
+    OpenAIChatCompletionsProvider,
     OpenAIResponsesProvider,
     XAIResponsesProvider,
     is_cloud_session_expired_error,
@@ -440,6 +441,32 @@ async def test_fireworks_uses_chat_completions_and_preserves_reasoning() -> None
     assert response.tool_calls[0].arguments == {"path": "README.md"}
     assert response.output_items[0]["reasoning_content"] == "First read the requested file."
     assert response.usage.total_tokens == 12
+
+
+@pytest.mark.parametrize("provider,model,base_url", [
+    ("groq", "openai/gpt-oss-120b", "https://api.groq.com/openai/v1"),
+    ("ollama", "qwen2.5-coder:7b", "http://127.0.0.1:11434/v1"),
+])
+async def test_chat_providers_omit_flags_those_servers_reject(provider: str, model: str, base_url: str) -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url == f"{base_url}/chat/completions"
+        payload = json.loads(request.content)
+        assert "reasoning_effort" not in payload
+        assert "parallel_tool_calls" not in payload
+        assert payload["tools"][0]["function"]["name"] == "read_file"
+        return httpx.Response(200, json={
+            "id": "chatcmpl-local",
+            "choices": [{"message": {"role": "assistant", "content": "ok"}}],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        })
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        adapter = OpenAIChatCompletionsProvider(
+            AgentProviderSettings(provider=provider, model=model, base_url=base_url, api_key="", credential_source="local", reasoning_effort="high"),
+            client=client,
+        )
+        response = await adapter.complete(instructions="Inspect", input_items=[{"role": "user", "content": "Read"}], tools=[{"type": "function", "name": "read_file"}])
+    assert response.text == "ok"
 
 
 @pytest.mark.parametrize("model", ["gemini-3.7-flash", "gemini-4-argon"])

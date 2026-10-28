@@ -764,15 +764,25 @@ async function readReusableSidecar() {
       }
       throw error;
     }
-    if (JSON.stringify(config.cloudConfiguration ?? { enabled: false, appBase: "", apiBase: "" }) !== JSON.stringify(cloudConfig) ||
-        config.terminalHostVersion !== TERMINAL_HOST_VERSION ||
-        (isDev() && config.devSourceStamp !== developmentSidecarStamp())) {
+    const savedCloud = config.cloudConfiguration ?? { enabled: false };
+    // Disabled cloud endpoints do not affect local-host compatibility.
+    const incompatible = JSON.stringify(savedCloud.enabled ? savedCloud : { enabled: false }) !==
+        JSON.stringify(cloudConfig.enabled ? cloudConfig : { enabled: false }) ||
+        config.terminalHostVersion !== TERMINAL_HOST_VERSION;
+    const sourceChanged = isDev() && config.devSourceStamp !== developmentSidecarStamp();
+    if (incompatible || sourceChanged) {
       const response = await fetch(`http://${config.host}:${config.port}/api/term`, {
         headers: { Authorization: `Bearer ${config.token}` },
       });
       if (!response.ok) throw Object.assign(new Error("Cannot inspect the running terminal host. Close its terminals before updating."), { preserveTerminalHost: true });
       const sessions = await response.json();
       if (sessions.some((session) => session.status !== "exited")) {
+        if (!incompatible) {
+          // Reopen the existing terminals so the user can finish or close them.
+          // Keep the old stamp: a subsequent launch upgrades once they exit.
+          console.warn("[sidecar] Backend source changed; reusing the current host to preserve active terminals. Close terminal tabs and restart Coloride to load the updated backend.");
+          return config;
+        }
         throw Object.assign(new Error("A previous terminal host still has active sessions. Close those terminal tabs before updating Coloride; their processes have been preserved."), { preserveTerminalHost: true });
       }
       throw new Error("stale terminal host without active sessions");
@@ -1828,6 +1838,8 @@ async function createWindow() {
   });
 
   const sidecarReady = startSidecar();
+  // Startup artwork loads concurrently; handle early rejection until awaited below.
+  void sidecarReady.catch(() => {});
   // Initialize the primary renderer before creating auxiliary views. It owns
   // the app page for the whole window lifetime, including the loading phase.
   await mainWindow.loadURL("about:blank");
@@ -1867,7 +1879,7 @@ async function createWindow() {
   await mainWindow.loadURL(url);
 }
 
-const settingsSections = new Set(["general", "appearance", "shortcuts", "editor", "terminal", "agent", "security", "updates", "diagnostics", "about"]);
+const settingsSections = new Set(["general", "appearance", "shortcuts", "editor", "terminal", "agent", "providers", "security", "updates", "diagnostics", "about"]);
 async function openSettingsWindow(section) {
   // Old account links open General. Account is no longer a settings section.
   const requested = section === "account" ? "general" : section;

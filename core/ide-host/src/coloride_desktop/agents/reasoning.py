@@ -26,6 +26,7 @@ REASONING_LEVEL_LABELS = {
 # (needle, efforts, can turn thinking off). Off is a reasoning toggle, or
 # "none" in the advertised effort list.
 _MODEL_EFFORTS: tuple[tuple[str, tuple[str, ...], bool], ...] = (
+    ("gpt-6", ACTIVE_REASONING_LEVELS, False),
     ("grok-build-0.1", (), False),
     ("grok-4.7", ("low", "medium", "high", "xhigh"), False),
     ("grok-4.6", ("low", "medium", "high", "xhigh"), False),
@@ -40,6 +41,8 @@ _MODEL_EFFORTS: tuple[tuple[str, tuple[str, ...], bool], ...] = (
     ("deepseek-v4", ("low", "high", "max"), True),
     ("minimax-m3", ("low", "medium", "high"), False),
     ("kimi-k3", ("low", "medium", "high", "max"), True),
+    ("mistral-large", ("low", "medium", "high"), False),
+    ("mistral-medium", ("low", "medium", "high"), False),
 )
 
 _DEFAULT_EFFORTS = ("low", "medium", "high")

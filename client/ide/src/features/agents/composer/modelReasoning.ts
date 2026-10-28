@@ -23,6 +23,7 @@ const MODEL_EFFORTS: {
   efforts: ComposerReasoning[];
   supportsOff: boolean;
 }[] = [
+  { needle: "gpt-6", efforts: ACTIVE_LEVELS, supportsOff: false },
   { needle: "grok-build-0.1", efforts: [], supportsOff: false },
   { needle: "grok-4.7", efforts: ["low", "medium", "high", "xhigh"], supportsOff: false },
   { needle: "grok-4.6", efforts: ["low", "medium", "high", "xhigh"], supportsOff: false },
@@ -37,6 +38,8 @@ const MODEL_EFFORTS: {
   { needle: "deepseek-v4", efforts: ["low", "high", "max"], supportsOff: true },
   { needle: "minimax-m3", efforts: ["low", "medium", "high"], supportsOff: false },
   { needle: "kimi-k3", efforts: ["low", "medium", "high", "max"], supportsOff: true },
+  { needle: "mistral-large", efforts: ["low", "medium", "high"], supportsOff: false },
+  { needle: "mistral-medium", efforts: ["low", "medium", "high"], supportsOff: false },
 ];
 
 function modelReasoningEntry(model: string) {

@@ -145,8 +145,6 @@ function ThemePreview({
   mode: ThemePreference;
   selected?: boolean;
 }) {
-  const light = mode === "light";
-  const split = mode === "system";
 
   return (
     <button
@@ -160,22 +158,33 @@ function ThemePreview({
       title={`Use ${label.toLowerCase()} theme`}
       type="button"
     >
-      <span
-        className={`appearance-theme-preview relative block aspect-[1.45/1] overflow-hidden rounded-xl border transition-colors ${selected ? "border-[#9a9a9f]" : "border-[#3b3b3b]"} ${light ? "bg-[#ededed]" : "bg-[#2b2b2b]"}`}
-      >
-        {split && <span className="theme-preview-split absolute inset-y-0 left-0 w-1/2 bg-[#dedede]" />}
-        <span className={`theme-preview-header absolute left-[13%] right-[13%] top-[24%] h-2 rounded-full ${light ? "bg-[#c8c8c8]" : "bg-[#727272]"}`} />
-        <span className={`theme-preview-panel absolute bottom-0 left-[9%] right-[9%] h-[52%] rounded-t-lg ${light ? "bg-white" : "bg-[#171717]"}`} />
-        <span className={`theme-preview-line-primary absolute bottom-[31%] left-[15%] h-2 w-[28%] rounded-full ${light ? "bg-[#d8d8d8]" : "bg-[#555]"}`} />
-        <span className={`theme-preview-line-secondary absolute bottom-[17%] left-[15%] h-1.5 w-[50%] rounded-full ${light ? "bg-[#e5e5e5]" : "bg-[#3f3f3f]"}`} />
+      <span className="appearance-theme-preview appearance-settings-preview relative block aspect-[1.45/1] overflow-hidden rounded-xl">
+        {mode === "system" ? (
+          <>
+            <ThemeScene tone="light" half="left" />
+            <ThemeScene tone="dark" half="right" />
+          </>
+        ) : <ThemeScene tone={mode} />}
+        <span className="appearance-theme-outline" aria-hidden="true" />
         {selected && (
-          <span className="absolute right-2 top-2 flex size-5 items-center justify-center rounded-full bg-[var(--accent-color)] text-[#10202b]">
+          <span className="absolute right-2 top-2 z-10 flex size-5 items-center justify-center rounded-full bg-[var(--accent-color)] text-[#10202b]">
             <Icon icon={Tick02Icon} size={12} strokeWidth={2.4} />
           </span>
         )}
       </span>
       <span className={`appearance-theme-label mt-1.5 block text-center text-xs ${selected ? "text-white" : "text-[#a0a0a5]"}`}>{label}</span>
     </button>
+  );
+}
+
+function ThemeScene({ tone, half }: { tone: "light" | "dark"; half?: "left" | "right" }) {
+  return (
+    <span className="theme-sample-scene" data-tone={tone} data-half={half} aria-hidden="true">
+      <span className="theme-sample-header" />
+      <span className="theme-sample-panel" />
+      <span className="theme-sample-line-primary" />
+      <span className="theme-sample-line-secondary" />
+    </span>
   );
 }
 

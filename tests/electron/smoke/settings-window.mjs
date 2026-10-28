@@ -27,11 +27,56 @@ try {
     if (!item) throw new Error('Native Settings menu item missing');
     item.click();
   });
+  // Exercise configuration with a fake key; never touch the OS credential store.
+  const fakeKey='test-settings-key-not-a-real-secret';
+  const secondKey='test-gemini-key-not-a-real-secret';
+  const providerWrites=[];
+  let failProviderSave=true;
+  const profiles={
+    openai:{provider:'openai',model:'gpt-5.3-codex',baseUrl:'https://api.openai.com/v1',configured:false,credentialSource:'none'},
+    gemini:{provider:'gemini',model:'gemini-3.8-flash',baseUrl:'https://generativelanguage.googleapis.com/v1beta',configured:false,credentialSource:'none'},
+    xai:{provider:'xai',model:'grok-4.5',baseUrl:'https://api.x.ai/v1',configured:false,credentialSource:'none'},
+    deepseek:{provider:'deepseek',model:'deepseek-flash',baseUrl:'https://api.deepseek.com',configured:false,credentialSource:'none'},
+    fireworks:{provider:'fireworks',model:'accounts/fireworks/models/kimi-k3',baseUrl:'https://api.fireworks.ai/inference/v1',configured:false,credentialSource:'none'},
+  };
+  let providerFixture={...profiles.xai,availability:'missing_credentials',managedLlm:false,
+    capabilities:{tools:true,streaming:true,encryptedReasoning:true,maxContextCharacters:100000,maxContextTokens:100000,maxRetries:3}};
+  const providerRoute=async route=>{
+    const connection=route.request().url().match(/\/providers\/(openai|gemini|xai|fireworks|deepseek|custom:[a-z0-9-]+)\/connect/);
+    if(route.request().url().endsWith('/api/agents/providers') && route.request().method()==='POST') {
+      const body=route.request().postDataJSON();
+      profiles[body.id]={provider:body.id,label:body.label,protocol:body.protocol,baseUrl:body.baseUrl,requiresKey:body.requiresKey,showInSettings:true,configured:!body.requiresKey,credentialSource:body.requiresKey?'none':'local',model:'',availableModels:[]};
+      await route.fulfill({status:201,json:{...body,builtin:false,showInSettings:true}}); return;
+    }
+    if(connection) {
+      const provider=connection[1];
+      const body=route.request().postDataJSON();
+      providerWrites.push({provider,...body});
+      if(body.apiKey && failProviderSave) { failProviderSave=false; await route.fulfill({status:503,json:{detail:'Credential store unavailable: '+fakeKey}}); return; }
+      const availableModels=provider.startsWith('custom:') ? [{id:'small-local',label:'small-local',capabilities:{tools:false,images:false,reasoning:false,streaming:false,encrypted_reasoning:false,context_tokens:128000,context_characters:409600,source:'unknown'}}] : provider==='openai' ? [{id:'gpt-6.1-sol',label:'GPT-6.1 Sol'},{id:'gpt-5.3-codex',label:'GPT-5.3 Codex'}] : [{id:'gemini-4-argon',label:'Gemini 4 Argon'}];
+      profiles[provider]={...profiles[provider],configured:true,credentialSource:profiles[provider].requiresKey===false?'local':'keychain',model:availableModels[0].id,availableModels};
+      if(!providerFixture.configured || providerFixture.provider===provider) providerFixture={...providerFixture,...profiles[provider],availability:'available'};
+    } else if(route.request().method()==='PUT') {
+      const body=route.request().postDataJSON();
+      providerWrites.push(body);
+      if(failProviderSave) { failProviderSave=false; await route.fulfill({status:503,json:{detail:'Credential store unavailable: '+fakeKey}}); return; }
+      profiles[body.provider]={...profiles[body.provider],model:body.model,
+        ...(body.apiKey ? {configured:true,credentialSource:'keychain'} : {})};
+      if(body.activate!==false || body.provider===providerFixture.provider) providerFixture={...providerFixture,...profiles[body.provider],availability:profiles[body.provider].configured?'available':'missing_credentials'};
+    }
+    await route.fulfill({json:{...providerFixture,providers:Object.values(profiles).map(entry=>({...entry,active:entry.provider===providerFixture.provider}))}});
+  };
+  await page.route('**/api/agents/config*',providerRoute);
+  await page.route('**/api/agents/providers/*/connect',providerRoute);
+  await page.route('**/api/agents/providers',providerRoute);
   const newSettings = async () => {
     const created=app.waitForEvent('window');
     await openSettings();
     const settings=await created;
     settings.setDefaultTimeout(15000);
+    await settings.route('**/api/agents/config*',providerRoute);
+    await settings.route('**/api/agents/providers/*/connect',providerRoute);
+    await settings.route('**/api/agents/providers',providerRoute);
     settings.on('pageerror', error=>errors.push(error.message));
     await expect(settings.getByRole('region',{name:'General settings',exact:true})).toBeVisible();
     return settings;
@@ -52,12 +97,21 @@ try {
   await (await app.browserWindow(settings)).evaluate(win=>win.setSize(1120,800));
   expect(await (await app.browserWindow(settings)).evaluate(win=>win.getParentWindow())).toBeNull();
   const nav=()=>settings.getByRole('navigation',{name:'Settings sections'});
-  const category=name=>nav().getByRole('button',{name,exact:true}).and(settings.locator('.settings-nav-label'));
+  const category=name=>nav().locator('.settings-nav-label').filter({hasText:new RegExp('^'+name+'$')});
   await category('Appearance').click();
   await settings.getByRole('radio',{name:'Light theme',exact:true}).click();
   await expect(settings.locator('body')).toHaveAttribute('data-theme','light');
   await expect(page.locator('body')).toHaveAttribute('data-theme','light');
+  await settings.screenshot({path:join(output,'settings-appearance-light.png')});
   await category('General').click();
+  const afterConnecting=settings.getByRole('button',{name:'After connecting',exact:true});
+  await afterConnecting.click();
+  await expect(settings.locator('.settings-select-menu')).toBeVisible();
+  await expect(settings.locator('.settings-select-menu').getByRole('button',{name:'Open server health',exact:true})).toBeVisible();
+  await expect.poll(()=>settings.locator('.settings-select-menu').evaluate(el=>getComputedStyle(el).opacity)).toBe('1');
+  await settings.screenshot({path:join(output,'settings-dropdown-light.png')});
+  await afterConnecting.press('Escape');
+  await expect(afterConnecting).toHaveAttribute('aria-expanded','false');
   const restore=()=>settings.getByRole('switch',{name:'Restore open files',exact:true});
   const before=await restore().getAttribute('aria-checked');
   await restore().click();
@@ -75,6 +129,7 @@ try {
   await page.getByRole('button',{name:'Show terminal',exact:true}).first().click();
   await expect(page.locator('[data-terminal-status=ready]').first()).toBeVisible({timeout:30000});
   const writeShellPid=async name=>{
+    await (await app.browserWindow(page)).evaluate(win=>win.focus());
     await page.locator('.xterm-helper-textarea').first().focus();
     await page.keyboard.insertText(`printf '%s' $$ > ${name}`);
     await page.keyboard.press('Enter');
@@ -88,6 +143,62 @@ try {
   await openSettings();
   await expect.poll(()=>app.windows().length).toBe(2);
   expect(await app.evaluate(({BrowserWindow},id)=>BrowserWindow.getFocusedWindow()?.id===id,settingsId)).toBe(true);
+  // Each provider has an independent visible form, not a provider dropdown.
+  await expect(page.getByRole('button',{name:'Open LLM provider settings',exact:true})).toBeVisible();
+  await expect(page.locator('.agent-provider-setup input')).toHaveCount(0);
+  await page.getByRole('button',{name:'Open LLM provider settings',exact:true}).click();
+  await expect(settings.getByRole('region',{name:'LLM Providers settings',exact:true})).toBeVisible();
+  await expect(settings.getByRole('button',{name:'Model provider',exact:true})).toHaveCount(0);
+  for(const label of ['OpenAI','Gemini','xAI','DeepSeek']) await expect(settings.getByRole('group',{name:label+' configuration',exact:true})).toBeAttached();
+  await expect(settings.getByRole('textbox',{name:'OpenAI model',exact:true})).toHaveCount(0);
+  await expect(settings.getByRole('button',{name:/^(Save|Use) /})).toHaveCount(0);
+  const key=settings.getByLabel('OpenAI API key',{exact:true});
+  const geminiKey=settings.getByLabel('Gemini API key',{exact:true});
+  await expect(key).toHaveAttribute('type','password');
+  await key.fill(' '+fakeKey+' ');
+  await expect(settings.getByRole('alert')).toContainText('Retrying automatically');
+  await expect(settings.getByRole('alert')).not.toContainText(fakeKey);
+  await expect(key).toHaveValue(' '+fakeKey+' ');
+  // Editing only restarts the debounce; no submit or provider selection.
+  await key.fill(fakeKey);
+  await expect(key).toHaveValue('');
+  await expect(settings.getByLabel('OpenAI available models')).toContainText('GPT-6.1 Sol');
+  expect(providerWrites[1]).toEqual({provider:'openai',apiKey:fakeKey});
+  expect(providerFixture.provider).toBe('openai');
+  await expect(page.locator('textarea.agent-composer-input').first()).toHaveAttribute('placeholder','Ask Coloride…');
+  await geminiKey.evaluate((input,value)=>{ const clipboardData=new DataTransfer(); clipboardData.setData('text/plain',value); input.dispatchEvent(new ClipboardEvent('paste',{clipboardData,bubbles:true,cancelable:true})); },secondKey);
+  await expect(geminiKey).toHaveValue('');
+  await expect(settings.getByLabel('Gemini available models')).toContainText('Gemini 4 Argon');
+  expect(providerFixture.provider).toBe('openai');
+  await page.locator('.agent-composer-model-trigger').first().click();
+  await page.getByRole('menuitem',{name:'GPT-6.1 Sol',exact:true}).click();
+  for(const label of ['GPT-6.1 Sol','GPT-5.3 Codex','Gemini 4 Argon']) await expect(page.getByRole('menuitemradio',{name:label,exact:true})).toBeVisible();
+  await expect(page.getByRole('menuitemradio',{name:'Grok 4.7',exact:true})).toHaveCount(0);
+  await expect(page.getByRole('menuitemradio',{name:'Kimi K3',exact:true})).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Escape');
+  expect(await settings.evaluate(()=>Object.values(localStorage).join('\n').includes('test-settings-key-not-a-real-secret'))).toBe(false);
+  await category('General').click();
+  await category('LLM Providers').click();
+  await expect(settings.getByLabel('OpenAI available models')).toContainText('GPT-6.1 Sol');
+  await expect(settings.getByLabel('Gemini available models')).toContainText('Gemini 4 Argon');
+  await expect(key).toHaveValue('');
+  await expect(geminiKey).toHaveValue('');
+  await key.scrollIntoViewIfNeeded();
+  await settings.screenshot({path:join(output,'settings-provider-light.png')});
+  await settings.getByText('Add a compatible provider',{exact:true}).click();
+  await settings.getByLabel('Provider name',{exact:true}).fill('Local Test');
+  await settings.getByLabel('Provider API endpoint',{exact:true}).fill('http://127.0.0.1:11434/v1');
+  await settings.getByRole('switch',{name:'API key required',exact:true}).click();
+  await settings.getByRole('button',{name:'Add provider',exact:true}).click();
+  const localModels=settings.getByLabel('Local Test available models',{exact:true});
+  await expect(localModels).toContainText('small-local · Ask only');
+  await settings.locator('.settings-subnav').getByRole('button',{name:'Local Test',exact:true}).click();
+  await expect(settings.getByRole('group',{name:'Local Test configuration',exact:true})).toBeInViewport();
+  await expect(settings.getByLabel('Local Test API key',{exact:true})).toBeDisabled();
+  expect(providerWrites.some(body=>body.provider==='custom:local-test' && !body.apiKey)).toBe(true);
+  expect(providerFixture.provider).toBe('openai');
+  await settings.screenshot({path:join(output,'settings-custom-provider.png')});
   const search=settings.getByRole('textbox',{name:'Search settings'});
   await settings.keyboard.press('Meta+f');
   await expect(search).toBeFocused();
@@ -100,11 +211,20 @@ try {
   await expect(search).toHaveValue('');
   // Section links reuse the same window and leave search results.
   await search.fill('minimap');
-  await page.evaluate(()=>window.dispatchEvent(new CustomEvent('coloride:open-settings',{detail:{section:'terminal'}})));
+  await page.evaluate(()=>window.colorideDesktop.openSettings('terminal'));
   await expect(settings.getByRole('region',{name:'Terminal settings',exact:true})).toBeVisible();
   await category('Appearance').click();
   await settings.getByRole('radio',{name:'Dark theme',exact:true}).click();
   await expect(page.locator('body')).toHaveAttribute('data-theme','dark');
+  await settings.screenshot({path:join(output,'settings-appearance-dark.png')});
+  await settings.getByRole('radio',{name:'System theme',exact:true}).click();
+  await expect(settings.getByRole('radio',{name:'System theme',exact:true})).toHaveAttribute('aria-checked','true');
+  await settings.screenshot({path:join(output,'settings-appearance-system.png')});
+  await settings.getByRole('radio',{name:'Dark theme',exact:true}).click();
+  await category('LLM Providers').click();
+  await expect(settings.getByRole('group',{name:'OpenAI configuration',exact:true})).toBeVisible();
+  await expect(settings.getByRole('button',{name:/^(Save|Use) /})).toHaveCount(0);
+  await settings.screenshot({path:join(output,'settings-provider-dark.png')});
   await category('General').click();
   await settings.screenshot({path:join(output,'settings-dark.png')});
   await (await app.browserWindow(settings)).evaluate(win=>win.setSize(760,650));
@@ -118,9 +238,10 @@ try {
   await expect(page.locator('.cm-content').first()).toContainText('greeting');
   expect(await writeShellPid('settings-shell-return.pid')).toBe(pid);
   expect(errors).toEqual([]);
-  console.log('PASS: Independent native Settings window, reuse, section links, search, persisted live preferences, themes, resize, native close and preserved editor/shell.');
+  console.log('PASS: Independent Settings window, automatic API setup with mocked keys, protected replacements, discovered composer models and live agent readiness, search, themes, native close and preserved editor/shell.');
 } catch (error) {
   if (settings && !settings.isClosed()) {
+    await settings.screenshot({path:join(output,'failure-settings.png')}).catch(()=>{});
     console.error('Settings focus:',await settings.evaluate(()=>({active:document.activeElement?.tagName,focused:document.hasFocus(),visibility:document.visibilityState})).catch(()=>null));
     console.error('Native focus:',await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows().map(win=>({id:win.id,focused:win.isFocused(),visible:win.isVisible()}))));
   }

@@ -13,7 +13,9 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const require = createRequire(import.meta.url);
 const { resolveTestPython } = require('../support/python.cjs');
 const dev = process.argv.includes('--dev');
-assert(process.argv.slice(2).every(arg => arg === '--dev'), 'Usage: node tests/electron/smoke/host-startup.mjs [--dev]');
+const sourceChange = process.argv.includes('--source-change');
+assert(!sourceChange || dev, '--source-change requires --dev');
+assert(process.argv.slice(2).every(arg => arg === '--dev' || arg === '--source-change'), 'Usage: node tests/electron/smoke/host-startup.mjs [--dev [--source-change]]');
 assert.equal(process.platform, 'darwin', 'This smoke currently uses macOS fixture-host cleanup.');
 if (dev) {
   assert((await fetch('http://127.0.0.1:5173', { signal: AbortSignal.timeout(2000) })).ok, 'Start pnpm dev:web first.');
@@ -27,7 +29,7 @@ const file = join(project, 'startup.txt');
 const output = join(root, 'artifacts/host-startup', dev ? 'dev' : 'production');
 await Promise.all([home, userData, project, output].map(folder => mkdir(folder, { recursive: true })));
 await writeFile(file, 'ColorIDE startup fixture\n');
-const env = { ...process.env, HOME: home, COLORIDE_TEST_USER_DATA: userData,
+const env = { ...process.env, HOME: home, COLORIDE_TEST_USER_DATA: userData, COLORIDE_CLOUD_ENABLED: '0',
   COLORIDE_DEV: dev ? '1' : '0', COLORIDE_SENTRY_DISABLED: '1', COLORIDE_SKIP_UPDATE_CHECK: '1',
   SHELL: '/bin/bash' };
 for (const key of ['ELECTRON_RUN_AS_NODE', 'COLORIDE_WEB_DEV_URL', 'COLORIDE_SIDECAR']) delete env[key];
@@ -97,7 +99,7 @@ async function scenario(name, { restored = name === 'reused', holdSshProbes = fa
   const page = await app.firstWindow();
   page.setDefaultTimeout(30000);
   await page.route('https://**/*', route => route.abort());
-  await expect(page.getByRole('button', { name: 'Explorer', exact: true })).toBeVisible({ timeout: 60000 });
+  await expect(page.locator('.app-workspace-region')).toBeVisible({ timeout: 60000 });
   await expect(page.locator('html')).not.toHaveAttribute('data-startup', /.+/);
   sample.uiReadyMs = performance.now() - started;
   await expect.poll(() => sample.logs.includes('[Electron] app loaded in')).toBe(true);
@@ -158,19 +160,29 @@ async function scenario(name, { restored = name === 'reused', holdSshProbes = fa
 
 try {
   const fresh = await scenario('fresh');
-  await stopHost(); // Retain discovery exactly as a stopped host does.
-  const stopped = await scenario('stopped');
-  assert.notEqual(stopped.hostPid, fresh.hostPid, 'Stopped host must be replaced.');
-  assert(stopped.sidecarReadyMs < 6000, 'Stopped discovery added a long startup stall.');
-  assert(stopped.sidecarReadyMs - fresh.sidecarReadyMs < 2000, 'Stopped discovery must not add more than 2 seconds to fresh startup.');
-  const reused = await scenario('reused');
-  assert.equal(reused.hostPid, stopped.hostPid, 'Healthy persistent host was restarted.');
-  assert.equal(reused.hostPort, stopped.hostPort, 'Healthy persistent host port changed.');
-  assert.equal(reused.shellPid, stopped.shellPid, 'Healthy terminal shell was restarted.');
-  const slowSsh = await scenario('reused-slow-ssh', { restored: true, holdSshProbes: true });
-  assert.equal(slowSsh.hostPid, reused.hostPid, 'Delayed SSH probes must not restart the healthy host.');
-  assert.equal(slowSsh.hostPort, reused.hostPort, 'Delayed SSH probes must preserve the local origin.');
-  assert.equal(slowSsh.shellPid, reused.shellPid, 'Delayed SSH probes must preserve the existing shell.');
+  if (sourceChange) {
+    const saved = await readRuntime();
+    await writeFile(join(userData, 'terminal-host.json'), JSON.stringify({ ...saved,
+      devSourceStamp: 'older-source-fixture', cloudConfiguration: { enabled: false, appBase: '', apiBase: 'https://api.coloride.com' } }));
+    const changed = await scenario('changed-source', { restored: true });
+    assert.equal(changed.hostPid, fresh.hostPid, 'Source changes must preserve an active host.');
+    assert.equal(changed.shellPid, fresh.shellPid, 'Source changes must preserve the running shell.');
+    assert.equal((await readRuntime()).devSourceStamp, 'older-source-fixture', 'Pending source upgrade must not be marked as loaded.');
+  } else {
+    await stopHost(); // Retain discovery exactly as a stopped host does.
+    const stopped = await scenario('stopped');
+    assert.notEqual(stopped.hostPid, fresh.hostPid, 'Stopped host must be replaced.');
+    assert(stopped.sidecarReadyMs < 6000, 'Stopped discovery added a long startup stall.');
+    assert(stopped.sidecarReadyMs - fresh.sidecarReadyMs < 2000, 'Stopped discovery must not add more than 2 seconds to fresh startup.');
+    const reused = await scenario('reused');
+    assert.equal(reused.hostPid, stopped.hostPid, 'Healthy persistent host was restarted.');
+    assert.equal(reused.hostPort, stopped.hostPort, 'Healthy persistent host port changed.');
+    assert.equal(reused.shellPid, stopped.shellPid, 'Healthy terminal shell was restarted.');
+    const slowSsh = await scenario('reused-slow-ssh', { restored: true, holdSshProbes: true });
+    assert.equal(slowSsh.hostPid, reused.hostPid, 'Delayed SSH probes must not restart the healthy host.');
+    assert.equal(slowSsh.hostPort, reused.hostPort, 'Delayed SSH probes must preserve the local origin.');
+    assert.equal(slowSsh.shellPid, reused.shellPid, 'Delayed SSH probes must preserve the existing shell.');
+  }
   // PID/port/shell identity proves reuse. Early console output can precede
   // Playwright's launch attachment and is not reliable as an assertion.
   report.status = 'passed';

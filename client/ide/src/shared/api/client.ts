@@ -392,9 +392,17 @@ export const api = {
       body: JSON.stringify(body)
     }),
   agentsAvailable: () => request<AgentInfo[]>("/api/agents/available"),
-  agentConfig: () =>
-    request<import("@coloride/contracts").AgentProviderConfig>("/api/agents/config"),
+  agentConfig: (includeProviders = false) =>
+    request<import("@coloride/contracts").AgentProviderConfig>(`/api/agents/config${includeProviders ? "?includeProviders=true" : ""}`),
+  agentProviderRegistry: () => request<import("@coloride/contracts").AgentProviderDefinition[]>("/api/agents/providers"),
+  registerAgentProvider: (body: Pick<import("@coloride/contracts").AgentProviderDefinition, "id" | "label" | "protocol" | "baseUrl" | "requiresKey">) =>
+    request<import("@coloride/contracts").AgentProviderDefinition>("/api/agents/providers", { method: "POST", body: JSON.stringify(body) }),
+  connectAgentProvider: (provider: import("@coloride/contracts").AgentProvider, apiKey?: string) =>
+    request<import("@coloride/contracts").AgentProviderConfig>(`/api/agents/providers/${provider}/connect`, {
+      method: "POST", body: JSON.stringify(apiKey === undefined ? {} : { apiKey })
+    }),
   updateAgentConfig: (body: {
+    activate?: boolean;
     provider: import("@coloride/contracts").AgentProvider;
     model: string;
     apiKey?: string;

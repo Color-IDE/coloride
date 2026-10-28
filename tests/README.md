@@ -60,13 +60,15 @@ node tests/electron/smoke/settings-window.mjs
 node tests/electron/smoke/host-startup.mjs
 # Same startup regression against an already running pnpm dev:web:
 node tests/electron/smoke/host-startup.mjs --dev
+# Pending Python changes and legacy disabled-cloud metadata preserve a live shell:
+node tests/electron/smoke/host-startup.mjs --dev --source-change
 ```
 
 `test:electron` includes chat, Markdown and terminal scenarios; `test:terminal` selects only the terminal folder. CI runs the complete Electron suite in its zsh/bash matrix. Discovery uses nested `*.spec.ts` files.
 
 `corepack pnpm test:unit` discovers all renderer TypeScript/TSX unit suites and runs them with `tsx` and `node:test`, isolated by file. Test-only resource loading does not reproduce browser rendering. The frontend CI job executes this command. Use isolated projects and profiles for running-app checks; unit tests do not certify browser layout or packaged behavior.
 
-`settings-window.mjs` checks a separate reusable native Settings window, cross-category search, preferences applied live in both windows, editor and terminal preservation, light/dark themes, narrow layout and keyboard shortcuts. It uses an isolated profile and temporary workspace; screenshots are written to `artifacts/settings-window/`.
+`settings-window.mjs` checks a separate reusable native Settings window, cross-category search, independent LLM provider blocks with mocked keys, automatic validation/save, discovery and preserved credentials, preferences and model readiness applied live in both windows, editor and terminal preservation, light/dark themes, narrow layout and keyboard shortcuts. It uses an isolated profile and temporary workspace; screenshots are written to `artifacts/settings-window/`.
 
 `host-startup.mjs` opens and edits a local file and runs a real PTY command in each startup scenario. It checks that a stopped host adds less than two seconds versus a fresh host, and that healthy reuse preserves both host and shell PIDs. A fourth reused-host scenario holds saved-profile and SSH-state requests until a restored local file has been edited and saved, proving local restore does not wait for those probes. Timings, logs and screenshots are saved under `artifacts/host-startup/`; these checkout measurements include Playwright overhead and do not certify cold boot or packaged performance.
 
@@ -129,6 +131,8 @@ Electron coverage includes Unicode and long wrapped output, paths with spaces, T
 The `terminal-local` CI job runs the Electron suite on macOS for both shells and retains failure screenshots. Local runs and a packaged offline command smoke are separate from remote CI results. The smoke artifact is an internal unsigned build; it does not validate notarization or publication.
 
 ## Performance benchmarks
+
+The short version, including the checks that are not measured yet, is in [docs/performance.md](../docs/performance.md).
 
 Run `corepack pnpm build:web` followed by `corepack pnpm bench:startup`. Run it alone, without other UI tests or interacting with its windows. The macOS benchmark creates a disposable project with 10,000 JavaScript files, opens a real editor in a fresh profile, then measures 20 warm restarts with the same persistent fixture host. Timing starts before Electron launches and ends after a real edit appears and two animation frames complete. The p95 budget is 2,000 ms; a breach exits nonzero. Initialization errors are reported separately from budget failures.
 
