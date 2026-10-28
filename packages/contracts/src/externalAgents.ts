@@ -91,6 +91,7 @@ export type ExternalAgentSession = ExternalAgentSessionIdentity & {
   processId: string | null;
   supportsLoad: boolean;
   authMethods: ExternalAgentAuthMethod[];
+  configOptions: ExternalAgentConfigOption[];
   error?: string | null;
   updatedAt: string;
 };

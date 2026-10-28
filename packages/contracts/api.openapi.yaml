@@ -113,6 +113,9 @@ components:
         authMethods:
           type: array
           items: { $ref: "#/components/schemas/ExternalAgentAuthMethod" }
+        configOptions:
+          type: array
+          items: { $ref: "#/components/schemas/ExternalAgentConfigOption" }
         error: { type: string, nullable: true }
         updatedAt: { type: string }
     ExternalAgentConfigChoice:

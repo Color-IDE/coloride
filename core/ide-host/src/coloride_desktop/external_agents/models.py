@@ -120,8 +120,8 @@ class SessionRecord(BaseModel):
 
     def public(self) -> dict[str, Any]:
         payload = self.model_dump(by_alias=True)
-        for key in ("configOptions", "pendingConfig", "lastSequence"):
-            payload.pop(key, None)
+        payload.pop("pendingConfig", None)
+        payload.pop("lastSequence", None)
         return payload
 
 

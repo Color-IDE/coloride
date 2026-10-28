@@ -94,6 +94,7 @@ test.beforeAll(async () => {
         processId: null,
         supportsLoad: true,
         authMethods: [{ id: "codex-login", name: "Sign in", type: "agent" }],
+        configOptions: [{ id: "thought", name: "Thinking", category: "thought_level", type: "select", currentValue: "low", options: [{ value: "low", name: "Low" }, { value: "high", name: "High" }] }],
         updatedAt: "2026-10-29T00:00:00Z",
       },
     });
@@ -109,6 +110,8 @@ test.afterAll(async () => {
 test("restored Codex conversation sends through the external composer", async () => {
   await page.goto(base + "/tests/external-agent.html");
   await expect(page.getByLabel("Codex conversation")).toContainText("Recovered Codex reply");
+  await expect(page.getByLabel("Thinking")).toHaveValue("low");
+  await page.getByLabel("Thinking").selectOption("high");
   await page.getByLabel("Message").fill("Change thinking and edit the file");
   await page.getByRole("button", { name: "Send" }).click();
   await expect(page.getByLabel("Message")).toHaveValue("");

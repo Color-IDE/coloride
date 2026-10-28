@@ -39,6 +39,7 @@ export function useExternalAgentSession(sessionId: string | null, active: boolea
     void externalAgentsApi.session(sessionId).then(async (loaded) => {
       if (cancelled) return;
       setSession(loaded);
+      setState((current) => ({ ...current, config: loaded.configOptions ?? current.config }));
       const events = await externalAgentsApi.events(sessionId, 0);
       if (cancelled) return;
       const hydrated = hydrateExternalAgentEvents(events);

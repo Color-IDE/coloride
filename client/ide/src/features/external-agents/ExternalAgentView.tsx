@@ -85,7 +85,7 @@ export function ExternalAgentView({
         }}
         onDraftChange={setDraft}
         onSubmit={() => void submit()}
-        options={state.config}
+        options={state.config.length ? state.config : session?.configOptions ?? []}
         pending={state.pendingConfig}
         running={state.turnActive}
       />
