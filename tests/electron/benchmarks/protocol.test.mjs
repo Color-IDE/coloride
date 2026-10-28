@@ -1,17 +1,20 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { comparisonSchedule, distribution, parseCpuSeconds, processTree, startResourceSampler, visualSamples } from './protocol.mjs';
-test('the comparison balances editor positions and uses 120 first opens per editor in fresh profiles', () => {
+test('the comparison balances editor positions and uses 40 first opens per editor in fresh profiles', () => {
   const schedule = comparisonSchedule();
-  assert.equal(new Set(schedule.map(row => row.profile)).size, 18);
-  for (let i = 1; i < schedule.length; i++) assert.notEqual(schedule[i - 1].editor, schedule[i].editor);
-  for (const editor of ['coloride', 'vscode', 'zed']) {
+  assert.equal(new Set(schedule.map(row => row.profile)).size, 4);
+  for (let round = 1; round <= 2; round++) {
+    const rows = schedule.filter(row => row.round === round);
+    assert.equal(new Set(rows.map(row => row.editor)).size, rows.length);
+  }
+  for (const editor of ['coloride', 'vscode']) {
     const entries = schedule.filter(row => row.editor === editor);
-    assert.equal(entries.reduce((sum, row) => sum + row.samples, 0), 120);
-    for (const position of [1, 2, 3]) assert.equal(entries.filter(row => row.position === position).length, 2);
+    assert.equal(entries.reduce((sum, row) => sum + row.samples, 0), 40);
+    for (const position of [1, 2]) assert.equal(entries.filter(row => row.position === position).length, 1);
     for (const entry of entries) assert.deepEqual([...entry.fileOrder].sort((a, b) => a - b), Array.from({ length: 20 }, (_, i) => i + 1));
   }
-  for (let round = 1; round <= 6; round++) assert.equal(new Set(schedule.filter(row => row.round === round).map(row => row.fileOrder.join(','))).size, 1);
+  for (let round = 1; round <= 2; round++) assert.equal(new Set(schedule.filter(row => row.round === round).map(row => row.fileOrder.join(','))).size, 1);
 });
 test('latency percentiles preserve outliers and CPU time supports long-lived processes', () => {
   const stats = distribution(Array.from({ length: 100 }, (_, i) => i + 1));
@@ -38,7 +41,7 @@ test('a visual result needs matching post-click pixels and cannot use stale cont
 });
 test('comparative summaries refuse partial or renderer-only evidence', async () => {
   const { summarizeComparison } = await import('./protocol.mjs');
-  assert.throws(() => summarizeComparison([]), /All 18/);
+  assert.throws(() => summarizeComparison([]), /All 4/);
   const schedule = comparisonSchedule();
   assert.throws(() => summarizeComparison(schedule.map(run => ({ ...run, environmentFingerprint: 'one-machine' }))), /incompatible visual measurement/);
 });

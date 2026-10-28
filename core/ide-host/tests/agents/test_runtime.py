@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from coloride_desktop.agents.cline_runtime import bundled_runtime_script, runtime_executable
+from coloride_desktop.agents.runtime import bundled_runtime_script, runtime_executable
 
 
 def test_override_path_is_used_when_it_exists(tmp_path, monkeypatch) -> None:
-    script = tmp_path / "cline-runtime.mjs"
+    script = tmp_path / "coloride-runtime.mjs"
     script.write_text("// host\n", encoding="utf-8")
-    monkeypatch.setenv("COLORIDE_CLINE_RUNTIME", str(script))
+    monkeypatch.setenv("COLORIDE_AGENT_RUNTIME", str(script))
     assert bundled_runtime_script() == script.resolve()
 
 
@@ -16,9 +16,9 @@ def test_missing_override_falls_through_to_later_candidate(tmp_path, monkeypatch
     missing = tmp_path / "missing.mjs"
     real = tmp_path / "real.mjs"
     real.write_text("// host\n", encoding="utf-8")
-    monkeypatch.setenv("COLORIDE_CLINE_RUNTIME", str(missing))
+    monkeypatch.setenv("COLORIDE_AGENT_RUNTIME", str(missing))
     monkeypatch.setattr(
-        "coloride_desktop.agents.cline_runtime._runtime_candidates",
+        "coloride_desktop.agents.runtime._runtime_candidates",
         lambda: [missing, real],
     )
     assert bundled_runtime_script() == real.resolve()
@@ -34,7 +34,7 @@ def test_runtime_executable_uses_existing_electron_binary(tmp_path, monkeypatch)
 def test_runtime_executable_ignores_stale_electron_path(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("COLORIDE_AGENT_NODE", str(tmp_path / "gone" / "electron.exe"))
     monkeypatch.setattr(
-        "coloride_desktop.agents.cline_runtime.shutil.which",
+        "coloride_desktop.agents.runtime.shutil.which",
         lambda name: str(tmp_path / "node.exe") if name in {"node", "node.exe"} else None,
     )
     assert runtime_executable() == str(tmp_path / "node.exe")
@@ -43,11 +43,11 @@ def test_runtime_executable_ignores_stale_electron_path(tmp_path, monkeypatch) -
 async def test_parallel_stop_waits_for_outstanding_tool_replies():
     import asyncio
     import pytest
-    from coloride_desktop.agents.cline_runtime import ClineRuntime
+    from coloride_desktop.agents.runtime import AgentRuntime
 
     if not bundled_runtime_script() or not runtime_executable():
         pytest.skip("Bundled runtime and Node are required")
-    runtime = ClineRuntime()
+    runtime = AgentRuntime()
     cancel = asyncio.Event()
     calls = [
         {"call_id": f"read-{i}", "name": "read_file", "arguments": {"path": f"file-{i}"}}
@@ -86,7 +86,7 @@ async def test_closed_uvloop_writer_reports_runtime_error_and_close_cleans_up():
     import asyncio
     from types import SimpleNamespace
     import pytest
-    from coloride_desktop.agents.cline_runtime import ClineRuntime, ClineRuntimeError
+    from coloride_desktop.agents.runtime import AgentRuntime, AgentRuntimeError
 
     class ClosedWriter:
         def is_closing(self):
@@ -102,11 +102,11 @@ async def test_closed_uvloop_writer_reports_runtime_error_and_close_cleans_up():
         waited = True
         return 1
 
-    runtime = ClineRuntime()
+    runtime = AgentRuntime()
     runtime.process = SimpleNamespace(stdin=ClosedWriter(), returncode=None, wait=wait)
     runtime._stderr = "runtime stopped"
     runtime._stderr_task = asyncio.create_task(asyncio.sleep(60))
-    with pytest.raises(ClineRuntimeError, match="runtime stopped"):
+    with pytest.raises(AgentRuntimeError, match="runtime stopped"):
         await runtime.reply({"id": 1}, {"output": "finished"})
     await runtime.close()
     assert waited

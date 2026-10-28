@@ -635,16 +635,16 @@ loadRepoDotEnv();
 const cloudConfig = require("./cloud-config.cjs").resolveCloudConfig();
 ipcMain.on("coloride:cloudConfig", (event) => { event.returnValue = cloudConfig; });
 
-function clineRuntimeBundlePath() {
+function agentRuntimeBundlePath() {
   if (app.isPackaged) {
-    return path.join(process.resourcesPath, "agent-runtime", "cline-runtime.mjs");
+    return path.join(process.resourcesPath, "agent-runtime", "coloride-runtime.mjs");
   }
-  return path.join(getRepoRoot(), "client", "desktop", "resources", "agent-runtime", "cline-runtime.mjs");
+  return path.join(getRepoRoot(), "client", "desktop", "resources", "agent-runtime", "coloride-runtime.mjs");
 }
 
 /** Dev checkouts gitignore the bundle. Build it so Windows (and Mac) can start the agent. */
-function ensureClineRuntime() {
-  const built = clineRuntimeBundlePath();
+function ensureAgentRuntime() {
+  const built = agentRuntimeBundlePath();
   if (fs.existsSync(built) || app.isPackaged) {
     return built;
   }
@@ -660,7 +660,7 @@ function ensureClineRuntime() {
   });
   if (result.status !== 0) {
     console.error(
-      "[agent-runtime] failed to build cline-runtime.mjs:",
+      "[agent-runtime] failed to build coloride-runtime.mjs:",
       result.stderr || result.stdout || (result.error && result.error.message),
     );
   }
@@ -676,7 +676,7 @@ function sidecarEnv(mode) {
   env.COLORIDE_AGENT_NODE = process.execPath;
   // Always the esbuild bundle. The source host imports TypeScript, which
   // Electron's embedded Node cannot load. beforePack rebuilds this file.
-  env.COLORIDE_CLINE_RUNTIME = ensureClineRuntime();
+  env.COLORIDE_AGENT_RUNTIME = ensureAgentRuntime();
   env.COLORIDE_TERMINAL_STATE_DIR = path.join(app.getPath("userData"), "terminal-host", "sessions");
   // Only needed when launching via python -m from the monorepo.
   if (mode === "python") {

@@ -13,7 +13,7 @@ const electron = require("electron");
 const repoRoot = path.resolve(__dirname, "..", "..");
 const main = path.join(repoRoot, "client", "desktop", "src", "main.cjs");
 const electronRoot = path.join(repoRoot, "client", "desktop");
-const runtimeBundle = path.join(electronRoot, "resources", "agent-runtime", "cline-runtime.mjs");
+const runtimeBundle = path.join(electronRoot, "resources", "agent-runtime", "coloride-runtime.mjs");
 const runtimeBuild = path.join(electronRoot, "src", "agent-runtime", "build.mjs");
 if (!fs.existsSync(runtimeBundle) && fs.existsSync(runtimeBuild)) {
   const built = spawnSync(process.execPath, [runtimeBuild], {
@@ -21,7 +21,7 @@ if (!fs.existsSync(runtimeBundle) && fs.existsSync(runtimeBuild)) {
     stdio: "inherit",
   });
   if (built.status !== 0) {
-    console.error("[agent-runtime] failed to build cline-runtime.mjs");
+    console.error("[agent-runtime] failed to build coloride-runtime.mjs");
     process.exit(built.status ?? 1);
   }
 }

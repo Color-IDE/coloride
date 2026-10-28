@@ -65,15 +65,11 @@ async function launch(entry){
   const runtime=JSON.parse(await readFile(join(entry.profile,'user-data/terminal-host.json'),'utf8'));
   hostPid=Number(execFileSync('/usr/sbin/lsof',['-tiTCP:'+runtime.port,'-sTCP:LISTEN'],{encoding:'utf8'}).trim());
  }else{
-  const args=entry.editor==='vscode'?['--user-data-dir',join(entry.profile,'user-data'),'--extensions-dir',join(entry.profile,'extensions'),'--disable-extensions','--new-window','--skip-welcome','--skip-release-notes',folder,plan.files[0].path]
-   :['--user-data-dir',join(entry.profile,'user-data'),folder,plan.files[0].path];
-  if(entry.editor==='zed'){
-   assert(!execFileSync('/bin/ps',['-axo','comm='],{encoding:'utf8'}).split('\n').some(line=>line.trim()==='/Applications/Zed.app/Contents/MacOS/zed'),'Existing Zed instance: do not attach to user sessions');
-  }
-  await execute('/usr/bin/open',['-n',entry.editor==='zed'?'/Applications/Zed.app':'/Applications/Visual Studio Code.app','--args',...args],{env});
+  const args=['--user-data-dir',join(entry.profile,'user-data'),'--extensions-dir',join(entry.profile,'extensions'),'--disable-extensions','--new-window','--skip-welcome','--skip-release-notes',folder,plan.files[0].path];
+  await execute('/usr/bin/open',['-n','/Applications/Visual Studio Code.app','--args',...args],{env});
   for(let attempt=0;attempt<60;attempt++){
    const rows=execFileSync('/bin/ps',['-axo','pid=,command='],{encoding:'utf8'}).split('\n');
-   const row=rows.find(line=>line.includes(entry.editor==='zed'?'/Applications/Zed.app/Contents/MacOS/zed':'/Applications/Visual Studio Code.app/Contents/MacOS/Code')&&line.includes(entry.profile));
+   const row=rows.find(line=>line.includes('/Applications/Visual Studio Code.app/Contents/MacOS/Code')&&line.includes(entry.profile));
    if(row){pid=Number(row.trim().split(/\s+/)[0]);break;}await sleep(250);
   }
   assert(pid,'Isolated editor process did not start');
@@ -109,7 +105,7 @@ try{
    entry.profile=await mkdtemp('/tmp/cide-probe-');entry.home=join(entry.profile,'home');
    await mkdir(entry.home,{recursive:true});await mkdir(join(entry.profile,'extensions'),{recursive:true});
    if(entry.editor!=='coloride'){
-    const path=join(entry.profile,entry.editor==='zed'?'user-data/config/settings.json':'user-data/User/settings.json');
+    const path=join(entry.profile,'user-data/User/settings.json');
     await mkdir(dirname(path),{recursive:true});await writeFile(path,JSON.stringify(plan.settings[entry.editor],null,2));
    }
   }
@@ -149,7 +145,7 @@ try{
   const result={editor:entry.editor,round:entry.round,profile:entry.profile,method:'native-visible-frame-v1',
    environmentFingerprint:createHash('sha256').update(JSON.stringify({environment:plan.environment,frame:warmup.frame})).digest('hex'),
    // A settings snapshot and a single calibration smoke are not sufficient
-   // to certify all three adapters. Keep publication blocked until that
+   // to certify both adapters. Keep publication blocked until that
    // independent verification is implemented.
    configurationVerified:false,captureCalibrated:false,samples,resources};
   executions.push(result);entry.status='completed';plan.results=executions;
