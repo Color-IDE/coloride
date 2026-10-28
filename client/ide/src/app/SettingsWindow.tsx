@@ -4,7 +4,10 @@ import { applyResolvedThemeToDocument, getInterfaceFontFamily, useAppPreferences
 
 /** Preferences have their own renderer; opening this window never mounts an IDE session. */
 export default function SettingsWindow() {
-  const [section, setSection] = useState(() => new URLSearchParams(location.search).get("section") as SettingsSection || "general");
+  const [section, setSection] = useState(() => (new URLSearchParams(location.search).get("section") || localStorage.getItem("coloride.settings.section.v1") || "general") as SettingsSection);
+  useEffect(() => {
+    try { localStorage.setItem("coloride.settings.section.v1", section); } catch { /* Storage may be unavailable. */ }
+  }, [section]);
   const preferences = useAppPreferences();
   const theme = useResolvedTheme();
   useEffect(() => {

@@ -56,6 +56,8 @@ node tests/electron/smoke/sidebar-submit-stability.mjs --source light
 node tests/electron/smoke/startup-appearance.mjs --source
 # Independent Settings window, live preferences and workspace preservation:
 node tests/electron/smoke/settings-window.mjs
+# Active screen, header terminal recovery and confirmed closes across app restarts:
+node tests/electron/smoke/session-restore.mjs
 # Fresh host, stopped discovery and persistent host/shell reuse (run alone):
 node tests/electron/smoke/host-startup.mjs
 # Same startup regression against an already running pnpm dev:web:

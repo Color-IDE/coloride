@@ -33,6 +33,7 @@ export type LastSessionSnapshot = {
   /** Agent dock on the right of Explorer. */
   rightPanelOpen: boolean;
   terminalOpen: boolean;
+  drawerView: "terminal" | "problems";
   agentToolsOpen: boolean;
   updatedAt: number;
 };
@@ -47,6 +48,7 @@ const empty = (): LastSessionSnapshot => ({
   sidePanelOpen: true,
   rightPanelOpen: true,
   terminalOpen: false,
+  drawerView: "terminal",
   agentToolsOpen: true,
   updatedAt: 0,
 });
@@ -77,6 +79,7 @@ export function readLastSession(): LastSessionSnapshot {
       sidePanelOpen: parsed.sidePanelOpen !== false,
       rightPanelOpen: parsed.rightPanelOpen !== false,
       terminalOpen: Boolean(parsed.terminalOpen),
+      drawerView: parsed.drawerView === "problems" ? "problems" : "terminal",
       agentToolsOpen: parsed.agentToolsOpen !== false,
       updatedAt: typeof parsed.updatedAt === "number" ? parsed.updatedAt : 0,
     };

@@ -6,6 +6,7 @@ import { useLayoutEffect, type Dispatch, type RefObject, type SetStateAction } f
 import { EditorTabsHairline } from "../../shared/ui/EditorTabsHairline";
 import { IconButton } from "../../shared/ui/IconButton";
 import { Tab } from "../../shared/ui/Tab";
+import { notify } from "../../shared/ui/notifications";
 import { closeManagedTerminalSession } from "../terminal/TerminalSessionManager";
 import { chatTitle } from "./ChatHistoryDialog";
 
@@ -116,9 +117,15 @@ export function AgentChatHeader({
                   label={`Close chat: ${title}`}
                   size="sm"
                   className="absolute right-1.5 z-10"
-                  onClick={() => {
+                  onClick={async () => {
+                    if (terminal && id) {
+                      try { await closeManagedTerminalSession(id); }
+                      catch {
+                        notify({ id: `close-terminal-${id}`, kind: "error", title: "Unable to close terminal", description: "The terminal is still open. Reconnect and try again." });
+                        return;
+                      }
+                    }
                     const remaining = openChatTabs.filter((tab) => tab !== id);
-                    if (terminal && id) void closeManagedTerminalSession(id);
                     if (remaining.length === 0) {
                       setOpenChatTabs([null]);
                       selectSession(null);

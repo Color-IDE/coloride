@@ -44,7 +44,7 @@ import { AppStatusBar } from "./shell/AppStatusBar";
 import { DesktopTitleBar } from "./shell/DesktopTitleBar";
 import {
   NAVIGATION_STORAGE_KEY,
-
+  readStoredNavigation,
   sameLocation,
   tabRequiresVps,
   type NavigationLocation,
@@ -139,7 +139,7 @@ export function App() {
     appPreferences.startupBehavior === "restore-session" &&
     Boolean(lastSessionRef.current.workspacePath);
   const initialLocation: NavigationLocation = hadOpenProject
-    ? { activeTab: "explorer", serverSubTab: "health" }
+    ? readStoredNavigation({ activeTab: "explorer", serverSubTab: "health" })
     : { activeTab: null, serverSubTab: "health" };
   const {
     activeTab,
@@ -186,7 +186,7 @@ export function App() {
     AgentTerminalReference[]
   >([]);
   const [drawerView, setDrawerView] = useState<"terminal" | "problems">(
-    "terminal",
+    () => appPreferences.startupBehavior === "restore-session" ? lastSessionRef.current.drawerView : "terminal",
   );
   /** Agent chat docked on the right inside Explorer. */
   const [explorerAgentOpen, setExplorerAgentOpen] = useState(() =>
@@ -198,7 +198,10 @@ export function App() {
     ((path: string | null) => void) | null
   >(null);
   const [settingsSection, setSettingsSection] =
-    useState<SettingsSection>("general");
+    useState<SettingsSection>(() => {
+      try { return (localStorage.getItem("coloride.settings.section.v1") || "general") as SettingsSection; }
+      catch { return "general"; }
+    });
   const [editorStatus, setEditorStatus] = useState<ExplorerEditorStatus | null>(
     null,
   );
@@ -427,8 +430,9 @@ export function App() {
       sidePanelOpen,
       rightPanelOpen: explorerAgentOpen,
       terminalOpen,
+      drawerView,
     });
-  }, [activeTab, serverSubTab, sidePanelOpen, explorerAgentOpen, terminalOpen]);
+  }, [activeTab, serverSubTab, sidePanelOpen, explorerAgentOpen, terminalOpen, drawerView]);
 
   useEffect(() => {
     const previous = previousConnectionStateRef.current;

@@ -70,6 +70,8 @@ export function useAgentSessionNavigation({
     (sessionId: string | null, options?: { preferNewTask?: boolean }) => {
       setComplementsOpen(false);
       setActiveHeaderTerminal(null);
+      if (!sessionId && options?.preferNewTask !== false)
+        writePreferNewTask(sessionPane, true);
       if (selectedSessionIdRef.current === sessionId) return;
       selectedSessionIdRef.current = sessionId;
       stickToBottomRef.current = true;
@@ -87,8 +89,6 @@ export function useAgentSessionNavigation({
       setQueuedFollowUps([]);
       setError("");
       if (!sessionId) {
-        if (options?.preferNewTask !== false)
-          writePreferNewTask(sessionPane, true);
         setHistoryLoading(false);
         setHistoryHasOlder(false);
         setEvents([]);

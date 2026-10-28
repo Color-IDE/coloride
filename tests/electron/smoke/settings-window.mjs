@@ -15,8 +15,10 @@ const env = {...process.env, HOME:join(sandbox,'home'), COLORIDE_TEST_USER_DATA:
 await mkdir(env.HOME);
 delete env.ELECTRON_RUN_AS_NODE; delete env.COLORIDE_WEB_DEV_URL;
 let app, page, settings;
+const launchLog=[];
 try {
   app = await _electron.launch({executablePath:require('electron'),args:[resolve('client/desktop/src/main.cjs')],env,timeout:60000});
+  for (const stream of [app.process().stdout, app.process().stderr]) stream?.on('data', chunk => { launchLog.push(String(chunk)); if (launchLog.length > 30) launchLog.shift(); });
   page = await app.firstWindow(); page.setDefaultTimeout(15000);
   const errors=[]; page.on('pageerror', error=>errors.push(error.message));
   await expect(page.getByRole('menuitem',{name:'Open Project',exact:true})).toBeVisible({timeout:60000});
@@ -31,6 +33,7 @@ try {
   const fakeKey='test-settings-key-not-a-real-secret';
   const secondKey='test-gemini-key-not-a-real-secret';
   const providerWrites=[];
+  let legacyProviderResponse=false;
   let failProviderSave=true;
   const profiles={
     openai:{provider:'openai',model:'gpt-5.3-codex',baseUrl:'https://api.openai.com/v1',configured:false,credentialSource:'none'},
@@ -64,7 +67,7 @@ try {
         ...(body.apiKey ? {configured:true,credentialSource:'keychain'} : {})};
       if(body.activate!==false || body.provider===providerFixture.provider) providerFixture={...providerFixture,...profiles[body.provider],availability:profiles[body.provider].configured?'available':'missing_credentials'};
     }
-    await route.fulfill({json:{...providerFixture,providers:Object.values(profiles).map(entry=>({...entry,active:entry.provider===providerFixture.provider}))}});
+    await route.fulfill({json:{...providerFixture,...(legacyProviderResponse ? {} : {providers:Object.values(profiles).map(entry=>({...entry,active:entry.provider===providerFixture.provider}))})}});
   };
   await page.route('**/api/agents/config*',providerRoute);
   await page.route('**/api/agents/providers/*/connect',providerRoute);
@@ -131,6 +134,7 @@ try {
   const writeShellPid=async name=>{
     await (await app.browserWindow(page)).evaluate(win=>win.focus());
     await page.locator('.xterm-helper-textarea').first().focus();
+    await page.keyboard.press('Control+u');
     await page.keyboard.insertText(`printf '%s' $$ > ${name}`);
     await page.keyboard.press('Enter');
     await expect.poll(()=>readFile(join(project,name),'utf8').catch(()=>'' )).toMatch(/^\d+$/);
@@ -146,8 +150,17 @@ try {
   // Each provider has an independent visible form, not a provider dropdown.
   await expect(page.getByRole('button',{name:'Open LLM provider settings',exact:true})).toBeVisible();
   await expect(page.locator('.agent-provider-setup input')).toHaveCount(0);
+  legacyProviderResponse=true;
   await page.getByRole('button',{name:'Open LLM provider settings',exact:true}).click();
   await expect(settings.getByRole('region',{name:'LLM Providers settings',exact:true})).toBeVisible();
+  const pendingKey=settings.getByLabel('OpenAI API key',{exact:true});
+  await expect(settings.getByRole('alert')).toContainText('Close your terminal tabs and restart Coloride');
+  await pendingKey.fill('draft-not-a-real-key');
+  await expect(pendingKey).toHaveValue('draft-not-a-real-key');
+  expect(providerWrites).toHaveLength(0);
+  await pendingKey.fill('');
+  legacyProviderResponse=false;
+  await expect(settings.getByRole('alert')).toHaveCount(0,{timeout:10000});
   await expect(settings.getByRole('button',{name:'Model provider',exact:true})).toHaveCount(0);
   for(const label of ['OpenAI','Gemini','xAI','DeepSeek']) await expect(settings.getByRole('group',{name:label+' configuration',exact:true})).toBeAttached();
   await expect(settings.getByRole('textbox',{name:'OpenAI model',exact:true})).toHaveCount(0);
@@ -161,12 +174,14 @@ try {
   await expect(key).toHaveValue(' '+fakeKey+' ');
   // Editing only restarts the debounce; no submit or provider selection.
   await key.fill(fakeKey);
+  await settings.getByRole('group',{name:'OpenAI configuration',exact:true}).getByRole('button',{name:'Change API key',exact:true}).click();
   await expect(key).toHaveValue('');
   await expect(settings.getByLabel('OpenAI available models')).toContainText('GPT-6.1 Sol');
   expect(providerWrites[1]).toEqual({provider:'openai',apiKey:fakeKey});
   expect(providerFixture.provider).toBe('openai');
   await expect(page.locator('textarea.agent-composer-input').first()).toHaveAttribute('placeholder','Ask Coloride…');
   await geminiKey.evaluate((input,value)=>{ const clipboardData=new DataTransfer(); clipboardData.setData('text/plain',value); input.dispatchEvent(new ClipboardEvent('paste',{clipboardData,bubbles:true,cancelable:true})); },secondKey);
+  await settings.getByRole('group',{name:'Gemini configuration',exact:true}).getByRole('button',{name:'Change API key',exact:true}).click();
   await expect(geminiKey).toHaveValue('');
   await expect(settings.getByLabel('Gemini available models')).toContainText('Gemini 4 Argon');
   expect(providerFixture.provider).toBe('openai');
@@ -182,11 +197,13 @@ try {
   await category('LLM Providers').click();
   await expect(settings.getByLabel('OpenAI available models')).toContainText('GPT-6.1 Sol');
   await expect(settings.getByLabel('Gemini available models')).toContainText('Gemini 4 Argon');
+  await settings.getByRole('group',{name:'OpenAI configuration',exact:true}).getByRole('button',{name:'Change API key',exact:true}).click();
+  await settings.getByRole('group',{name:'Gemini configuration',exact:true}).getByRole('button',{name:'Change API key',exact:true}).click();
   await expect(key).toHaveValue('');
   await expect(geminiKey).toHaveValue('');
   await key.scrollIntoViewIfNeeded();
   await settings.screenshot({path:join(output,'settings-provider-light.png')});
-  await settings.getByText('Add a compatible provider',{exact:true}).click();
+  await settings.getByRole('button',{name:'Add provider',exact:true}).click();
   await settings.getByLabel('Provider name',{exact:true}).fill('Local Test');
   await settings.getByLabel('Provider API endpoint',{exact:true}).fill('http://127.0.0.1:11434/v1');
   await settings.getByRole('switch',{name:'API key required',exact:true}).click();
@@ -200,6 +217,7 @@ try {
   expect(providerFixture.provider).toBe('openai');
   await settings.screenshot({path:join(output,'settings-custom-provider.png')});
   const search=settings.getByRole('textbox',{name:'Search settings'});
+  await (await app.browserWindow(settings)).evaluate(win=>win.focus());
   await settings.keyboard.press('Meta+f');
   await expect(search).toBeFocused();
   await search.fill('minimap');
@@ -240,6 +258,8 @@ try {
   expect(errors).toEqual([]);
   console.log('PASS: Independent Settings window, automatic API setup with mocked keys, protected replacements, discovered composer models and live agent readiness, search, themes, native close and preserved editor/shell.');
 } catch (error) {
+  console.error('Electron exit:',app?.process().exitCode,app?.process().signalCode);
+  console.error(launchLog.join('').split('\n').filter(line=>/\[sidecar\]|\[Electron\]|Error|ERR_|\[quit\]/.test(line)).join('\n'));
   if (settings && !settings.isClosed()) {
     await settings.screenshot({path:join(output,'failure-settings.png')}).catch(()=>{});
     console.error('Settings focus:',await settings.evaluate(()=>({active:document.activeElement?.tagName,focused:document.hasFocus(),visibility:document.visibilityState})).catch(()=>null));

@@ -1,5 +1,6 @@
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import { api } from "../../../shared/api/client";
+import { notify } from "../../../shared/ui/notifications";
 import type { AgentTerminalReference } from "../../../shared/api/types";
 import { closeManagedTerminalSession } from "../TerminalSessionManager";
 import { firstTerminalPaneId } from "../terminalLayout";
@@ -57,7 +58,7 @@ export function useTerminalTabActions({
   activePaneId,
   setActivePaneId,
 }: Dependencies) {
-  const closeTab = (id: number) => {
+  const closeTab = async (id: number) => {
     const closed = tabs.find((tab) => tab.id === id);
     if (!closed) return;
 
@@ -81,13 +82,14 @@ export function useTerminalTabActions({
       return;
     }
 
-    void closeManagedTerminalSession(closed.sessionId)
-      .then((closedByManager) => {
-        if (closedByManager) return;
-        const termId = terminalIds[id];
-        if (termId) void api.closeTerminal(termId).catch(() => {});
-      })
-      .catch(() => {});
+    try {
+      const closedByManager = await closeManagedTerminalSession(closed.sessionId);
+      const termId = terminalIds[id];
+      if (!closedByManager && termId) await api.closeTerminal(termId);
+    } catch {
+      notify({ id: `close-terminal-${closed.sessionId}`, kind: "error", title: "Unable to close terminal", description: "The terminal is still open. Reconnect and try again." });
+      return;
+    }
     if (
       initialTerminal?.sessionId === closed.sessionId ||
       requestedRef.current.has(closed.sessionId)
