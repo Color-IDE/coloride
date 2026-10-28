@@ -6,6 +6,31 @@ The foundation is a local IDE: opening files and using terminals must work witho
 
 This document defines priorities and expected outcomes. It is not an audit of implemented functionality: some capabilities already exist, while others need development or validation. Progress percentages and dates require evidence. The numbering 0–12 represents **13 phases**, including the foundation.
 
+## Current contribution focus
+
+The following areas are the product work we want contributors to help develop.
+Some already have a foundation; each needs a scoped assessment of what is
+implemented, what is missing and what still requires validation. This list does
+not certify completion or promise delivery dates.
+
+| Area | Intended outcome | Related phases |
+| --- | --- | --- |
+| Git integrated with the IDE | Changes, staging, commits, diffs and conflict resolution connected to the file tree, editor and agent review. Agent edits must remain reviewable alongside the user's own changes. | 1, 4–5 |
+| SSH connector | Open remote projects with files, terminals, LSP and previews targeting the selected machine. Reconnection must preserve work and avoid duplicate commands. | 3 |
+| Debugger | DAP-based breakpoints, stepping, variables, stack traces and a debug console integrated with the editor and diagnostics. | 1, 7 |
+| Adaptive agent and agent workspace | Better context selection, planning, error recovery and final verification; a more complete interface and backend for task progress, tools, approvals, changes and history. | 4–6, 9 |
+| Extension format | A versioned manifest and public API, with permissions, an isolated extension host, compatibility rules and an install/update/remove lifecycle. | 10 |
+| Agents and browsers on other computers | Authenticate to another machine and access its agent and browser sessions. Make execution location, session ownership, permissions, cancellation and recovery explicit. | 3, 8–9, 11 |
+| Team collaboration | Shared projects and sessions, presence, change review and clear access controls. Sharing must not implicitly authorize terminal or agent execution. | 11 |
+| Code navigation and project intelligence | Reliable symbol search, definitions, references and diagnostics, with indexes that stay current after edits and branch changes. | 1, 6 |
+| Performance and reliability | Reproducible startup, typing, scrolling, search, CPU and memory benchmarks; regression coverage as features grow. | 0–2, across all phases |
+
+Use “editor integration” in proposals: Coloride currently uses CodeMirror.
+Moving to a different editor engine would be a separate architectural decision.
+Git, SSH and debugging are useful foundation workflows; extensions, cross-machine
+sessions and collaboration need explicit interface and permission designs before
+large implementations.
+
 ## How to move forward
 
 Each phase must deliver a usable experience with repeatable verification. Closing a phase requires meeting its exit criteria, documenting known limitations and retaining relevant validation evidence. A standalone demonstration or a successful build is not enough to declare an entire workflow complete.
@@ -151,5 +176,17 @@ This phase formalizes advanced controls on top of security established from the 
 **Expansion — phases 9–12.** Add agent coordination, extensions, collaboration and enterprise administration on top of established workflows. Each addition must demonstrate its value and maintenance cost.
 
 ## Tracking progress
+
+Use this roadmap for product direction, Discussions for open-ended design when
+available, and GitHub Issues for bounded, actionable work. Search existing issues
+before opening a new one. A broad area can have a tracking issue linking smaller
+implementation and validation issues; it should not be treated as one enormous
+pull request.
+
+Each implementation issue should identify the user problem, current behavior,
+proposed scope, dependencies and testable acceptance criteria. Link the relevant
+roadmap area and report implementation, pending validation and blockers
+separately. Keep the contribution guide focused on how to participate rather
+than maintaining a second task-status list.
 
 When starting a phase, define a bounded set of deliverables and record evidence in the repository's work tracking. Progress reviews must distinguish implementation, pending validation and blockers. A phase closes only when its exit criteria are met; individual test results and execution journals do not accumulate in this guide.
