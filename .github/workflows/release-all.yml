@@ -42,7 +42,7 @@ jobs:
       tag: ${{ steps.meta.outputs.tag }}
       sha: ${{ steps.meta.outputs.sha }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.tag || github.ref }}
       - uses: actions/setup-node@v4
@@ -67,7 +67,7 @@ jobs:
     needs: meta
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.meta.outputs.sha }}
       - uses: pnpm/action-setup@v4
@@ -130,7 +130,7 @@ jobs:
     needs: meta
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.meta.outputs.sha }}
       - uses: pnpm/action-setup@v4
