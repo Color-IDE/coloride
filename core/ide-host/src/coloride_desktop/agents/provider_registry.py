@@ -5,7 +5,7 @@ never changes the agent loop. Unknown model abilities are disabled, not guessed.
 """
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 import re
 from typing import Literal
 from urllib.parse import urlparse, urlsplit

@@ -1,5 +1,5 @@
 """Backward-compatible access to the central provider capability registry."""
-from .provider_registry import TOOL_MODELS, ProviderRegistry
+from .provider_registry import ProviderRegistry
 
 
 def supports_tools(provider: str, model: str) -> bool:

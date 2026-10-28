@@ -19,7 +19,7 @@ DEFAULT_PROVIDER = "xai"
 DEFAULT_MODEL = "grok-4.5"
 DEFAULT_BASE_URL = "https://api.x.ai/v1"
 
-from .provider_registry import PROVIDER_DEFAULTS, ProviderRegistry, ModelCapabilities, custom_definition
+from .provider_registry import ProviderRegistry, ModelCapabilities, custom_definition
 
 # Coloride's hosted gateway holds credentials for every product provider. BYOK
 # remains an explicit development/enterprise fallback, never a normal user flow.
@@ -202,7 +202,6 @@ class AgentConfigStore:
         settings = self.public_settings()
         caps = self.registry().capabilities(str(settings["provider"]), str(settings["model"]))
         provider = str(settings["provider"])
-        model = str(settings.get("model") or "")
         managed_llm = self._managed_llm_enabled() and provider in MANAGED_LLM_PROVIDERS
         source, _ = await self._resolve_credentials(provider)
         # When using managed LLM, public baseUrl still shows the logical provider
@@ -318,7 +317,7 @@ class AgentConfigStore:
     ) -> dict[str, object]:
         provider = provider.strip().lower()
         model = model.strip()
-        definition = self.registry().get(provider)
+        self.registry().get(provider)
         if not model or len(model) > 120:
             raise ValueError("Choose a valid model name")
         current = self.public_settings()
