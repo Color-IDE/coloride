@@ -63,16 +63,17 @@ try {
   const composerBeforeModelChange = await page.locator('textarea.agent-composer-input').boundingBox();
   await page.locator('.agent-composer-model-trigger').click();
   await page.getByRole('menuitem', {name: /Grok 4\.5|Gemini 3\.8 Flash/}).click();
-  await page.getByRole('menuitemradio', {name:'Gemini 3.8 Flash', exact:true}).click();
-  await expect(notices.getByRole('alert')).toContainText('Configure a Gemini API key');
+  // A provider without a saved key is absent from the flyout. The catalog-error
+  // notice is covered by the agent restore spec, which stubs that catalog.
+  await expect(page.getByText('Add an API key in Settings to load models.', {exact:true})).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Escape');
   const composerAfterModelChange = await page.locator('textarea.agent-composer-input').boundingBox();
   expect(composerAfterModelChange.y).toBeCloseTo(composerBeforeModelChange.y, 0);
   expect(composerAfterModelChange.height).toBeCloseTo(composerBeforeModelChange.height, 0);
   await expect(page.locator('.agent-composer-retry-error, .agent-view > .agent-error')).toHaveCount(0);
-  await expect(notices.locator('li')).toHaveCSS('opacity', '1');
-  await page.screenshot({path: resolve('artifacts/notifications/agent-provider-error.png')});
-  await notices.getByRole('button', {name:'Dismiss: Agent', exact:true}).click();
   await expect(notices.locator('.notification-card')).toHaveCount(0);
+  await page.screenshot({path: resolve('artifacts/notifications/agent-provider-error.png')});
   const terminalToggle = page.getByRole('button', {name:'Show terminal', exact:true}).first();
   if (await terminalToggle.isVisible()) await terminalToggle.click();
   await expect(page.locator('[data-terminal-status=ready]').first()).toBeVisible({timeout:30000});
