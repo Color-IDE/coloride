@@ -47,6 +47,144 @@ components:
               type: number
             diskPct:
               type: number
+    ExternalAgentDistributionKind:
+      type: string
+      enum: [npx, uvx, binary]
+    ExternalAgentInstallationStatus:
+      type: string
+      enum: [installed, installing, failed, missing-runtime]
+    ExternalAgentConnectionPhase:
+      type: string
+      enum: [installed, starting, needs-login, authenticating, ready, failed, closed, unsupported]
+    ExternalAgentRegistryEntry:
+      type: object
+      required: [id, name, version, description, distributionKind, installed]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        version: { type: string }
+        description: { type: string }
+        repository: { type: string, nullable: true }
+        license: { type: string, nullable: true }
+        licenseUrl: { type: string, nullable: true }
+        icon: { type: string, nullable: true }
+        distributionKind: { $ref: "#/components/schemas/ExternalAgentDistributionKind" }
+        packageSpec: { type: string, nullable: true }
+        installed: { type: boolean }
+        installedVersion: { type: string, nullable: true }
+    ExternalAgentInstallation:
+      type: object
+      required: [id, agentId, name, version, distribution, status]
+      properties:
+        id: { type: string }
+        agentId: { type: string }
+        name: { type: string }
+        version: { type: string }
+        distribution: { $ref: "#/components/schemas/ExternalAgentDistributionKind" }
+        status: { $ref: "#/components/schemas/ExternalAgentInstallationStatus" }
+        error: { type: string, nullable: true }
+        installedAt: { type: string, nullable: true }
+        packageSpec: { type: string, nullable: true }
+        executable: { type: string, nullable: true }
+    ExternalAgentAuthMethod:
+      type: object
+      required: [id, name, type]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        type: { type: string, enum: [agent, terminal, env] }
+    ExternalAgentSession:
+      type: object
+      required: [id, agentId, installationVersion, acpSessionId, workspacePath, executionTarget, installationId, title, phase, turn, processId, supportsLoad, authMethods, updatedAt]
+      properties:
+        id: { type: string, description: Coloride session id }
+        agentId: { type: string, description: Registry id, for example codex-acp }
+        installationVersion: { type: string }
+        acpSessionId: { type: string, nullable: true }
+        workspacePath: { type: string }
+        executionTarget: { type: string, enum: [local] }
+        installationId: { type: string }
+        title: { type: string }
+        phase: { $ref: "#/components/schemas/ExternalAgentConnectionPhase" }
+        turn: { type: string, enum: [idle, running, cancelling] }
+        processId: { type: string, nullable: true }
+        supportsLoad: { type: boolean }
+        authMethods:
+          type: array
+          items: { $ref: "#/components/schemas/ExternalAgentAuthMethod" }
+        error: { type: string, nullable: true }
+        updatedAt: { type: string }
+    ExternalAgentConfigChoice:
+      type: object
+      required: [value, name]
+      properties:
+        value: { type: string }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        group: { type: string, nullable: true }
+        groupName: { type: string, nullable: true }
+    ExternalAgentConfigOption:
+      type: object
+      required: [id, name, category, type, currentValue, options]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        category: { type: string, nullable: true }
+        type: { type: string, enum: [select, boolean] }
+        currentValue: {}
+        options:
+          type: array
+          items: { $ref: "#/components/schemas/ExternalAgentConfigChoice" }
+    ExternalAgentConfig:
+      type: object
+      required: [sessionId, options, pending]
+      properties:
+        sessionId: { type: string }
+        options:
+          type: array
+          items: { $ref: "#/components/schemas/ExternalAgentConfigOption" }
+        pending:
+          type: object
+          additionalProperties: true
+    ExternalAgentEvent:
+      type: object
+      required: [sessionId, sequence, update, createdAt]
+      properties:
+        sessionId: { type: string }
+        sequence: { type: integer }
+        update:
+          type: object
+          required: [sessionUpdate]
+          additionalProperties: true
+        createdAt: { type: string }
+    ExternalAgentPermissionOption:
+      type: object
+      required: [optionId, name, kind]
+      properties:
+        optionId: { type: string }
+        name: { type: string }
+        kind: { type: string }
+    ExternalAgentPermissionRequest:
+      type: object
+      required: [requestId, sessionId, options]
+      properties:
+        requestId: { type: string }
+        sessionId: { type: string }
+        toolCallId: { type: string, nullable: true }
+        title: { type: string, nullable: true }
+        kind: { type: string, nullable: true }
+        options:
+          type: array
+          items: { $ref: "#/components/schemas/ExternalAgentPermissionOption" }
+    ExternalAgentPromptAcceptance:
+      type: object
+      required: [accepted, sessionId, turnId]
+      properties:
+        accepted: { type: boolean, const: true }
+        sessionId: { type: string }
+        turnId: { type: string }
     AgentInfo:
       type: object
       required: [id, name, version, installed, needsKey, supported]
@@ -1482,6 +1620,234 @@ paths:
       responses:
         "200":
           description: Path renamed.
+  /api/external-agents/registry:
+    get:
+      operationId: externalAgentsRegistry
+      responses:
+        "200":
+          description: Cached or freshly fetched ACP registry entries.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ExternalAgentRegistryEntry" }
+  /api/external-agents/installations:
+    get:
+      operationId: externalAgentsInstallations
+      responses:
+        "200":
+          description: Installed external agents.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ExternalAgentInstallation" }
+    post:
+      operationId: externalAgentsInstall
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [agentId]
+              properties:
+                agentId: { type: string }
+                version: { type: string }
+      responses:
+        "200":
+          description: Installation recorded.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExternalAgentInstallation" }
+  /api/external-agents/installations/{id}:
+    delete:
+      operationId: externalAgentsUninstall
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Program removed. User session data is kept.
+  /api/external-agents/sessions:
+    post:
+      operationId: externalAgentsOpenSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [workspacePath]
+              properties:
+                sessionId: { type: string }
+                agentId: { type: string }
+                workspacePath: { type: string }
+                executionTarget: { type: string, enum: [local] }
+      responses:
+        "200":
+          description: Session created or restored.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExternalAgentSession" }
+  /api/external-agents/sessions/{id}:
+    get:
+      operationId: externalAgentsGetSession
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Stored session.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExternalAgentSession" }
+    delete:
+      operationId: externalAgentsDeleteSession
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Conversation deleted when the agent supports it.
+  /api/external-agents/sessions/{id}/events:
+    get:
+      operationId: externalAgentsSessionEvents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: after
+          in: query
+          schema: { type: integer, default: 0 }
+      responses:
+        "200":
+          description: Persisted updates after the given sequence.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ExternalAgentEvent" }
+  /api/external-agents/sessions/{id}/authenticate:
+    post:
+      operationId: externalAgentsAuthenticate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [methodId]
+              properties:
+                methodId: { type: string }
+      responses:
+        "200":
+          description: Authentication started or completed.
+  /api/external-agents/sessions/{id}/config:
+    patch:
+      operationId: externalAgentsSetConfig
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [configId, value]
+              properties:
+                configId: { type: string }
+                value: {}
+      responses:
+        "200":
+          description: Confirmed configuration returned by the agent.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExternalAgentConfig" }
+  /api/external-agents/sessions/{id}/prompts:
+    post:
+      operationId: externalAgentsPrompt
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text: { type: string }
+      responses:
+        "202":
+          description: Prompt accepted. Updates arrive as events.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExternalAgentPromptAcceptance" }
+  /api/external-agents/sessions/{id}/cancel:
+    post:
+      operationId: externalAgentsCancel
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Current turn cancelled.
+  /api/external-agents/sessions/{id}/permissions/{requestId}:
+    post:
+      operationId: externalAgentsResolvePermission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: requestId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                optionId: { type: string, nullable: true }
+                outcome: { type: string, enum: [selected, cancelled] }
+      responses:
+        "200":
+          description: Permission resolved with the advertised option id.
+  /api/external-agents/sessions/{id}/close:
+    post:
+      operationId: externalAgentsClose
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Execution closed. History is kept.
   /api/term/create:
     post:
       operationId: termCreate

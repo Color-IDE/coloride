@@ -678,6 +678,9 @@ function sidecarEnv(mode) {
   // Electron's embedded Node cannot load. beforePack rebuilds this file.
   env.COLORIDE_AGENT_RUNTIME = ensureAgentRuntime();
   env.COLORIDE_TERMINAL_STATE_DIR = path.join(app.getPath("userData"), "terminal-host", "sessions");
+  env.COLORIDE_EXTERNAL_AGENTS_DIR = path.join(app.getPath("userData"), "external-agents");
+  env.COLORIDE_NODE = process.execPath;
+  if (process.env.npm_execpath) env.COLORIDE_NPM = process.env.npm_execpath;
   // Only needed when launching via python -m from the monorepo.
   if (mode === "python") {
     const root = getRepoRoot();
@@ -1879,7 +1882,7 @@ async function createWindow() {
   await mainWindow.loadURL(url);
 }
 
-const settingsSections = new Set(["general", "appearance", "shortcuts", "editor", "terminal", "agent", "providers", "security", "updates", "diagnostics", "about"]);
+const settingsSections = new Set(["general", "appearance", "shortcuts", "editor", "terminal", "agent", "external-agents", "providers", "security", "updates", "diagnostics", "about"]);
 async function openSettingsWindow(section) {
   // Old account links open General. Account is no longer a settings section.
   const requested = section === "account" ? "general" : section;

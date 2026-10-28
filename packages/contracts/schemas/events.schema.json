@@ -7,7 +7,7 @@
   "properties": {
     "event": {
       "type": "string",
-      "examples": ["conn:state", "conn:stats", "agent:event"]
+      "examples": ["conn:state", "conn:stats", "agent:event", "external-agent:event"]
     },
     "payload": {
       "type": "object"

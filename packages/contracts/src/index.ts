@@ -453,12 +453,38 @@ export type AgentTerminalReference = {
   revealed?: boolean;
 };
 
+export type {
+  ExternalAgentAuthMethod,
+  ExternalAgentCapabilities,
+  ExternalAgentConfig,
+  ExternalAgentConfigChoice,
+  ExternalAgentConfigOption,
+  ExternalAgentConnectionPhase,
+  ExternalAgentDistributionKind,
+  ExternalAgentEvent,
+  ExternalAgentExecutionTarget,
+  ExternalAgentInstallation,
+  ExternalAgentInstallationStatus,
+  ExternalAgentPermissionOption,
+  ExternalAgentPermissionRequest,
+  ExternalAgentPromptAcceptance,
+  ExternalAgentRegistryEntry,
+  ExternalAgentSession,
+  ExternalAgentSessionIdentity,
+  ExternalAgentSessionUpdate,
+  ExternalAgentTerminalAuth,
+  ExternalAgentTurnState,
+} from "./externalAgents";
+
+import type { ExternalAgentEvent } from "./externalAgents";
+
 export type EventEnvelope =
   | { event: "conn:state"; payload: { state: ConnState; profileId?: string | null } }
   | { event: "conn:stats"; payload: ConnStats }
   | { event: "agent:event"; payload: AgentEvent }
   | { event: "agent:cost"; payload: { sessionId: string; spentUsd: number; budgetUsd?: number } }
   | { event: "agent:state"; payload: { sessionId: string; state: string } }
+  | { event: "external-agent:event"; payload: ExternalAgentEvent }
   | { event: "term:reveal"; payload: AgentTerminalReference }
   | { event: "term:exit"; payload: { termId: string; code: number | null } }
   | { event: string; payload: Record<string, unknown> };
