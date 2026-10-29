@@ -110,11 +110,12 @@ test.afterAll(async () => {
 test("restored Codex conversation sends through the external composer", async () => {
   await page.goto(base + "/tests/external-agent.html");
   await expect(page.getByLabel("Codex conversation")).toContainText("Recovered Codex reply");
-  await expect(page.getByLabel("Thinking")).toHaveValue("low");
-  await page.getByLabel("Thinking").selectOption("high");
-  await page.getByLabel("Message").fill("Change thinking and edit the file");
-  await page.getByRole("button", { name: "Send" }).click();
-  await expect(page.getByLabel("Message")).toHaveValue("");
-  await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Thinking", exact: true })).toContainText("Low");
+  await page.getByRole("button", { name: "Thinking", exact: true }).click();
+  await page.getByRole("menuitemradio", { name: "High", exact: true }).click();
+  await page.getByLabel("Message Codex").fill("Change thinking and edit the file");
+  await page.getByRole("button", { name: "Send", exact: true }).click();
+  await expect(page.getByLabel("Message Codex")).toHaveValue("");
+  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeVisible();
   expect(errors).toEqual([]);
 });

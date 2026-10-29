@@ -243,13 +243,12 @@ try {
     };
   }, project);
   await view.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(view.getByLabel("Thinking", { exact: true })).toBeVisible();
-  await view.getByLabel("Thinking", { exact: true }).selectOption("high");
-  await expect(view.getByLabel("Thinking", { exact: true })).toHaveValue(
-    "high",
-  );
+  await expect(view.getByRole("button", { name: "Thinking", exact: true })).toContainText("Low");
+  await view.getByRole("button", { name: "Thinking", exact: true }).click();
+  await view.getByRole("menuitemradio", { name: "High", exact: true }).click();
+  await expect(view.getByRole("button", { name: "Thinking", exact: true })).toContainText("High");
   await view
-    .getByRole("textbox", { name: "Message", exact: true })
+    .getByRole("textbox", { name: "Message Test ACP", exact: true })
     .fill("hello from the real UI");
   await view.getByRole("button", { name: "Send", exact: true }).click();
   await view.getByRole("button", { name: "Allow", exact: true }).click();

@@ -118,6 +118,7 @@ export function ExternalAgentConfigControls({
         <button
           aria-expanded={modeOpen}
           aria-haspopup="menu"
+          aria-label={mode.name}
           className="agent-composer-model-trigger flex h-[30px] max-w-[200px] items-center gap-1.5 rounded-full px-2.5 text-xs font-medium"
           disabled={disabled}
           onClick={() => {
