@@ -28,12 +28,20 @@ def external_agent_router() -> APIRouter:
         return JSONResponse(status_code=exc.status, content=payload.model_dump(by_alias=True))
 
     @router.get("/registry")
-    async def registry(request: Request) -> list[dict]:
-        return await manager(request).catalog()
+    async def registry(request: Request) -> JSONResponse:
+        try:
+            return JSONResponse(await manager(request).catalog())
+        except ExternalAgentError as exc:
+            return failure(exc)
 
     @router.get("/installations")
     async def installations(request: Request) -> list[dict]:
         return manager(request).installations()
+
+    @router.post("/suspend")
+    async def suspend(request: Request) -> dict[str, bool]:
+        await manager(request).shutdown()
+        return {"ok": True}
 
     @router.post("/installations")
     async def install(request: Request, body: InstallRequest) -> JSONResponse:

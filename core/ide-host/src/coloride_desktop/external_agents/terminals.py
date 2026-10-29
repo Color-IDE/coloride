@@ -58,13 +58,21 @@ class AcpTerminalBridge:
         self._terminals[terminal_id] = terminal
         return terminal_id
 
-    async def output(self, terminal_id: str) -> tuple[str, bool]:
-        terminal = self._require(terminal_id)
-        return terminal.output.decode("utf-8", errors="replace"), terminal.truncated
+    async def output(self, terminal_id: str, *, owner: str | None = None) -> tuple[str, bool, dict | None]:
+        terminal = self._require(terminal_id, owner)
+        code = terminal.process.returncode
+        status = (
+            None
+            if code is None
+            else ({"exitCode": code} if code >= 0 else {"signal": signal.Signals(-code).name})
+        )
+        return terminal.output.decode("utf-8", errors="replace"), terminal.truncated, status
 
-    async def wait(self, terminal_id: str) -> tuple[int | None, str | None]:
-        terminal = self._require(terminal_id)
+    async def wait(self, terminal_id: str, *, owner: str | None = None) -> tuple[int | None, str | None]:
+        terminal = self._require(terminal_id, owner)
         await terminal.process.wait()
+        if terminal.reader:
+            await terminal.reader
         code = terminal.process.returncode
         signal_name = None
         if code is not None and code < 0:
@@ -72,8 +80,8 @@ class AcpTerminalBridge:
             code = None
         return code, signal_name
 
-    async def kill(self, terminal_id: str) -> None:
-        terminal = self._require(terminal_id)
+    async def kill(self, terminal_id: str, *, owner: str | None = None) -> None:
+        terminal = self._require(terminal_id, owner)
         if terminal.process.returncode is None and terminal.process.pid:
             with contextlib.suppress(ProcessLookupError):
                 os.killpg(terminal.process.pid, signal.SIGTERM)
@@ -82,11 +90,20 @@ class AcpTerminalBridge:
             except TimeoutError:
                 with contextlib.suppress(ProcessLookupError):
                     os.killpg(terminal.process.pid, signal.SIGKILL)
+                await terminal.process.wait()
 
-    async def release(self, terminal_id: str) -> None:
+    async def release(self, terminal_id: str, *, owner: str | None = None) -> None:
+        self._require(terminal_id, owner)
+        await self.kill(terminal_id, owner=owner)
+        terminal = self._require(terminal_id, owner)
+        if terminal.process.pid:
+            with contextlib.suppress(ProcessLookupError):
+                os.killpg(terminal.process.pid, signal.SIGKILL)
         terminal = self._terminals.pop(terminal_id, None)
         if terminal and terminal.reader:
             terminal.reader.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await terminal.reader
 
     async def close_session(self, session_id: str) -> None:
         for terminal_id, terminal in list(self._terminals.items()):
@@ -99,9 +116,9 @@ class AcpTerminalBridge:
             await self.kill(terminal_id)
             await self.release(terminal_id)
 
-    def _require(self, terminal_id: str) -> AcpTerminal:
+    def _require(self, terminal_id: str, owner: str | None = None) -> AcpTerminal:
         terminal = self._terminals.get(terminal_id)
-        if terminal is None:
+        if terminal is None or (owner is not None and terminal.session_id != owner):
             raise KeyError(terminal_id)
         return terminal
 

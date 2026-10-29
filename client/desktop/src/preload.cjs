@@ -16,6 +16,7 @@ const desktopApi = {
     return () => ipcRenderer.removeListener("coloride:settingsSection", listener);
   },
   getRuntime: () => ipcRenderer.invoke("coloride:getRuntime"),
+  restartHost: () => ipcRenderer.invoke("coloride:restartHost"),
   getAppInfo: () => ipcRenderer.invoke("coloride:getAppInfo"),
   finishStartup: () => ipcRenderer.invoke("coloride:finishStartup"),
   openExternal: (externalUrl) => ipcRenderer.invoke("coloride:openExternal", externalUrl),

@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
+import re
 from pathlib import Path
 from typing import Any
 
@@ -52,6 +54,8 @@ class ExternalAgentStore:
         self._write_json(self.registry_cache, payload)
 
     def session_dir(self, session_id: str) -> Path:
+        if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9._:-]*", session_id):
+            raise ValueError("Invalid external agent session ID.")
         path = self.sessions_dir / session_id
         path.mkdir(parents=True, exist_ok=True)
         return path
@@ -81,9 +85,18 @@ class ExternalAgentStore:
 
     def append_event(self, session_id: str, update: dict[str, Any]) -> StoredEvent:
         record = self.read_session(session_id)
-        sequence = (record.last_sequence if record else 0) + 1
-        event = StoredEvent(sessionId=session_id, sequence=sequence, update=update)
         path = self.session_dir(session_id) / "events.jsonl"
+        last_sequence = record.last_sequence if record else 0
+        # A crash may append an event before the session index is replaced.
+        if path.is_file():
+            with path.open("rb") as handle:
+                handle.seek(max(0, path.stat().st_size - 65536))
+                tail = handle.read().splitlines()
+            if tail:
+                with contextlib.suppress(ValueError, KeyError):
+                    last_sequence = max(last_sequence, json.loads(tail[-1])["sequence"])
+        sequence = last_sequence + 1
+        event = StoredEvent(sessionId=session_id, sequence=sequence, update=update)
         with path.open("a", encoding="utf-8") as handle:
             handle.write(event.model_dump_json(by_alias=True) + "\n")
             handle.flush()
@@ -101,7 +114,11 @@ class ExternalAgentStore:
         for line in path.read_text(encoding="utf-8").splitlines():
             if not line.strip():
                 continue
-            event = StoredEvent.model_validate_json(line)
+            try:
+                event = StoredEvent.model_validate_json(line)
+            except ValueError:
+                # An interrupted final append must not make the whole history unreadable.
+                continue
             if event.sequence > after:
                 events.append(event)
         return events
@@ -127,4 +144,5 @@ class ExternalAgentStore:
         path.parent.mkdir(parents=True, exist_ok=True)
         temporary = path.with_suffix(path.suffix + ".tmp")
         temporary.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        temporary.chmod(0o600)
         os.replace(temporary, path)

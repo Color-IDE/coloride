@@ -6,7 +6,6 @@ import base64
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 
-
 StatFile = Callable[[str], Awaitable[dict]]
 ReadFile = Callable[[str], Awaitable[tuple[str, str, bool]]]
 WriteFile = Callable[[str, str, str | None], Awaitable[str]]
@@ -32,6 +31,15 @@ class AcpFileBridge:
         self.write_file = write_file
         self.known_etag = known_etag
 
+    def for_workspace(self, workspace: Path) -> AcpFileBridge:
+        return AcpFileBridge(
+            workspace,
+            stat_file=self.stat_file,
+            read_file=self.read_file,
+            write_file=self.write_file,
+            known_etag=self.known_etag,
+        )
+
     def _resolve(self, path: str) -> Path:
         candidate = Path(path)
         if not candidate.is_absolute():
@@ -45,6 +53,8 @@ class AcpFileBridge:
         resolved = self._resolve(path)
         encoded, _etag, _truncated = await self.read_file(str(resolved))
         text = base64.b64decode(encoded).decode("utf-8")
+        if line is None and limit is None:
+            return text
         rows = text.splitlines()
         start = max((line or 1) - 1, 0)
         end = start + limit if limit else None

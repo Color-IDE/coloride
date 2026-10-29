@@ -1,4 +1,4 @@
-import { type MouseEventHandler } from "react";
+import { type MouseEventHandler, type ReactNode } from "react";
 
 export type AgentFileStreamApply = (input: {
   path: string;
@@ -15,6 +15,22 @@ export type AgentFileStreamApply = (input: {
 export interface AgentViewProps {
   /** False while another app tab is shown; view stays mounted to preserve chat scroll. */
   active?: boolean;
+  externalAgentOptions?: Array<{
+    agentId: string;
+    name: string;
+    icon?: string | null;
+  }>;
+  onOpenExternalAgent?: (agentId: string) => void;
+  externalAgentTabs?: Array<{
+    id: string;
+    agentId: string;
+    title: string;
+    icon?: string | null;
+  }>;
+  activeExternalAgentId?: string | null;
+  onSelectExternalAgent?: (id: string) => void;
+  onCloseExternalAgent?: (id: string) => void;
+  externalAgentView?: ReactNode;
   connected: boolean;
   onResizeStart: MouseEventHandler<HTMLDivElement>;
   /**

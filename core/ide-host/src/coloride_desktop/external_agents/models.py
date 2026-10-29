@@ -72,6 +72,7 @@ class InstallationRecord(BaseModel):
     executable: str | None = None
     args: list[str] = Field(default_factory=list)
     location: str | None = None
+    env: dict[str, str] = Field(default_factory=dict)
 
     model_config = {"populate_by_name": True}
 
@@ -82,12 +83,14 @@ class RegistryEntryRecord(BaseModel):
     version: str
     description: str = ""
     repository: str | None = None
+    website: str | None = None
     license: str | None = None
     license_url: str | None = Field(default=None, alias="licenseUrl")
     icon: str | None = None
     distribution_kind: DistributionKind = Field(alias="distributionKind")
     package_spec: str | None = Field(default=None, alias="packageSpec")
     command: list[str] = Field(default_factory=list)
+    env: dict[str, str] = Field(default_factory=dict)
     archive_url: str | None = None
     archive_sha256: str | None = None
     installed: bool = False
@@ -153,7 +156,7 @@ class InstallRequest(BaseModel):
 
 
 class OpenSessionRequest(BaseModel):
-    session_id: str | None = Field(default=None, alias="sessionId")
+    session_id: str | None = Field(default=None, alias="sessionId", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9._:-]*$")
     agent_id: str = Field(default="codex-acp", alias="agentId")
     workspace_path: str = Field(alias="workspacePath")
     execution_target: Literal["local"] = Field(default="local", alias="executionTarget")

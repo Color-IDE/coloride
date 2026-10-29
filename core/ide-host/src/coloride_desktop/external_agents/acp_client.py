@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from acp import PROTOCOL_VERSION, ClientSideConnection
+from acp import PROTOCOL_VERSION, connect_to_agent
 from acp.exceptions import RequestError
 from acp.meta import AGENT_METHODS
 from acp.schema import (
@@ -19,12 +20,14 @@ from acp.schema import (
     AuthenticateResponse,
     AuthMethodAgent,
     AvailableCommandsUpdate,
+    BooleanConfigOptionCapabilities,
     ClientCapabilities,
+    ClientSessionCapabilities,
     ConfigOptionUpdate,
     CreateTerminalResponse,
+    CurrentModeUpdate,
     DeleteSessionRequest,
     DeleteSessionResponse,
-    CurrentModeUpdate,
     DeniedOutcome,
     EnvVariable,
     FileSystemCapabilities,
@@ -38,6 +41,7 @@ from acp.schema import (
     ReadTextFileResponse,
     ReleaseTerminalResponse,
     RequestPermissionResponse,
+    SessionConfigOptionsCapabilities,
     SessionInfoUpdate,
     TerminalAuthMethod,
     TerminalOutputResponse,
@@ -49,11 +53,15 @@ from acp.schema import (
     WaitForTerminalExitResponse,
     WriteTextFileResponse,
 )
+from acp.utils import request_model_from_dict
 
 from .files import AcpFileBridge
 from .models import AuthMethodRecord, ConfigOptionRecord
 from .processes import OwnedProcess
 from .terminals import AcpTerminalBridge
+
+if TYPE_CHECKING:
+    from acp.client.connection import ClientSideConnection
 
 STABLE_PROTOCOL_VERSION = 1
 assert PROTOCOL_VERSION == STABLE_PROTOCOL_VERSION
@@ -64,6 +72,8 @@ ExitHandler = Callable[[str, int | None, str], Awaitable[None]]
 
 
 def _dump(model: Any) -> dict[str, Any]:
+    if isinstance(model, dict):
+        return model
     if hasattr(model, "model_dump"):
         return model.model_dump(by_alias=True, mode="json")
     return {"value": model}
@@ -82,6 +92,8 @@ def config_options_from(raw: list[Any] | None) -> list[ConfigOptionRecord]:
     for item in raw or []:
         payload = _dump(item)
         kind = payload.get("type")
+        if kind not in {"select", "boolean"}:
+            continue
         if kind == "boolean":
             options.append(
                 ConfigOptionRecord(
@@ -113,6 +125,8 @@ def config_options_from(raw: list[Any] | None) -> list[ConfigOptionRecord]:
                         "value": str(choice.get("value")),
                         "name": str(choice.get("name") or choice.get("value")),
                         "description": choice.get("description"),
+                        "group": choice.get("group"),
+                        "groupName": choice.get("groupName"),
                     }
                 )
         options.append(
@@ -164,6 +178,7 @@ class ColorideAcpClient:
         terminals: AcpTerminalBridge,
         on_update: UpdateHandler,
         on_permission: PermissionHandler,
+        workspace: str | None = None,
     ) -> None:
         self.session_id = session_id
         self.files = files
@@ -171,6 +186,7 @@ class ColorideAcpClient:
         self.on_update = on_update
         self.on_permission = on_permission
         self.connection: ClientSideConnection | None = None
+        self.workspace = workspace
 
     def on_connect(self, conn: ClientSideConnection) -> None:
         self.connection = conn
@@ -239,15 +255,17 @@ class ColorideAcpClient:
             command=command,
             args=args or [],
             env=[(item.name, item.value) for item in env or []],
-            cwd=cwd,
+            cwd=cwd or self.workspace,
             output_byte_limit=output_byte_limit,
         )
         return CreateTerminalResponse(terminalId=terminal_id)
 
-    async def terminal_output(self, session_id: str, terminal_id: str, **kwargs: Any) -> TerminalOutputResponse:
+    async def terminal_output(
+        self, session_id: str, terminal_id: str, **kwargs: Any
+    ) -> TerminalOutputResponse:
         del session_id, kwargs
-        output, truncated = await self.terminals.output(terminal_id)
-        return TerminalOutputResponse(output=output, truncated=truncated, exitStatus=None)
+        output, truncated, exit_status = await self.terminals.output(terminal_id, owner=self.session_id)
+        return TerminalOutputResponse(output=output, truncated=truncated, exitStatus=exit_status)
 
     async def wait_for_terminal_exit(
         self,
@@ -256,17 +274,19 @@ class ColorideAcpClient:
         **kwargs: Any,
     ) -> WaitForTerminalExitResponse:
         del session_id, kwargs
-        code, signal = await self.terminals.wait(terminal_id)
+        code, signal = await self.terminals.wait(terminal_id, owner=self.session_id)
         return WaitForTerminalExitResponse(exitCode=code, signal=signal)
 
     async def kill_terminal(self, session_id: str, terminal_id: str, **kwargs: Any) -> KillTerminalResponse:
         del session_id, kwargs
-        await self.terminals.kill(terminal_id)
+        await self.terminals.kill(terminal_id, owner=self.session_id)
         return KillTerminalResponse()
 
-    async def release_terminal(self, session_id: str, terminal_id: str, **kwargs: Any) -> ReleaseTerminalResponse:
+    async def release_terminal(
+        self, session_id: str, terminal_id: str, **kwargs: Any
+    ) -> ReleaseTerminalResponse:
         del session_id, kwargs
-        await self.terminals.release(terminal_id)
+        await self.terminals.release(terminal_id, owner=self.session_id)
         return ReleaseTerminalResponse()
 
     async def ext_method(self, method: str, params: dict[str, Any]) -> dict[str, Any]:
@@ -284,7 +304,7 @@ class AcpConnection:
             raise RuntimeError("ACP process has no stdio pipes.")
         self.client = client
         self.process = process
-        self.connection = ClientSideConnection(client, stdin, stdout)
+        self.connection = connect_to_agent(client, stdin, stdout)
         self.initialized: InitializeResponse | None = None
         self._reader = asyncio.create_task(self._read_until_exit())
 
@@ -296,7 +316,11 @@ class AcpConnection:
         return ClientCapabilities(
             fs=FileSystemCapabilities(readTextFile=True, writeTextFile=True),
             terminal=True,
-            auth=AuthCapabilities(terminal=True),
+            # Interactive terminal login is not advertised until a real PTY UI exists.
+            auth=AuthCapabilities(terminal=False),
+            session=ClientSessionCapabilities(
+                configOptions=SessionConfigOptionsCapabilities(boolean=BooleanConfigOptionCapabilities()),
+            ),
         )
 
     async def initialize(self) -> InitializeResponse:
@@ -307,9 +331,7 @@ class AcpConnection:
         )
         if response.protocol_version != STABLE_PROTOCOL_VERSION:
             await self.close()
-            raise RuntimeError(
-                f"Agent offered ACP protocol {response.protocol_version}; Coloride speaks v1."
-            )
+            raise RuntimeError(f"Agent offered ACP protocol {response.protocol_version}; Coloride speaks v1.")
         self.initialized = response
         return response
 
@@ -322,7 +344,9 @@ class AcpConnection:
     async def load_session(self, session_id: str, cwd: str) -> LoadSessionResponse:
         return await self.connection.load_session(session_id=session_id, cwd=cwd, mcp_servers=[])
 
-    async def set_config_option(self, session_id: str, config_id: str, value: str | bool) -> list[ConfigOptionRecord]:
+    async def set_config_option(
+        self, session_id: str, config_id: str, value: str | bool
+    ) -> list[ConfigOptionRecord]:
         response = await self.connection.set_config_option(
             config_id=config_id,
             session_id=session_id,
@@ -352,18 +376,16 @@ class AcpConnection:
         )
 
     async def close_session(self, session_id: str) -> None:
-        if self.initialized and self.initialized.agent_capabilities and self.initialized.agent_capabilities.session_capabilities:
-            close = self.initialized.agent_capabilities.session_capabilities.close
-            if close is None:
-                return
+        capabilities = self.initialized.agent_capabilities if self.initialized else None
+        sessions = capabilities.session_capabilities if capabilities else None
+        if sessions is None or sessions.close is None:
+            return
         await self.connection.close_session(session_id=session_id)
 
     async def close(self) -> None:
         self._reader.cancel()
-        try:
+        with contextlib.suppress(Exception):
             await self.connection.close()
-        except Exception:
-            pass
 
 
 # Imported names kept for the type checker of session updates we persist as JSON.

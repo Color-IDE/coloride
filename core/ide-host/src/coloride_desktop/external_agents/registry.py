@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import platform
+import re
 from typing import Any
 
 import httpx
@@ -11,6 +12,8 @@ from .models import RegistryEntryRecord
 from .store import ExternalAgentStore
 
 REGISTRY_URL = "https://cdn.agentclientprotocol.com/registry/v1/latest/registry.json"
+
+
 class RegistryError(RuntimeError):
     pass
 
@@ -77,12 +80,21 @@ def parse_registry(payload: Any) -> list[RegistryEntryRecord]:
         agent_id = _text(raw.get("id"))
         version = _text(raw.get("version"))
         name = _text(raw.get("name")) or agent_id
-        if agent_id is None or version is None or name is None:
+        if (
+            agent_id is None
+            or version is None
+            or name is None
+            or not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9._-]*", agent_id)
+            or not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9._+-]*", version)
+        ):
             continue
         try:
             kind, spec, command, archive, digest = parse_distribution(raw.get("distribution"))
         except RegistryError:
             continue
+        distribution = raw["distribution"][kind]
+        if kind == "binary":
+            distribution = distribution[platform_target()]
         entries.append(
             RegistryEntryRecord(
                 id=agent_id,
@@ -90,12 +102,14 @@ def parse_registry(payload: Any) -> list[RegistryEntryRecord]:
                 version=version,
                 description=_text(raw.get("description")) or "",
                 repository=_text(raw.get("repository")),
+                website=_text(raw.get("website")),
                 license=_text(raw.get("license")),
                 licenseUrl=_text(raw.get("license_url")),
                 icon=_text(raw.get("icon")),
                 distributionKind=kind,  # type: ignore[arg-type]
                 packageSpec=spec,
                 command=command,
+                env={str(key): str(value) for key, value in (distribution.get("env") or {}).items()},
                 archive_url=archive,
                 archive_sha256=digest,
             )
@@ -112,18 +126,19 @@ class RegistryClient:
         payload = None
         if refresh:
             try:
-                async with httpx.AsyncClient(timeout=20) as client:
+                async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
                     response = await client.get(self.url)
                     response.raise_for_status()
                     payload = response.json()
+                parse_registry(payload)
                 self.store.write_registry_cache({"source": self.url, "payload": payload})
-            except (httpx.HTTPError, ValueError):
+            except (httpx.HTTPError, ValueError, RegistryError):
                 payload = None
         if payload is None:
             cached = self.store.read_registry_cache()
             payload = cached.get("payload") if cached else None
         if payload is None:
-            return []
+            raise RegistryError("The ACP Registry could not be reached. Check your connection and retry.")
         return parse_registry(payload)
 
     async def entry(self, agent_id: str, version: str | None = None) -> RegistryEntryRecord:
@@ -134,7 +149,5 @@ class RegistryClient:
         if match is None:
             raise RegistryError(f"Registry has no agent {agent_id}.")
         if version and version != match.version:
-            raise RegistryError(
-                f"{agent_id} {version} is not the published stable version {match.version}."
-            )
+            raise RegistryError(f"{agent_id} {version} is not the published stable version {match.version}.")
         return match

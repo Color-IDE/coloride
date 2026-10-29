@@ -61,6 +61,7 @@ export type ExternalAgentRegistryEntry = {
   version: string;
   description: string;
   repository?: string | null;
+  website?: string | null;
   license?: string | null;
   licenseUrl?: string | null;
   icon?: string | null;

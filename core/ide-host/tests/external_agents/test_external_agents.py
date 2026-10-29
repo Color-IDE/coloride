@@ -12,7 +12,6 @@ from coloride_desktop.external_agents.models import InstallationRecord
 from coloride_desktop.external_agents.registry import parse_registry
 from coloride_desktop.external_agents.service import ExternalAgentManager
 
-
 REGISTRY = {
     "version": "1.0.0",
     "agents": [
@@ -40,7 +39,9 @@ def test_install_is_not_repeated(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     destination.mkdir(parents=True)
     package = destination / "node_modules" / "@agentclientprotocol" / "codex-acp"
     package.mkdir(parents=True)
-    (package / "package.json").write_text(json.dumps({"bin": {"codex-acp": "dist/index.js"}}), encoding="utf-8")
+    (package / "package.json").write_text(
+        json.dumps({"bin": {"codex-acp": "dist/index.js"}}), encoding="utf-8"
+    )
     binary = package / "dist"
     binary.mkdir()
     executable = binary / "index.js"
@@ -55,7 +56,9 @@ def test_install_is_not_repeated(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
         calls.append("npm")
         raise AssertionError("npm should not run for an existing verified install")
 
-    monkeypatch.setattr("coloride_desktop.external_agents.installer.asyncio.create_subprocess_exec", fail_install)
+    monkeypatch.setattr(
+        "coloride_desktop.external_agents.installer.asyncio.create_subprocess_exec", fail_install
+    )
     app = _app(tmp_path)
     manager = app.state.external_agents
     manager.store.write_registry_cache({"payload": REGISTRY})
@@ -85,7 +88,11 @@ def test_ssh_workspace_is_rejected(tmp_path: Path) -> None:
         response = client.post(
             "/api/external-agents/sessions",
             headers=_auth(app),
-            json={"agentId": "codex-acp", "workspacePath": "ssh://example/project", "executionTarget": "local"},
+            json={
+                "agentId": "codex-acp",
+                "workspacePath": "ssh://example/project",
+                "executionTarget": "local",
+            },
         )
     assert response.status_code == 409, response.text
     assert response.json()["code"] == "external_agents.ssh"
@@ -102,6 +109,7 @@ def test_prompt_accepts_before_turn_finishes(tmp_path: Path, monkeypatch: pytest
         async def prompt(self, session_id: str, text: str):
             assert text == "hello"
             from types import SimpleNamespace
+
             return SimpleNamespace(stop_reason="end_turn")
 
         async def cancel(self, session_id: str) -> None:

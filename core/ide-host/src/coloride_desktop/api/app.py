@@ -440,16 +440,21 @@ def create_app(config: LaunchConfig) -> FastAPI:
     auth = Depends(bearer_auth(config.bearer_token))
 
     async def _external_stat(path: str) -> Any:
-        return await app.state.files.stat_path(path)
+        return await external_local_files.stat_path(path)
 
     async def _external_read(path: str) -> tuple[str, str, bool]:
-        return await app.state.files.read(path)
+        return await external_local_files.read(path)
 
     async def _external_write(path: str, content_b64: str, etag: str | None) -> str:
-        return await app.state.files.write(path, content_b64, etag)
+        return await external_local_files.write(path, content_b64, etag)
 
     def _known_etag(path: str) -> str | None:
         return None
+
+    # ACP sessions retain their own local workspace even when the IDE switches
+    # its main filesystem service to a different folder or SSH connection.
+    from ..files.local import LocalFileService
+    external_local_files = LocalFileService(str(Path.home()))
 
     app.state.external_agents = ExternalAgentManager(
         user_data_root(),

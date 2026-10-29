@@ -121,10 +121,21 @@ export function useAgentHeaderState({ openChatTabs, sessions, isSidebar, setOpen
     return () => observer.disconnect();
   }, [isSidebar, openChatTabs, sessions, updateChatTabScroll]);
   useEffect(() => {
-    setOpenChatTabs((tabs) =>
-      tabs.includes(selectedSessionId) ? tabs : [...tabs, selectedSessionId],
+    const externalIds = new Set(
+      (props.externalAgentTabs ?? []).map((tab) => tab.id),
     );
-  }, [selectedSessionId]);
+    setOpenChatTabs((tabs) => {
+      const kept = tabs.filter(
+        (id) => !id?.startsWith("external-agent:") || externalIds.has(id),
+      );
+      const missing = [...externalIds].filter((id) => !kept.includes(id));
+      const withSession =
+        selectedSessionId === null || kept.includes(selectedSessionId)
+          ? kept
+          : [...kept, selectedSessionId];
+      return missing.length ? [...withSession, ...missing] : withSession;
+    });
+  }, [selectedSessionId, props.externalAgentTabs]);
   return {
     activeHeaderTerminal,
     setActiveHeaderTerminal,

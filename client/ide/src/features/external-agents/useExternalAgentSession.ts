@@ -1,8 +1,15 @@
-import type { ExternalAgentEvent, ExternalAgentSession } from "@coloride/contracts";
-import { useEffect, useRef, useState } from "react";
+import type {
+  ExternalAgentEvent,
+  ExternalAgentSession,
+} from "@coloride/contracts";
+import { useEffect, useState } from "react";
 import { api } from "../../shared/api/client";
 import { externalAgentsApi } from "./api";
-import { emptyExternalAgentState, hydrateExternalAgentEvents, reduceExternalAgentEvent, type ExternalAgentUiState } from "./externalAgentReducer";
+import {
+  emptyExternalAgentState,
+  reduceExternalAgentEvent,
+  type ExternalAgentUiState,
+} from "./externalAgentReducer";
 
 const TABS_KEY = "coloride.external-agent.tabs.v1";
 
@@ -11,67 +18,155 @@ export type AgentWorkspaceTab =
   | { id: string; kind: "external"; agentId: string; sessionId: string }
   | { id: string; kind: "terminal"; sessionId: string };
 
-export function readAgentWorkspaceTabs(): { tabs: AgentWorkspaceTab[]; selectedId: string | null } {
+export function readAgentWorkspaceTabs(namespace = ""): {
+  tabs: AgentWorkspaceTab[];
+  selectedId: string | null;
+} {
   try {
-    const raw = window.localStorage.getItem(TABS_KEY);
-    if (!raw) return { tabs: [{ id: "coloride", kind: "coloride", sessionId: null }], selectedId: "coloride" };
-    const parsed = JSON.parse(raw) as { tabs?: AgentWorkspaceTab[]; selectedId?: string | null };
-    if (!parsed.tabs?.length) return { tabs: [{ id: "coloride", kind: "coloride", sessionId: null }], selectedId: "coloride" };
-    return { tabs: parsed.tabs, selectedId: parsed.selectedId ?? parsed.tabs[0]?.id ?? null };
+    const raw = window.localStorage.getItem(`${TABS_KEY}:${namespace}`);
+    if (!raw)
+      return {
+        tabs: [{ id: "coloride", kind: "coloride", sessionId: null }],
+        selectedId: "coloride",
+      };
+    const parsed = JSON.parse(raw) as {
+      tabs?: AgentWorkspaceTab[];
+      selectedId?: string | null;
+    };
+    if (
+      !Array.isArray(parsed.tabs) ||
+      !parsed.tabs.every(
+        (tab) =>
+          tab &&
+          typeof tab.id === "string" &&
+          (tab.kind === "coloride" ||
+            (tab.kind === "external" &&
+              typeof tab.agentId === "string" &&
+              typeof tab.sessionId === "string")),
+      )
+    )
+      throw new Error("Invalid saved agent tabs");
+    if (!parsed.tabs?.length)
+      return {
+        tabs: [{ id: "coloride", kind: "coloride", sessionId: null }],
+        selectedId: "coloride",
+      };
+    return {
+      tabs: parsed.tabs,
+      selectedId: parsed.selectedId ?? parsed.tabs[0]?.id ?? null,
+    };
   } catch {
-    return { tabs: [{ id: "coloride", kind: "coloride", sessionId: null }], selectedId: "coloride" };
+    return {
+      tabs: [{ id: "coloride", kind: "coloride", sessionId: null }],
+      selectedId: "coloride",
+    };
   }
 }
 
-export function writeAgentWorkspaceTabs(tabs: AgentWorkspaceTab[], selectedId: string | null) {
-  window.localStorage.setItem(TABS_KEY, JSON.stringify({ tabs, selectedId }));
+export function writeAgentWorkspaceTabs(
+  tabs: AgentWorkspaceTab[],
+  selectedId: string | null,
+  namespace = "",
+) {
+  try {
+    window.localStorage.setItem(
+      `${TABS_KEY}:${namespace}`,
+      JSON.stringify({ tabs, selectedId }),
+    );
+  } catch {
+    /* A full browser store must not crash an open conversation. */
+  }
 }
 
-export function useExternalAgentSession(sessionId: string | null, active: boolean) {
+export function useExternalAgentSession(
+  sessionId: string | null,
+  active: boolean,
+) {
   const [session, setSession] = useState<ExternalAgentSession | null>(null);
-  const [state, setState] = useState<ExternalAgentUiState>(emptyExternalAgentState);
+  const [state, setState] = useState<ExternalAgentUiState>(
+    emptyExternalAgentState,
+  );
   const [error, setError] = useState("");
-  const sequence = useRef(0);
-
   useEffect(() => {
     if (!sessionId) return;
-    let cancelled = false;
-    void externalAgentsApi.session(sessionId).then(async (loaded) => {
-      if (cancelled) return;
-      setSession(loaded);
-      setState((current) => ({ ...current, config: loaded.configOptions ?? current.config }));
-      const events = await externalAgentsApi.events(sessionId, 0);
-      if (cancelled) return;
-      const hydrated = hydrateExternalAgentEvents(events);
-      sequence.current = hydrated.lastSequence;
-      setState(hydrated);
-    }).catch((reason: unknown) => {
-      if (!cancelled) setError(reason instanceof Error ? reason.message : "Could not open Codex.");
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [sessionId]);
+    let disposed = false;
+    let sequence = 0;
+    let fetching = false;
+    let again = false;
+    let opened = false;
+    let identity: ExternalAgentSession | null = null;
+    setSession(null);
+    setState(emptyExternalAgentState());
+    setError("");
 
-  useEffect(() => {
-    if (!active || !sessionId) return;
-    const socket = api.events((event) => {
-      if (event.event !== "external-agent:event") return;
-      const payload = event.payload as ExternalAgentEvent;
-      if (payload.sessionId !== sessionId) return;
-      sequence.current = Math.max(sequence.current, payload.sequence);
-      setState((current) => reduceExternalAgentEvent(current, payload));
-    });
-    const refresh = window.setInterval(() => {
-      void externalAgentsApi.events(sessionId, sequence.current).then((events) => {
-        setState((current) => events.reduce(reduceExternalAgentEvent, current));
-        const last = events.at(-1);
-        if (last) sequence.current = last.sequence;
-      }).catch(() => undefined);
-    }, 1500);
+    const synchronize = async () => {
+      if (disposed) return;
+      if (fetching) {
+        again = true;
+        return;
+      }
+      fetching = true;
+      try {
+        do {
+          again = false;
+          let loaded: ExternalAgentSession =
+            identity ?? (await externalAgentsApi.session(sessionId));
+          if (disposed) return;
+          if (active && !opened) {
+            opened = true;
+            loaded = await externalAgentsApi.openSession({
+              sessionId,
+              agentId: loaded.agentId,
+              workspacePath: loaded.workspacePath,
+              executionTarget: "local",
+            });
+            if (disposed) return;
+          }
+          // The durable log is authoritative: socket notifications only wake this
+          // ordered catch-up, so a missed packet cannot skip earlier text chunks.
+          const events = await externalAgentsApi.events(sessionId, sequence);
+          if (disposed) return;
+          loaded = await externalAgentsApi.session(sessionId);
+          if (disposed) return;
+          identity = loaded;
+          const last = events.at(-1);
+          if (last) sequence = last.sequence;
+          setSession(loaded);
+          setState((current) => ({
+            ...events.reduce(reduceExternalAgentEvent, current),
+            config: loaded.configOptions,
+            turnActive: loaded.turn !== "idle",
+          }));
+          setError("");
+        } while (again && !disposed);
+      } catch (reason) {
+        if (!disposed)
+          setError(
+            reason instanceof Error
+              ? reason.message
+              : "Could not open the external agent.",
+          );
+      } finally {
+        fetching = false;
+      }
+    };
+    void synchronize();
+    const socket = active
+      ? api.events((event) => {
+          if (
+            event.event === "external-agent:event" &&
+            (event.payload as ExternalAgentEvent).sessionId === sessionId
+          )
+            void synchronize();
+        })
+      : null;
+    const timer = active
+      ? window.setInterval(() => void synchronize(), 1500)
+      : null;
     return () => {
-      socket.close();
-      window.clearInterval(refresh);
+      disposed = true;
+      socket?.close();
+      if (timer !== null) window.clearInterval(timer);
     };
   }, [active, sessionId]);
 

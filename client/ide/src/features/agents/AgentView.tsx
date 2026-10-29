@@ -16,6 +16,8 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { api } from "../../shared/api/client";
+import { AgentMark } from "../external-agents";
+import "../settings/styles/external-agents.css";
 import { Menu, MenuItem, MenuLabel, MenuSeparator } from "../../shared/ui/Menu";
 import { useContextMenuPosition } from "../../shared/ui/useContextMenuPosition";
 import {
@@ -1826,7 +1828,22 @@ export function AgentView(props: AgentViewProps) {
             setHeaderTabMenu={setHeaderTabMenu}
             setChatHistoryOpen={setChatHistoryOpen}
             onCloseSidebar={props.onCloseSidebar}
+            externalAgentTabs={props.externalAgentTabs}
+            activeExternalAgentId={props.activeExternalAgentId}
+            onSelectExternalAgent={props.onSelectExternalAgent}
+            onCloseExternalAgent={props.onCloseExternalAgent}
           />
+        ) : null}
+        {isSidebar && props.externalAgentView ? (
+          <div
+            className={
+              props.activeExternalAgentId
+                ? "flex min-h-0 min-w-0 flex-1 flex-col"
+                : "hidden"
+            }
+          >
+            {props.externalAgentView}
+          </div>
         ) : null}
         {isSidebar && headerTabMenu
           ? createPortal(
@@ -1834,7 +1851,7 @@ export function AgentView(props: AgentViewProps) {
               ref={headerTabMenuPlacement.ref}
               style={headerTabMenuPlacement.style}
               aria-label="Add tab"
-              className="fixed z-[10060] w-[180px]"
+              className="agent-add-tab-menu fixed z-[10060] w-[180px]"
               onPointerDown={(event) => event.stopPropagation()}
             >
               <MenuItem
@@ -1862,6 +1879,42 @@ export function AgentView(props: AgentViewProps) {
               >
                 Coloride Agent
               </MenuItem>
+              {props.externalAgentOptions?.length ? (
+                <div aria-hidden="true" className="agent-add-tab-separator" />
+              ) : null}
+              {props.externalAgentOptions?.some(
+                (agent) => agent.agentId === "codex-acp",
+              ) ? (
+                <MenuItem
+                  compact
+                  onClick={() => {
+                    setHeaderTabMenu(null);
+                    props.onOpenExternalAgent?.("codex-acp");
+                  }}
+                >
+                  <AgentMark agentId="codex-acp" name="Codex" />
+                  Codex
+                </MenuItem>
+              ) : null}
+              {props.externalAgentOptions
+                ?.filter((agent) => agent.agentId !== "codex-acp")
+                .map((agent) => (
+                  <MenuItem
+                    compact
+                    key={agent.agentId}
+                    onClick={() => {
+                      setHeaderTabMenu(null);
+                      props.onOpenExternalAgent?.(agent.agentId);
+                    }}
+                  >
+                    <AgentMark
+                      agentId={agent.agentId}
+                      icon={agent.icon}
+                      name={agent.name}
+                    />
+                    {agent.name}
+                  </MenuItem>
+                ))}
             </Menu>,
             document.body,
           )
@@ -1934,7 +1987,13 @@ export function AgentView(props: AgentViewProps) {
             }}
           />
         ) : null}
-        <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
+        <div
+          className={
+            isSidebar && props.activeExternalAgentId
+              ? "hidden"
+              : "flex min-h-0 min-w-0 flex-1 overflow-hidden"
+          }
+        >
           {!isSidebar ? (
             <div
               aria-hidden={!props.sidePanelOpen}

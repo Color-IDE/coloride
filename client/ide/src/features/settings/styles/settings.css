@@ -737,7 +737,7 @@ body[data-theme=light] .settings-search:focus-within {
   border-bottom: 1px dashed rgb(255 255 255 / 12%);
   grid-template-columns: minmax(0, 1fr) minmax(140px, 210px);
 }
-.settings-workbench .settings-section-group .settings-preference-row:last-child,
+.settings-workbench .settings-section-group:not(.acp-registry) .settings-preference-row:last-child,
 .settings-workbench .settings-shortcut-group .settings-shortcut-row:last-child,
 .settings-workbench .llm-provider-section .settings-preference-row:not(:has(+ .settings-preference-row)),
 .settings-workbench .llm-custom-page .settings-preference-row:last-child {

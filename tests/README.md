@@ -6,6 +6,7 @@ Tests are grouped by subsystem within the component that owns them. Backend fold
 | --- | --- |
 | `core/ide-host/tests/agents/` | Agent sessions, runtime, context, memory, policy, completion and checkpoints |
 | `core/ide-host/tests/providers/` | Provider adapters, model capabilities and reasoning |
+| `core/ide-host/tests/external_agents/` | ACP transport, authentication, configuration, permissions, files and process recovery |
 | `core/ide-host/tests/terminal/` | Local PTYs, shell integration, protocol, sessions and remote terminal channels |
 | `core/ide-host/tests/files/` | Files, search index and semantic search |
 | `core/ide-host/tests/lsp/` | Language servers, sockets and framing |
@@ -56,6 +57,8 @@ node tests/electron/smoke/sidebar-submit-stability.mjs --source light
 node tests/electron/smoke/startup-appearance.mjs --source
 # Independent Settings window, live preferences and workspace preservation:
 node tests/electron/smoke/settings-window.mjs
+# External agent registry, real isolated Codex install and deterministic ACP conversation:
+node tests/electron/smoke/external-agents.mjs
 # Active screen, header terminal recovery and confirmed closes across app restarts:
 node tests/electron/smoke/session-restore.mjs
 # Fresh host, stopped discovery and persistent host/shell reuse (run alone):

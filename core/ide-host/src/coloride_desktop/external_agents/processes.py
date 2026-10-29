@@ -77,8 +77,11 @@ class ProcessRegistry:
         if owned is None:
             return
         process = owned.process
-        if process.returncode is None and process.pid:
+        if process.pid:
+            # A parent may exit before its children; the owned process group
+            # still needs to be retired when the conversation closes.
             await self._terminate_group(process.pid)
+        if process.returncode is None and process.pid:
             try:
                 await asyncio.wait_for(process.wait(), timeout=3)
             except TimeoutError:
@@ -86,6 +89,8 @@ class ProcessRegistry:
                 with contextlib.suppress(ProcessLookupError):
                     process.kill()
                 await process.wait()
+        if process.pid:
+            await self._kill_group(process.pid)
         if owned.stderr_task:
             owned.stderr_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):

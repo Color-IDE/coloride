@@ -1,4 +1,9 @@
-import { useRef, type KeyboardEvent, type ReactNode } from "react";
+import {
+  useLayoutEffect,
+  useRef,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 import { ComposerInput } from "./ComposerInput";
 import { ComposerSurface } from "./ComposerSurface";
 
@@ -25,6 +30,12 @@ export function SharedComposer({
   controls,
 }: SharedComposerProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => {
+    const input = inputRef.current;
+    if (!input) return;
+    input.style.height = "auto";
+    input.style.height = `${Math.min(180, input.scrollHeight)}px`;
+  }, [draft]);
 
   const submit = () => {
     if (disabled || running || !draft.trim()) return;
@@ -32,7 +43,11 @@ export function SharedComposer({
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === "Enter" && !event.shiftKey) {
+    if (
+      event.key === "Enter" &&
+      !event.shiftKey &&
+      !event.nativeEvent.isComposing
+    ) {
       event.preventDefault();
       submit();
     }
@@ -52,7 +67,11 @@ export function SharedComposer({
       <div className="mt-2 flex items-center justify-between gap-2">
         <div className="flex min-w-0 flex-1 items-center gap-1">{controls}</div>
         {running ? (
-          <button className="agent-composer-send" onClick={onCancel} type="button">
+          <button
+            className="agent-composer-send"
+            onClick={onCancel}
+            type="button"
+          >
             Stop
           </button>
         ) : (

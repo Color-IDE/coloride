@@ -132,7 +132,10 @@ export function reduceExternalAgentUpdate(
     const request = update as unknown as ExternalAgentPermissionRequest;
     return { ...state, permissions: [...state.permissions, request] };
   }
-  if (kind === "turn_complete") {
+  if (kind === "permission_resolved") {
+    return { ...state, permissions: state.permissions.filter((item) => item.requestId !== update.requestId) };
+  }
+  if (kind === "turn_complete" || kind === "execution_closed") {
     return { ...state, items: finishLive(state.items), permissions: [], turnActive: false };
   }
   if (kind === "error") {

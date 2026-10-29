@@ -10,12 +10,13 @@ from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Any
 
+from acp.exceptions import RequestError
+
 from .acp_client import (
     AcpConnection,
     ColorideAcpClient,
     auth_methods_from,
     config_options_from,
-    terminal_auth_command,
 )
 from .files import AcpFileBridge
 from .installer import ExternalAgentInstaller, InstallError
@@ -24,9 +25,7 @@ from .models import (
     InstallationRecord,
     OpenSessionRequest,
     PermissionRecord,
-    RegistryEntryRecord,
     SessionRecord,
-    utc_now,
 )
 from .processes import ProcessRegistry
 from .registry import RegistryClient, RegistryError
@@ -56,22 +55,31 @@ class ExternalAgentManager:
         self._permissions: dict[str, asyncio.Future[str | None]] = {}
         self._turns: dict[str, asyncio.Task[None]] = {}
         self._locks: dict[str, asyncio.Lock] = {}
+        self._config_locks: dict[str, asyncio.Lock] = {}
+        self._replaying: set[str] = set()
+        self._watchers: dict[str, asyncio.Task[None]] = {}
 
     async def shutdown(self) -> None:
-        for session_id in list(self._connections):
-            await self.close_execution(session_id)
+        await asyncio.gather(*(self.close_execution(session_id) for session_id in list(self._connections)))
         await self.terminals.close_all()
         await self.processes.stop_all()
 
     async def catalog(self) -> list[dict[str, Any]]:
-        entries = await self.registry.catalog(refresh=True)
-        installed = {item.agent_id: item for item in self.store.read_installations() if item.status == "installed"}
+        try:
+            entries = await self.registry.catalog(refresh=True)
+        except RegistryError as exc:
+            raise ExternalAgentError("external_agents.registry", str(exc), 503) from exc
+        installed = {
+            item.agent_id: item for item in self.store.read_installations() if item.status == "installed"
+        }
         public: list[dict[str, Any]] = []
         for entry in entries:
             current = installed.get(entry.id)
             entry.installed = current is not None
             entry.installed_version = current.version if current else None
-            public.append(entry.model_dump(by_alias=True, exclude={"command", "archive_url", "archive_sha256"}))
+            public.append(
+                entry.model_dump(by_alias=True, exclude={"command", "env", "archive_url", "archive_sha256"})
+            )
         return public
 
     def installations(self) -> list[dict[str, Any]]:
@@ -101,7 +109,10 @@ class ExternalAgentManager:
         for session in self.store.list_sessions():
             if session.installation_id == installation_id:
                 await self.close_execution(session.id)
-        await self.installer.uninstall(record)
+        try:
+            await self.installer.uninstall(record)
+        except InstallError as exc:
+            raise ExternalAgentError("external_agents.install", str(exc), 422) from exc
 
     async def open_session(self, request: OpenSessionRequest) -> dict[str, Any]:
         if request.execution_target != "local":
@@ -118,6 +129,12 @@ class ExternalAgentManager:
         installation = self._ready_installation(request.agent_id)
         session_id = request.session_id or str(uuid.uuid4())
         record = self.store.read_session(session_id)
+        if record and (
+            record.agent_id != request.agent_id or record.workspace_path != str(workspace.resolve())
+        ):
+            raise ExternalAgentError(
+                "external_agents.session", "This conversation belongs to a different agent or project.", 409
+            )
         if record is None:
             record = SessionRecord(
                 id=session_id,
@@ -129,6 +146,8 @@ class ExternalAgentManager:
                 phase="installed",
             )
             self.store.write_session(record)
+        if record:
+            installation = self._installation(record.installation_id)
         await self._ensure_connection(record, installation)
         stored = self.store.read_session(session_id)
         assert stored is not None
@@ -146,27 +165,33 @@ class ExternalAgentManager:
         record = self._session(session_id)
         method = next((item for item in record.auth_methods if item.id == method_id), None)
         if method is None:
-            raise ExternalAgentError("external_agents.auth", "That authentication method was not announced.", 400)
+            raise ExternalAgentError(
+                "external_agents.auth", "That authentication method was not announced.", 400
+            )
         connection = self._connections.get(session_id)
         if connection is None:
             raise ExternalAgentError("external_agents.connection", "Start the agent before signing in.", 409)
         record.phase = "authenticating"
         self.store.write_session(record)
         if method.type == "terminal":
-            installation = self._installation(record.installation_id)
-            executable, args, env = self.installer.launch_command(installation)
-            command = terminal_auth_command(executable, args, method)
-            await self._run_terminal_auth(command, env, record.workspace_path)
-            await self.close_execution(session_id)
-            refreshed = self._session(session_id)
-            installation = self._installation(refreshed.installation_id)
-            await self._ensure_connection(refreshed, installation)
-        elif method.type == "agent":
-            await connection.authenticate(method.id)
-            record = self._session(session_id)
-            record.phase = "ready"
-            record.error = None
+            record.phase = "needs-login"
             self.store.write_session(record)
+            raise ExternalAgentError(
+                "external_agents.auth",
+                "This agent requires interactive terminal login, which is not supported yet.",
+                409,
+            )
+        elif method.type == "agent":
+            try:
+                await connection.authenticate(method.id)
+            except Exception as exc:
+                record = self._session(session_id)
+                record.phase = "needs-login"
+                record.error = str(exc)
+                self.store.write_session(record)
+                raise ExternalAgentError("external_agents.auth", str(exc), 401) from exc
+            record = self._session(session_id)
+            await self._open_acp_session(record, connection)
         else:
             raise ExternalAgentError(
                 "external_agents.auth",
@@ -176,12 +201,23 @@ class ExternalAgentManager:
         return self._session(session_id).public()
 
     async def set_config(self, session_id: str, config_id: str, value: str | bool) -> dict[str, Any]:
+        async with self._config_locks.setdefault(session_id, asyncio.Lock()):
+            return await self._set_config(session_id, config_id, value)
+
+    async def _set_config(self, session_id: str, config_id: str, value: str | bool) -> dict[str, Any]:
         record = self._session(session_id)
         if record.acp_session_id is None:
             raise ExternalAgentError("external_agents.session", "The ACP session is not ready.", 409)
         known = next((item for item in record.config_options if item.id == config_id), None)
         if known is None:
             raise ExternalAgentError("external_agents.config", "That option was not announced.", 400)
+        if (known.type == "boolean" and not isinstance(value, bool)) or (
+            known.type == "select"
+            and (not isinstance(value, str) or value not in {item.value for item in known.options})
+        ):
+            raise ExternalAgentError(
+                "external_agents.config", "That value was not announced for this option.", 400
+            )
         connection = self._require_connection(session_id)
         record.pending_config[config_id] = value
         self.store.write_session(record)
@@ -198,13 +234,17 @@ class ExternalAgentManager:
         record.pending_config.pop(config_id, None)
         record.error = None
         self.store.write_session(record)
-        await self._emit(session_id, {"sessionUpdate": "config_option_update", "configOptions": _options(confirmed)})
+        await self._emit(
+            session_id, {"sessionUpdate": "config_option_update", "configOptions": _options(confirmed)}
+        )
         return {"sessionId": session_id, "options": _options(confirmed), "pending": record.pending_config}
 
     async def prompt(self, session_id: str, text: str) -> dict[str, Any]:
         record = self._session(session_id)
         if record.phase == "needs-login":
-            raise ExternalAgentError("external_agents.auth", "Sign in to Codex before sending a message.", 409)
+            raise ExternalAgentError(
+                "external_agents.auth", "Sign in to Codex before sending a message.", 409
+            )
         if record.phase != "ready" or record.acp_session_id is None:
             raise ExternalAgentError("external_agents.session", "The session is not ready.", 409)
         if record.turn == "running":
@@ -215,7 +255,9 @@ class ExternalAgentManager:
         turn_id = str(uuid.uuid4())
         record.turn = "running"
         self.store.write_session(record)
-        self._turns[session_id] = asyncio.create_task(self._run_prompt(session_id, record.acp_session_id, message))
+        self._turns[session_id] = asyncio.create_task(
+            self._run_prompt(session_id, record.acp_session_id, message)
+        )
         return {"accepted": True, "sessionId": session_id, "turnId": turn_id}
 
     async def cancel(self, session_id: str) -> None:
@@ -234,23 +276,46 @@ class ExternalAgentManager:
             except TimeoutError:
                 task.cancel()
 
-    async def resolve_permission(self, session_id: str, request_id: str, option_id: str | None, outcome: str) -> None:
+    async def resolve_permission(
+        self, session_id: str, request_id: str, option_id: str | None, outcome: str
+    ) -> None:
+        if not request_id.startswith(f"{session_id}:"):
+            raise ExternalAgentError(
+                "external_agents.permission", "That permission belongs to another conversation.", 404
+            )
         future = self._permissions.get(request_id)
         if future is None or future.done():
-            raise ExternalAgentError("external_agents.permission", "That permission request is no longer pending.", 404)
+            raise ExternalAgentError(
+                "external_agents.permission", "That permission request is no longer pending.", 404
+            )
         if outcome == "cancelled" or not option_id:
             future.set_result(None)
             return
+        requests = self.store.events_after(session_id, 0)
+        offered = next(
+            (
+                event.update.get("options", [])
+                for event in reversed(requests)
+                if event.update.get("requestId") == request_id
+            ),
+            [],
+        )
+        if option_id not in {item.get("optionId") for item in offered}:
+            raise ExternalAgentError(
+                "external_agents.permission", "That permission option was not offered.", 400
+            )
         future.set_result(option_id)
-        del session_id
 
     async def close_execution(self, session_id: str) -> None:
         record = self.store.read_session(session_id)
+        watcher = self._watchers.pop(session_id, None)
+        if watcher and watcher is not asyncio.current_task():
+            watcher.cancel()
         self._cancel_permissions(session_id)
         connection = self._connections.pop(session_id, None)
         if connection and record and record.acp_session_id and hasattr(connection, "close_session"):
             with contextlib.suppress(Exception):
-                await connection.close_session(record.acp_session_id)
+                await asyncio.wait_for(connection.close_session(record.acp_session_id), timeout=2)
         if connection and hasattr(connection, "close"):
             await connection.close()
         if record and record.process_id:
@@ -259,11 +324,14 @@ class ExternalAgentManager:
         task = self._turns.pop(session_id, None)
         if task and not task.done():
             task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
         if record:
             record.phase = "closed"
             record.turn = "idle"
             record.process_id = None
             self.store.write_session(record)
+            await self._emit(session_id, {"sessionUpdate": "execution_closed"})
 
     async def delete_session(self, session_id: str) -> None:
         record = self._session(session_id)
@@ -279,8 +347,16 @@ class ExternalAgentManager:
     async def _ensure_connection(self, record: SessionRecord, installation: InstallationRecord) -> None:
         lock = self._locks.setdefault(record.id, asyncio.Lock())
         async with lock:
-            if record.id in self._connections and record.phase in {"ready", "needs-login"}:
+            record = self._session(record.id)
+            if record.id in self._connections and record.phase in {"ready", "needs-login", "authenticating"}:
                 return
+            if record.id in self._connections:
+                await self.close_execution(record.id)
+            if record.turn != "idle":
+                record.turn = "idle"
+                record.pending_config = {}
+                self.store.write_session(record)
+                await self._emit(record.id, {"sessionUpdate": "turn_complete", "stopReason": "interrupted"})
             record.phase = "starting"
             record.error = None
             self.store.write_session(record)
@@ -297,10 +373,11 @@ class ExternalAgentManager:
             self.store.write_session(record)
             client = ColorideAcpClient(
                 session_id=record.id,
-                files=self.files,
+                files=self.files.for_workspace(Path(record.workspace_path)),
                 terminals=self.terminals,
                 on_update=self._emit,
                 on_permission=self._permission,
+                workspace=record.workspace_path,
             )
             connection = AcpConnection(client, process)
             self._connections[record.id] = connection
@@ -315,19 +392,20 @@ class ExternalAgentManager:
             capabilities = initialized.agent_capabilities
             record.supports_load = bool(capabilities and capabilities.load_session)
             record.auth_methods = auth_methods_from(initialized)
-            if record.auth_methods and record.acp_session_id is None:
-                record.phase = "needs-login"
-                self.store.write_session(record)
-                return
             await self._open_acp_session(record, connection)
+            self._watchers[record.id] = asyncio.create_task(self._watch_process(record.id, process))
 
     async def _open_acp_session(self, record: SessionRecord, connection: AcpConnection) -> None:
         try:
             if record.acp_session_id and record.supports_load:
-                loaded = await connection.load_session(record.acp_session_id, record.workspace_path)
+                self._replaying.add(record.id)
+                try:
+                    loaded = await connection.load_session(record.acp_session_id, record.workspace_path)
+                finally:
+                    self._replaying.discard(record.id)
                 record.config_options = config_options_from(loaded.config_options)
             elif record.acp_session_id and not record.supports_load:
-                record.phase = "ready"
+                record.phase = "unsupported"
                 record.error = "This agent cannot restore the conversation. Start a new one to continue."
                 self.store.write_session(record)
                 return
@@ -336,8 +414,7 @@ class ExternalAgentManager:
                 record.acp_session_id = created.session_id
                 record.config_options = config_options_from(created.config_options)
         except Exception as exc:
-            message = str(exc).lower()
-            if "auth" in message or "-32000" in message:
+            if isinstance(exc, RequestError) and exc.code == RequestError.auth_required().code:
                 record.phase = "needs-login"
                 record.error = None
                 self.store.write_session(record)
@@ -361,7 +438,13 @@ class ExternalAgentManager:
             stop_reason = response.stop_reason
         except Exception as exc:
             stop_reason = "error"
+            if isinstance(exc, RequestError) and exc.code == RequestError.auth_required().code:
+                record = self._session(session_id)
+                record.phase = "needs-login"
+                self.store.write_session(record)
             await self._emit(session_id, {"sessionUpdate": "error", "message": str(exc)})
+        except asyncio.CancelledError:
+            stop_reason = "cancelled"
         record = self.store.read_session(session_id)
         if record:
             record.turn = "idle"
@@ -391,11 +474,14 @@ class ExternalAgentManager:
         loop = asyncio.get_running_loop()
         future: asyncio.Future[str | None] = loop.create_future()
         self._permissions[request_id] = future
-        await self._emit(session_id, {"sessionUpdate": "permission_request", **permission.model_dump(by_alias=True)})
+        await self._emit(
+            session_id, {"sessionUpdate": "permission_request", **permission.model_dump(by_alias=True)}
+        )
         try:
             return await future
         finally:
             self._permissions.pop(request_id, None)
+            await self._emit(session_id, {"sessionUpdate": "permission_resolved", "requestId": request_id})
 
     def _cancel_permissions(self, session_id: str) -> None:
         prefix = f"{session_id}:"
@@ -404,30 +490,35 @@ class ExternalAgentManager:
                 future.set_result(None)
 
     async def _emit(self, session_id: str, update: dict[str, Any]) -> None:
+        if session_id in self._replaying and update.get("sessionUpdate") in {
+            "user_message_chunk",
+            "agent_message_chunk",
+            "agent_thought_chunk",
+            "tool_call",
+            "tool_call_update",
+            "plan",
+        }:
+            return
         if update.get("sessionUpdate") == "config_option_update" and "configOptions" in update:
             record = self.store.read_session(session_id)
             if record:
-                record.config_options = [ConfigOptionRecord.model_validate(item) for item in update["configOptions"]]
+                # Notifications contain ACP options; normalize grouped choices just like session/new.
+                record.config_options = config_options_from(update["configOptions"])
+                update = {**update, "configOptions": _options(record.config_options)}
                 self.store.write_session(record)
         event = self.store.append_event(session_id, update)
         await self.publish("external-agent:event", event.model_dump(by_alias=True))
 
-    async def _run_terminal_auth(self, command: list[str], env: dict[str, str], cwd: str) -> None:
-        process = await asyncio.create_subprocess_exec(
-            *command,
-            cwd=cwd,
-            env={**os.environ, **env},
-            stdin=asyncio.subprocess.PIPE,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
-        )
-        try:
-            _stdout, _stderr = await asyncio.wait_for(process.communicate(b"\n"), timeout=180)
-        except TimeoutError as exc:
-            process.kill()
-            raise ExternalAgentError("external_agents.auth", "Terminal login timed out.", 408) from exc
-        if process.returncode not in (0, None):
-            raise ExternalAgentError("external_agents.auth", "Terminal login did not complete.", 401)
+    async def _watch_process(self, session_id: str, process: Any) -> None:
+        await process.exited.wait()
+        if self.processes.by_session(session_id) is not process:
+            return
+        await self.close_execution(session_id)
+        record = self._session(session_id)
+        record.phase = "failed"
+        record.error = f"The agent exited (code {process.returncode}). Reopen the conversation to reconnect."
+        self.store.write_session(record)
+        await self._emit(session_id, {"sessionUpdate": "error", "message": record.error})
 
     def _ready_installation(self, agent_id: str) -> InstallationRecord:
         matches = [
@@ -446,7 +537,10 @@ class ExternalAgentManager:
         return found
 
     def _session(self, session_id: str) -> SessionRecord:
-        record = self.store.read_session(session_id)
+        try:
+            record = self.store.read_session(session_id)
+        except ValueError as exc:
+            raise ExternalAgentError("external_agents.session", "Invalid session ID.", 400) from exc
         if record is None:
             raise ExternalAgentError("external_agents.not_found", "Session was not found.", 404)
         return record

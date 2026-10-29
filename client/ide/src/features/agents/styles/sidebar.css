@@ -52,6 +52,12 @@
 .agent-sidebar-header-title {
   letter-spacing: 0.01em;
 }
+.agent-sidebar-header-title .acp-agent-mark {
+  width: auto;
+  height: 14px;
+  flex: none;
+  color: var(--ui-text-muted);
+}
 body[data-theme="light"] .agent-view-sidebar {
   background: #ffffff;
   border-top-color: #e4e4e6;

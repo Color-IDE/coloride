@@ -65,6 +65,7 @@ components:
         version: { type: string }
         description: { type: string }
         repository: { type: string, nullable: true }
+        website: { type: string, nullable: true }
         license: { type: string, nullable: true }
         licenseUrl: { type: string, nullable: true }
         icon: { type: string, nullable: true }
@@ -1634,6 +1635,12 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/ExternalAgentRegistryEntry" }
+  /api/external-agents/suspend:
+    post:
+      operationId: externalAgentsSuspend
+      responses:
+        "200":
+          description: Close external agent executions and keep saved conversations.
   /api/external-agents/installations:
     get:
       operationId: externalAgentsInstallations

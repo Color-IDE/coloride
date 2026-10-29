@@ -71,7 +71,7 @@ const settingsSubgroups: Record<SettingsSection, string[]> = {
   editor: ["Layout", "Indentation", "Display", "Files", "Interaction"],
   terminal: ["Cursor", "Buffer", "Interaction"],
   agent: ["Autonomy", "Activity"],
-  "external-agents": ["Catalog", "Installed"],
+  "external-agents": ["ACP Registry"],
   providers: ["OpenAI", "Gemini", "xAI", "DeepSeek", "Mistral", "Groq", "Ollama"],
   security: ["Workspace protection", "SSH connections", "Issue reports", "Local privacy"],
   updates: ["Updates", "Installed version", "Available release"],
