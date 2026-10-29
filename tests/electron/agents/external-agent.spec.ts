@@ -62,6 +62,11 @@ test.beforeAll(async () => {
           sessionId: "codex-1",
           sequence: 1,
           createdAt: "2026-10-29T00:00:00Z",
+          update: { sessionUpdate: "user_message_chunk", content: { type: "text", text: "Analyze this project" } },
+        }, {
+          sessionId: "codex-1",
+          sequence: 2,
+          createdAt: "2026-10-29T00:00:00Z",
           update: { sessionUpdate: "agent_message_chunk", content: { type: "text", text: "Recovered Codex reply" } },
         }],
       });
@@ -111,6 +116,16 @@ test.afterAll(async () => {
 test("restored Codex conversation sends through the external composer", async () => {
   await page.goto(base + "/tests/external-agent.html");
   await expect(page.getByLabel("Codex conversation")).toContainText("Recovered Codex reply");
+  const topInset = () => page.locator(".agent-user-message").first().evaluate((message) => {
+    const timeline = message.closest(".agent-timeline")!;
+    timeline.scrollTop = 0;
+    return message.getBoundingClientRect().top - timeline.getBoundingClientRect().top;
+  });
+  await expect.poll(topInset).toBe(14);
+  await page.locator("main").evaluate((element) => element.classList.add("agent-view-sidebar"));
+  await expect.poll(topInset).toBe(2);
+  await page.screenshot({ path: "artifacts/external-agent-top-inset.png" });
+  await page.locator("main").evaluate((element) => element.classList.remove("agent-view-sidebar"));
   await page.getByRole("button", { name: "Model", exact: true }).click();
   await expect(page.getByRole("menuitemradio", { name: "Low", exact: true })).toHaveAttribute("aria-checked", "true");
   await page.getByRole("menuitemradio", { name: "High", exact: true }).click();

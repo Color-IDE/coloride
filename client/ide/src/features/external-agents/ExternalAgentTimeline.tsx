@@ -108,18 +108,19 @@ export function ExternalAgentTimeline({
             96;
       }}
       aria-label={`${name} conversation`}
-      className="agent-timeline agent-timeline-native agent-chat-column min-h-0 flex-1 overflow-x-hidden overflow-y-auto pt-3.5"
+      className="agent-main agent-timeline agent-timeline-native agent-chat-column min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
     >
-      <div className="agent-timeline-content agent-chat-measure">
-        {turns.map((turn, index) => (
+      <div className="agent-timeline-virtual-header" />
+      {turns.map((turn, index) => (
+        <div key={turn.id} className="agent-timeline-virtual-item agent-chat-measure">
           <AgentTimelineTurn
-            key={turn.id}
             user={turn.user}
             items={turn.items}
             turnActive={turnActive && index === turns.length - 1}
           />
-        ))}
-      </div>
+        </div>
+      ))}
+      <div className="agent-timeline-virtual-footer" />
     </div>
   );
 }

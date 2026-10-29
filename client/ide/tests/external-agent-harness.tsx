@@ -4,7 +4,7 @@ import { ExternalAgentView } from "../src/features/external-agents/ExternalAgent
 import "../src/app/styles.css";
 
 createRoot(document.getElementById("root")!).render(
-  <main style={{ height: "100vh", display: "flex" }}>
+  <main style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
     <ExternalAgentView active sessionId="codex-1" workspaceKind="local" />
   </main>,
 );
