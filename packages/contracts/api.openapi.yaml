@@ -111,6 +111,7 @@ components:
         turn: { type: string, enum: [idle, running, cancelling] }
         processId: { type: string, nullable: true }
         supportsLoad: { type: boolean }
+        supportsImages: { type: boolean }
         authMethods:
           type: array
           items: { $ref: "#/components/schemas/ExternalAgentAuthMethod" }
@@ -182,6 +183,13 @@ components:
         options:
           type: array
           items: { $ref: "#/components/schemas/ExternalAgentPermissionOption" }
+    ExternalAgentImage:
+      type: object
+      required: [data, mimeType, name]
+      properties:
+        data: { type: string, format: byte, maxLength: 14000000 }
+        mimeType: { type: string, enum: [image/png, image/jpeg, image/webp, image/gif] }
+        name: { type: string, maxLength: 255 }
     ExternalAgentPromptAcceptance:
       type: object
       required: [accepted, sessionId, turnId]
@@ -1803,9 +1811,12 @@ paths:
           application/json:
             schema:
               type: object
-              required: [text]
               properties:
-                text: { type: string }
+                text: { type: string, default: "" }
+                images:
+                  type: array
+                  maxItems: 12
+                  items: { $ref: "#/components/schemas/ExternalAgentImage" }
       responses:
         "202":
           description: Prompt accepted. Updates arrive as events.

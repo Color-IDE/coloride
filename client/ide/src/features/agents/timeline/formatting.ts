@@ -164,7 +164,7 @@ export function toolActionParts(entry: ToolTimelineEntry): {
     entry.tool === "run_terminal_command"
   ) {
     return {
-      verb: done ? "Ran command" : "Running command",
+      verb: entry.metadata.interrupted === true ? "Stopped command" : done ? "Ran command" : "Running command",
       detail:
         commandName(stringArgument(values.command)) ||
         stringArgument(values.cwd) ||

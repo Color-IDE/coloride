@@ -129,3 +129,14 @@ test("streamed terminal chunks survive status updates and replay without duplica
   assert.equal(tool.terminalOutput, "/project\ncafé ✓\n");
   assert.equal(tool.status, "completed");
 });
+
+test("image-only and text/image prompts stay in a single user message", () => {
+  let state = reduceExternalAgentUpdate(emptyExternalAgentState(), { sessionUpdate: "user_message_chunk", content: { type: "image", data: "aGk=", mimeType: "image/png", name: "reference.png" } });
+  state = reduceExternalAgentUpdate(state, { sessionUpdate: "user_message_chunk", content: { type: "text", text: "Use this layout" } });
+  assert.equal(state.items.length, 1);
+  const user = state.items[0];
+  assert.equal(user.kind, "user");
+  if (user.kind !== "user") throw Error("Expected user");
+  assert.equal(user.text, "Use this layout");
+  assert.equal(user.images?.[0]?.name, "reference.png");
+});

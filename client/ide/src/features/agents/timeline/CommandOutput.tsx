@@ -67,7 +67,7 @@ export function CommandSourceBlock({ command }: { command: string }) {
 }
 
 export function CommandOutput({ entry }: { entry: ToolTimelineEntry }) {
-  const emptyMessage = entry.failed ? "Command failed without output."
+  const emptyMessage = entry.metadata.interrupted === true ? "Command was stopped." : entry.failed ? "Command failed without output."
     : entry.complete ? "Command finished without output." : "Waiting for command output…";
   const output = entry.output.trim() ? entry.output : emptyMessage;
   const { scrollRef, fadeEdges } = useScrollFadeEdges([output]);
@@ -88,6 +88,12 @@ export function CommandOutput({ entry }: { entry: ToolTimelineEntry }) {
       >
         <TerminalHighlighted text={output} mode="output" />
       </pre>
+      {typeof entry.metadata.exitCode === "number" || typeof entry.metadata.signal === "string" ? (
+        <div className="px-3 pb-2 text-xs text-muted">
+          {entry.metadata.interrupted === true ? "Stopped · " : ""}
+          {typeof entry.metadata.exitCode === "number" ? `Exit code ${entry.metadata.exitCode}` : `Signal ${entry.metadata.signal}`}
+        </div>
+      ) : null}
     </div>
   );
 }

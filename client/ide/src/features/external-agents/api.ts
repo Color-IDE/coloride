@@ -1,5 +1,6 @@
 import type {
   ExternalAgentConfig,
+  ExternalAgentImage,
   ExternalAgentEvent,
   ExternalAgentInstallation,
   ExternalAgentPromptAcceptance,
@@ -35,10 +36,10 @@ export const externalAgentsApi = {
       method: "PATCH",
       body: JSON.stringify({ configId, value }),
     }),
-  prompt: (id: string, text: string) =>
+  prompt: (id: string, text: string, images: ExternalAgentImage[] = []) =>
     request<ExternalAgentPromptAcceptance>(`${root}/sessions/${encodeURIComponent(id)}/prompts`, {
       method: "POST",
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ text, ...(images.length ? { images } : {}) }),
     }),
   cancel: (id: string) =>
     request<{ ok: boolean }>(`${root}/sessions/${encodeURIComponent(id)}/cancel`, { method: "POST" }),

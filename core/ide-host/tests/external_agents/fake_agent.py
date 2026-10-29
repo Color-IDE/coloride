@@ -31,6 +31,7 @@ async def main() -> None:
                         "protocolVersion": 1,
                         "agentCapabilities": {
                             "loadSession": "--no-load" not in sys.argv,
+                            "promptCapabilities": {"image": "--images" in sys.argv},
                             "sessionCapabilities": {"delete": {}},
                         },
                         "authMethods": [{"id": "codex-login", "name": "Sign in", "type": "agent"}],
@@ -111,6 +112,8 @@ async def main() -> None:
                 }
             )
         elif method == "session/prompt":
+            if "--images" in sys.argv:
+                (Path.cwd() / ".fake-prompt.json").write_text(json.dumps(params))
             if "--crash" in sys.argv:
                 return
             pending_prompt = request_id

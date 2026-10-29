@@ -288,16 +288,83 @@ test("command expansion streams terminal output and restores it from history", a
   );
   await expect(command.locator(".agent-terminal-output")).toHaveText("/fixture\nindex.html\n");
   updates.push(
-    { sessionUpdate: "tool_call_update", toolCallId: "exec-output", status: "completed", rawOutput: { exit_code: 0 } },
+    { sessionUpdate: "tool_call_update", toolCallId: "exec-output", status: "failed", _meta: { terminal_exit: { terminal_id: "exec-output", exit_code: 130 } } },
     { sessionUpdate: "tool_call", toolCallId: "exec-empty", kind: "execute", title: "true", rawInput: { command: "true" }, status: "completed" },
+    { sessionUpdate: "tool_call", toolCallId: "exec-failed", kind: "execute", title: "npm run dev", rawInput: { command: "npm run dev" }, status: "failed", _meta: { terminal_output_delta: { terminal_id: "exec-failed", data: "Error: listen EPERM: operation not permitted 127.0.0.1:5173\n" }, terminal_exit: { terminal_id: "exec-failed", exit_code: 1 } } },
     { sessionUpdate: "turn_complete" },
   );
   running = false;
-  await expect(page.locator(".agent-tool-row.is-command")).toHaveCount(2);
+  await expect(page.locator(".agent-tool-row.is-command")).toHaveCount(3);
   await page.reload();
   await command.locator(".agent-tool-header").click();
   await expect(command.locator(".agent-terminal-output")).toHaveText("/fixture\nindex.html\n");
-  const empty = page.locator(".agent-tool-row.is-command").last();
+  await expect(command).toContainText("Stopped command");
+  await expect(command).toContainText("Exit code 130");
+  await expect(command).not.toHaveClass(/is-failed/);
+  const failure = page.locator(".agent-tool-row.is-command").last();
+  await failure.locator(".agent-tool-header").click();
+  await expect(failure).toHaveClass(/is-failed/);
+  await expect(failure).toContainText("listen EPERM");
+  await expect(failure).toContainText("Exit code 1");
+  const empty = page.locator(".agent-tool-row.is-command").nth(1);
   await empty.locator(".agent-tool-header").click();
   await expect(empty).toContainText("Command finished without output.");
+});
+
+test("Codex accepts image-only prompts from picker, paste and drop, retaining failed drafts", async () => {
+  const png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=";
+  const sent: Array<{ text: string; images: Array<{ data: string; mimeType: string; name: string }> }> = [];
+  let accepted = false;
+  let supportsImages = true;
+  await page.route(/\/api\/external-agents\/sessions\/codex-1$/, route => route.fulfill({ json: {
+    id: "codex-1", title: "Codex", phase: "ready", turn: accepted ? "running" : "idle", supportsImages, configOptions: [modelOption], authMethods: [],
+  } }));
+  await page.route(/\/api\/external-agents\/sessions\/[^/]+\/events(?:\?.*)?$/, route => route.fulfill({ json: accepted ? sent.at(-1)!.images.map((image, i) => ({ sessionId: "codex-1", sequence: i + 1, createdAt: "2026-10-29T00:00:00Z", update: { sessionUpdate: "user_message_chunk", content: { type: "image", ...image } } })) : [] }));
+  await page.route(/\/api\/external-agents\/sessions\/[^/]+\/prompts$/, route => {
+    sent.push(route.request().postDataJSON());
+    accepted = sent.length > 1;
+    return route.fulfill({ status: accepted ? 202 : 503, json: accepted ? { accepted: true, sessionId: "codex-1", turnId: "image-turn" } : { message: "Try again" } });
+  });
+  await page.goto(base + "/tests/external-agent.html");
+  await page.getByRole("button", { name: "Choose mode", exact: true }).click();
+  const picker = page.waitForEvent("filechooser");
+  await page.getByRole("menuitem", { name: "Add images", exact: true }).click();
+  await (await picker).setFiles({ name: "reference.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") });
+  await expect(page.getByRole("button", { name: "Remove reference.png", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Remove reference.png", exact: true }).click();
+  await page.getByLabel("Message Codex").evaluate((input, data) => {
+    const bytes = Uint8Array.from(atob(data), char => char.charCodeAt(0));
+    const clipboardData = new DataTransfer();
+    clipboardData.items.add(new File([bytes], "pasted.png", { type: "image/png" }));
+    input.dispatchEvent(new ClipboardEvent("paste", { clipboardData, bubbles: true, cancelable: true }));
+  }, png);
+  await page.locator(".agent-composer").evaluate((surface, data) => {
+    const bytes = Uint8Array.from(atob(data), char => char.charCodeAt(0));
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(new File([bytes], "dropped.png", { type: "image/png" }));
+    surface.dispatchEvent(new DragEvent("drop", { dataTransfer, bubbles: true, cancelable: true }));
+  }, png);
+  await expect(page.getByRole("list", { name: "Attached files", exact: true }).getByRole("listitem")).toHaveCount(2);
+  await page.locator("main").evaluate(element => element.classList.add("agent-view-sidebar"));
+  await page.evaluate(() => { document.body.dataset.theme = "light"; });
+  await page.screenshot({ path: "artifacts/codex-image-attachments.png" });
+  await page.getByRole("button", { name: "Send", exact: true }).click();
+  await expect.poll(() => sent.length).toBe(1);
+  await expect(page.getByRole("button", { name: "Send", exact: true })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Remove pasted.png", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Send", exact: true }).click();
+  await expect.poll(() => sent.length).toBe(2);
+  expect(sent[1]?.text).toBe("");
+  expect(sent[1]?.images.map(image => [image.name, image.mimeType, image.data])).toEqual([["pasted.png", "image/png", png], ["dropped.png", "image/png", png]]);
+  await expect(page.getByRole("button", { name: "Remove pasted.png", exact: true })).toHaveCount(0);
+  await expect(page.locator(".agent-user-attachments img")).toHaveCount(2);
+  await page.reload();
+  await expect(page.locator(".agent-user-attachments img")).toHaveCount(2);
+  await expect.poll(() => page.locator(".agent-user-attachments img").evaluateAll(images => images.every(image => (image as HTMLImageElement).naturalWidth > 0))).toBe(true);
+  accepted = false;
+  supportsImages = false;
+  await page.reload();
+  await expect(page.getByLabel("Message Codex")).toBeEnabled();
+  await page.getByRole("button", { name: "Choose mode", exact: true }).click();
+  await expect(page.getByRole("menuitem", { name: "Add images", exact: true })).toHaveCount(0);
 });

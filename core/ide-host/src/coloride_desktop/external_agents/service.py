@@ -25,6 +25,7 @@ from .models import (
     InstallationRecord,
     OpenSessionRequest,
     PermissionRecord,
+    PromptImage,
     SessionRecord,
 )
 from .processes import ProcessRegistry
@@ -239,7 +240,7 @@ class ExternalAgentManager:
         )
         return {"sessionId": session_id, "options": _options(confirmed), "pending": record.pending_config}
 
-    async def prompt(self, session_id: str, text: str) -> dict[str, Any]:
+    async def prompt(self, session_id: str, text: str, images: list[PromptImage] | None = None) -> dict[str, Any]:
         record = self._session(session_id)
         if record.phase == "needs-login":
             raise ExternalAgentError(
@@ -250,13 +251,16 @@ class ExternalAgentManager:
         if record.turn == "running":
             raise ExternalAgentError("external_agents.turn", "A turn is already running.", 409)
         message = text.strip()
-        if not message:
+        images = images or []
+        if images and not record.supports_images:
+            raise ExternalAgentError("external_agents.images", "This agent does not support image prompts.", 400)
+        if not message and not images:
             raise ExternalAgentError("external_agents.prompt", "Write a message first.", 400)
         turn_id = str(uuid.uuid4())
         record.turn = "running"
         self.store.write_session(record)
         self._turns[session_id] = asyncio.create_task(
-            self._run_prompt(session_id, record.acp_session_id, message)
+            self._run_prompt(session_id, record.acp_session_id, message, images)
         )
         return {"accepted": True, "sessionId": session_id, "turnId": turn_id}
 
@@ -391,6 +395,7 @@ class ExternalAgentManager:
                 raise ExternalAgentError("external_agents.initialize", str(exc), 502) from exc
             capabilities = initialized.agent_capabilities
             record.supports_load = bool(capabilities and capabilities.load_session)
+            record.supports_images = bool(capabilities and capabilities.prompt_capabilities and capabilities.prompt_capabilities.image)
             record.auth_methods = auth_methods_from(initialized)
             await self._open_acp_session(record, connection)
             self._watchers[record.id] = asyncio.create_task(self._watch_process(record.id, process))
@@ -427,14 +432,14 @@ class ExternalAgentManager:
         record.error = None
         self.store.write_session(record)
 
-    async def _run_prompt(self, session_id: str, acp_session_id: str, text: str) -> None:
-        await self._emit(
-            session_id,
-            {"sessionUpdate": "user_message_chunk", "content": {"type": "text", "text": text}},
-        )
+    async def _run_prompt(self, session_id: str, acp_session_id: str, text: str, images: list[PromptImage] | None = None) -> None:
+        if text:
+            await self._emit(session_id, {"sessionUpdate": "user_message_chunk", "content": {"type": "text", "text": text}})
+        for image in images or []:
+            await self._emit(session_id, {"sessionUpdate": "user_message_chunk", "content": {"type": "image", **image.model_dump(by_alias=True)}})
         connection = self._require_connection(session_id)
         try:
-            response = await connection.prompt(acp_session_id, text)
+            response = await connection.prompt(acp_session_id, text, images) if images else await connection.prompt(acp_session_id, text)
             stop_reason = response.stop_reason
         except Exception as exc:
             stop_reason = "error"

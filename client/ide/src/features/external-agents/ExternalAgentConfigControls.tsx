@@ -37,12 +37,14 @@ function optionLabel(option: ExternalAgentConfigOption, value: string) {
 export function ExternalAgentConfigControls({
   options,
   newTask = false,
+  onAttachImages,
   pending,
   disabled,
   onChange,
 }: {
   options: ExternalAgentConfigOption[];
   newTask?: boolean;
+  onAttachImages?: () => void;
   pending: Record<string, string | boolean>;
   disabled: boolean;
   onChange: (configId: string, value: string | boolean) => void;
@@ -217,7 +219,7 @@ export function ExternalAgentConfigControls({
     };
   }, [plusOpen, modelOpen]);
 
-  if (!options.length) return null;
+  if (!options.length && !onAttachImages) return null;
   return (
     <div className="relative flex h-[30px] items-center gap-1.5" ref={rootRef}>
       <button
@@ -292,6 +294,7 @@ export function ExternalAgentConfigControls({
           transition={{ duration: 0.12, ease: "easeOut" }}
         >
           <Menu className="min-w-44">
+            {onAttachImages ? <MenuItem compact onClick={() => { setPlusOpen(false); onAttachImages(); }}>Add images</MenuItem> : null}
             {extras.map((option) => {
               const value = pending[option.id] ?? option.currentValue;
               if (option.type === "boolean") {

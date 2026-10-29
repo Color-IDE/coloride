@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { encodeBytesToBase64 } from "../../shared/api/client";
+import { useComposerAttachments } from "../../shared/ui/composer/useComposerAttachments";
 import { externalAgentsApi } from "./api";
 import { ExternalAgentComposer } from "./ExternalAgentComposer";
 import { ExternalAgentPermission } from "./ExternalAgentPermission";
@@ -26,6 +28,21 @@ export function ExternalAgentView({
   const needsLogin =
     session?.phase === "needs-login" || session?.phase === "authenticating";
   const ready = session?.phase === "ready" && !ssh;
+  const { attachments, addFiles, clearAttachments, removeAttachment } = useComposerAttachments(!ready || sending || state.turnActive);
+  const addImages = (files: File[]) => {
+    if (!ready || sending || state.turnActive) return;
+    if (!session?.supportsImages) { setError("This agent does not support image prompts."); return; }
+    const types: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", gif: "image/gif" };
+    const images = files.map(file => file.type ? file : new File([file], file.name, { type: types[file.name.split(".").pop()?.toLowerCase() ?? ""] ?? "", lastModified: file.lastModified }));
+    if (images.some(file => !Object.values(types).includes(file.type) || !file.size || file.size > 10 * 1024 * 1024)) {
+      setError("Use PNG, JPEG, WebP or GIF images up to 10 MiB each."); return;
+    }
+    if (attachments.length + images.length > 12 || [...attachments.map(item => item.file), ...images].reduce((sum, file) => sum + file.size, 0) > 20 * 1024 * 1024) {
+      setError("Attach up to 12 images, with at most 20 MiB in total."); return;
+    }
+    setError("");
+    addFiles(images);
+  };
   const name = session?.title || "External agent";
   const connecting =
     starting ||
@@ -52,11 +69,13 @@ export function ExternalAgentView({
 
   const submit = async () => {
     const text = draft.trim();
-    if (!text || sending || state.turnActive) return;
+    if ((!text && !attachments.length) || sending || state.turnActive) return;
     setSending(true);
     setError("");
     try {
-      await externalAgentsApi.prompt(sessionId, text);
+      const images = await Promise.all(attachments.map(async item => ({ name: item.name, mimeType: item.mime, data: encodeBytesToBase64(await item.file.arrayBuffer()) })));
+      await externalAgentsApi.prompt(sessionId, text, images);
+      clearAttachments();
       setDraft("");
       setState((current) => ({ ...current, turnActive: true }));
     } catch (reason) {
@@ -196,6 +215,10 @@ export function ExternalAgentView({
       {connecting ? null : (
       <ExternalAgentComposer
         newTask={emptyChat}
+        attachments={attachments}
+        supportsImages={session?.supportsImages === true}
+        onAddImages={addImages}
+        onRemoveImage={id => { if (!sending) removeAttachment(id); }}
         disabled={!ready || sending}
         draft={draft}
         onCancel={() =>

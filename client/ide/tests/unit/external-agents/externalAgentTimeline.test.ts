@@ -43,3 +43,24 @@ test("terminal chunks take precedence over exit-only metadata and terminal refer
   if (entry.kind !== "tool") throw Error("Expected tool");
   assert.equal(entry.output, "actual command output\n");
 });
+
+test("interrupting a preview server is distinct from an execution failure", () => {
+  const stopped = toAgentTimelineEntry({ ...edit, toolKind: "execute", status: "failed", terminalExit: { exitCode: 130 }, terminalOutput: "VITE ready\n" }, false);
+  const failed = toAgentTimelineEntry({ ...edit, toolKind: "execute", status: "failed", terminalExit: { exitCode: 1 }, terminalOutput: "Error: listen EPERM\n" }, false);
+  if (stopped.kind !== "tool" || failed.kind !== "tool") throw Error("Expected tools");
+  assert.equal(stopped.failed, false);
+  assert.equal(stopped.metadata.interrupted, true);
+  assert.equal(stopped.metadata.exitCode, 130);
+  assert.equal(failed.failed, true);
+  assert.equal(failed.metadata.interrupted, false);
+  assert.match(failed.output, /EPERM/);
+});
+
+test("MCP execution results use the native plugin row and preserve returned text", () => {
+  const entry = toAgentTimelineEntry({ ...edit, toolKind: "execute", rawInput: { server: "cua_repl", tool: "js", arguments: { code: "preview" } }, rawOutput: { result: { content: [{ type: "text", text: "Browser ready" }, { type: "image", data: "binary-payload", mimeType: "image/png" }] } } }, false);
+  if (entry.kind !== "tool") throw Error("Expected tool");
+  assert.equal(entry.tool, "mcp__cua_repl__js");
+  assert.equal(entry.output, "Browser ready\n\nImage returned by tool.");
+  assert.doesNotMatch(entry.output, /binary-payload/);
+  assert.deepEqual(entry.arguments, { code: "preview" });
+});

@@ -1,5 +1,6 @@
 import type { ExternalAgentConfigOption } from "@coloride/contracts";
-import { useLayoutEffect, useRef, type KeyboardEvent } from "react";
+import { useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
+import { ComposerAttachments, type ComposerAttachment } from "../../shared/ui/composer/ComposerAttachments";
 import { ComposerInput } from "../../shared/ui/composer/ComposerInput";
 import { ComposerSurface } from "../../shared/ui/composer/ComposerSurface";
 import { ExternalAgentConfigControls } from "./ExternalAgentConfigControls";
@@ -8,6 +9,10 @@ import { ComposerPlanBadge } from "../../shared/ui/composer/ComposerPlanBadge";
 
 export function ExternalAgentComposer({
   draft,
+  attachments,
+  supportsImages,
+  onAddImages,
+  onRemoveImage,
   newTask = false,
   disabled,
   running,
@@ -20,6 +25,10 @@ export function ExternalAgentComposer({
   name = "External agent",
 }: {
   draft: string;
+  attachments: ComposerAttachment[];
+  supportsImages: boolean;
+  onAddImages: (files: File[]) => void;
+  onRemoveImage: (id: string) => void;
   newTask?: boolean;
   disabled: boolean;
   running: boolean;
@@ -31,6 +40,8 @@ export function ExternalAgentComposer({
   onConfigChange: (configId: string, value: string | boolean) => void;
   name?: string;
 }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const planOption =
     options.find((option) => option.id === "collaboration_mode") ??
@@ -60,7 +71,7 @@ export function ExternalAgentComposer({
   }, [draft, newTask]);
 
   const submit = () => {
-    if (disabled || running || !draft.trim()) return;
+    if (disabled || running || (!draft.trim() && !attachments.length)) return;
     onSubmit();
   };
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -78,7 +89,19 @@ export function ExternalAgentComposer({
     <footer className={`agent-composer-wrap external-agent-composer shrink-0 px-2.5 pb-2.5 pt-0${newTask ? " is-new-task" : ""}`}>
       <div className="agent-composer-stack relative mx-auto flex w-full flex-col">
         <div className="agent-composer-card-slot relative">
-          <ComposerSurface compact newTask={newTask} disabled={disabled} inputRef={inputRef}>
+          <ComposerSurface compact newTask={newTask} disabled={disabled} inputRef={inputRef} dragOver={dragOver}
+            onPaste={event => {
+              const images = [...event.clipboardData.files].filter(file => file.type.startsWith("image/"));
+              if (!images.length) return;
+              event.preventDefault();
+              onAddImages(images);
+            }}
+            onDragOver={event => { if (event.dataTransfer.types.includes("Files")) { event.preventDefault(); if (!disabled && !running) setDragOver(true); } }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={event => { if (!event.dataTransfer.files.length) return; event.preventDefault(); setDragOver(false); if (!disabled && !running) onAddImages([...event.dataTransfer.files]); }}>
+            <input ref={fileRef} aria-label="Attach images" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden
+              onChange={event => { onAddImages([...(event.target.files ?? [])]); event.target.value = ""; }} />
+            <ComposerAttachments attachments={attachments} onRemove={onRemoveImage} />
             <div className="agent-composer-input-row">
               <ComposerInput
                 aria-label={`Message ${name}`}
@@ -95,6 +118,7 @@ export function ExternalAgentComposer({
             <div className="agent-centered-composer-actions flex h-[30px] shrink-0 items-center gap-1.5">
               <ExternalAgentConfigControls
                 newTask={newTask}
+                onAttachImages={supportsImages && !running ? () => fileRef.current?.click() : undefined}
                 disabled={disabled || Object.keys(pending).length > 0}
                 onChange={onConfigChange}
                 options={options}
@@ -124,7 +148,7 @@ export function ExternalAgentComposer({
               <button
                 aria-label={running ? "Stop" : "Send"}
                 className={`agent-send-button agent-send-button-centered is-${planActive ? "plan" : readOnlyActive ? "ask" : "act"} ml-auto shrink-0${running ? " is-stop" : ""}`}
-                disabled={!running && (disabled || !draft.trim())}
+                disabled={!running && (disabled || (!draft.trim() && !attachments.length))}
                 onClick={running ? onCancel : submit}
                 type="button"
               >

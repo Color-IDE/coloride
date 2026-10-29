@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import base64
+import binascii
 from datetime import UTC, datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 def utc_now() -> str:
@@ -112,6 +114,7 @@ class SessionRecord(BaseModel):
     turn: TurnState = "idle"
     process_id: str | None = Field(default=None, alias="processId")
     supports_load: bool = Field(default=False, alias="supportsLoad")
+    supports_images: bool = Field(default=False, alias="supportsImages")
     auth_methods: list[AuthMethodRecord] = Field(default_factory=list, alias="authMethods")
     config_options: list[ConfigOptionRecord] = Field(default_factory=list, alias="configOptions")
     pending_config: dict[str, str | bool] = Field(default_factory=dict, alias="pendingConfig")
@@ -177,8 +180,34 @@ class ConfigPatch(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class PromptImage(BaseModel):
+    data: str = Field(max_length=14_000_000)
+    mime_type: Literal["image/png", "image/jpeg", "image/webp", "image/gif"] = Field(alias="mimeType")
+    name: str = Field(default="Image", max_length=255)
+
+    @field_validator("data")
+    @classmethod
+    def valid_image_data(cls, value: str) -> str:
+        try:
+            raw = base64.b64decode(value, validate=True)
+        except (ValueError, binascii.Error) as exc:
+            raise ValueError("Image must contain valid base64 data.") from exc
+        if not raw or len(raw) > 10 * 1024 * 1024:
+            raise ValueError("Images must be nonempty and at most 10 MiB.")
+        return value
+
+    model_config = {"populate_by_name": True}
+
+
 class PromptBody(BaseModel):
-    text: str
+    text: str = ""
+    images: list[PromptImage] = Field(default_factory=list, max_length=12)
+
+    @model_validator(mode="after")
+    def total_image_size(self):
+        if sum(len(image.data) for image in self.images) > 28_000_000:
+            raise ValueError("Attached images exceed the total size limit.")
+        return self
 
 
 class PermissionDecision(BaseModel):

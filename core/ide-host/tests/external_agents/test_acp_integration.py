@@ -192,3 +192,46 @@ async def test_terminal_callbacks_report_exit_status_and_enforce_session_ownersh
         assert status == {"exitCode": 0}
     finally:
         await terminals.close_all()
+
+
+@pytest.mark.asyncio
+async def test_image_only_prompt_uses_acp_image_blocks_and_persists_preview(tmp_path):
+    import json
+    from coloride_desktop.external_agents.models import PromptImage
+
+    manager = manager_for(tmp_path, "--no-auth", "--images")
+    image = PromptImage(data="aGVsbG8=", mimeType="image/png", name="reference.png")
+    try:
+        opened = await manager.open_session(OpenSessionRequest(agentId="test", workspacePath=str(tmp_path)))
+        assert opened["supportsImages"] is True
+        sid = opened["id"]
+        accepted = await manager.prompt(sid, "", [image])
+        assert accepted["accepted"] is True
+        await eventually(lambda: bool(manager._permissions))
+        sent = json.loads((tmp_path / ".fake-prompt.json").read_text())["prompt"]
+        assert len(sent) == 1
+        assert sent[0]["type"] == "image"
+        assert sent[0]["data"] == image.data
+        assert sent[0]["mimeType"] == "image/png"
+        events = await manager.events(sid, 0)
+        content = next(e["update"]["content"] for e in events if e["update"]["sessionUpdate"] == "user_message_chunk")
+        assert content["name"] == "reference.png"
+        assert content["data"] == image.data
+        await manager.cancel(sid)
+    finally:
+        await manager.shutdown()
+
+
+@pytest.mark.asyncio
+async def test_images_rejected_without_advertised_capability(tmp_path):
+    from coloride_desktop.external_agents.models import PromptImage
+
+    manager = manager_for(tmp_path, "--no-auth")
+    try:
+        opened = await manager.open_session(OpenSessionRequest(agentId="test", workspacePath=str(tmp_path)))
+        assert opened["supportsImages"] is False
+        with pytest.raises(ExternalAgentError, match="does not support image"):
+            await manager.prompt(opened["id"], "look", [PromptImage(data="aGk=", mimeType="image/png")])
+        assert manager._session(opened["id"]).turn == "idle"
+    finally:
+        await manager.shutdown()

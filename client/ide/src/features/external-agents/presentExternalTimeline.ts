@@ -13,6 +13,9 @@ function toolDetails(content: unknown): string {
   return content
     .filter((entry: Record<string, unknown>) => entry.type !== "terminal")
     .map((entry: Record<string, unknown>) => {
+      if (entry.type === "image") return "Image returned by tool.";
+      if (entry.type === "audio") return "Audio returned by tool.";
+      if (entry.type === "text" && typeof entry.text === "string") return entry.text;
       if (
         entry.type === "content" &&
         entry.content &&
@@ -33,7 +36,9 @@ export function toAgentTimelineEntry(
   live: boolean,
   final = false,
 ): AgentTimelineEntry {
-  if (item.kind === "user") return { id: item.id, kind: "user", text: item.text };
+  if (item.kind === "user") return { id: item.id, kind: "user", text: item.text,
+    attachments: item.images?.map(image => ({ name: image.name, kind: "image", mime: image.mimeType, previewDataUrl: `data:${image.mimeType};base64,${image.data}` })),
+  };
   if (item.kind === "agent") return {
     id: item.id, kind: "assistant", text: item.text,
     streaming: live, final, finishedAt: null,
@@ -58,15 +63,22 @@ export function toAgentTimelineEntry(
   };
   if (item.kind !== "tool") return { id: item.id, kind: "status", text: item.text };
   const review = item.toolKind === "think" && item.toolCallId.startsWith("guardian_assessment:");
-  const command = item.toolKind === "execute";
   const args = item.rawInput ?? {};
-  const tool = review ? "guardian_review" : command ? "execute_command"
+  const mcp = typeof args.server === "string" && typeof args.tool === "string";
+  const command = item.toolKind === "execute" && !mcp;
+  const tool = review ? "guardian_review" : mcp ? `mcp__${args.server}__${args.tool}` : command ? "execute_command"
     : item.toolKind === "edit" ? "write_file"
     : /^list files$/i.test(item.title) ? "list_files"
     : item.toolKind === "read" && (args.path || args.file_path) ? "read_file"
     : item.toolKind === "search" ? "search_files"
     : `acp_${item.toolKind || "tool"}`;
   const rawOutput = item.rawOutput;
+  const rawExitCode = rawOutput && typeof rawOutput === "object" && "exit_code" in rawOutput ? rawOutput.exit_code : undefined;
+  const exitCode = item.terminalExit?.exitCode ?? (typeof rawExitCode === "number" ? rawExitCode : undefined);
+  const signal = item.terminalExit?.signal;
+  const interrupted = command && (exitCode === 130 || exitCode === 143 || signal === "SIGINT" || signal === "SIGTERM");
+  const result = rawOutput && typeof rawOutput === "object" && "result" in rawOutput ? rawOutput.result : null;
+  const resultContent = result && typeof result === "object" && "content" in result ? result.content : null;
   const output = typeof rawOutput === "string" ? rawOutput
     : rawOutput && typeof rawOutput === "object"
       ? ["stdout", "stderr", "output"].map((key) => (rawOutput as Record<string, unknown>)[key]).filter((value) => typeof value === "string").join("\n")
@@ -75,11 +87,11 @@ export function toAgentTimelineEntry(
     id: item.id, kind: "tool", itemId: item.toolCallId,
     tool,
     title: item.title,
-    arguments: command ? { ...args, command: args.command ?? item.title }
+    arguments: mcp ? (args.arguments && typeof args.arguments === "object" ? args.arguments as Record<string, unknown> : {}) : command ? { ...args, command: args.command ?? item.title }
       : { ...args, ...(args.file_path && !args.path ? { path: args.file_path } : {}) },
-    output: item.terminalOutput || output || toolDetails(item.content), metadata: review ? { reviewStatus: item.status === "completed" ? "Approved" : item.status === "failed" ? "Not approved" : "Reviewing" } : {}, diff: "", preview: "",
+    output: item.terminalOutput || output || toolDetails(resultContent) || toolDetails(item.content), metadata: { exitCode, signal, interrupted, ...(review ? { reviewStatus: item.status === "completed" ? "Approved" : item.status === "failed" ? "Not approved" : "Reviewing" } : {}) }, diff: "", preview: "",
     complete: item.status === "completed" || item.status === "failed",
-    failed: item.status === "failed", waitingApproval: false,
+    failed: item.status === "failed" && !interrupted, waitingApproval: false,
   };
 }
 
