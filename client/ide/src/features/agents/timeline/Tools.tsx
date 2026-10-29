@@ -96,7 +96,7 @@ export function AgentReadFileRow({
         <span className="agent-read-file-verb">{verb}</span>
         <button
           className="agent-read-file-open"
-          disabled={!onOpenFile || path === "file"}
+          disabled={!onOpenFile || path === "file" || entry.metadata.canOpenFile === false}
           onClick={() =>
             onOpenFile?.({
               path,
@@ -1170,7 +1170,7 @@ export function AgentWriteFileRow({
     [patch, path],
   );
   const running = !entry.complete && !entry.failed;
-  const canOpen = Boolean(path && onOpenFile);
+  const canOpen = Boolean(path && onOpenFile && entry.metadata.canOpenFile !== false);
   const livePayload = liveEditPayload(entry);
   const runningVerb = entry.tool === "write_file" ? "Writing" : "Editing";
   const errorText = entry.failed
@@ -1260,6 +1260,7 @@ export function AgentWriteFileRow({
           ) : null}
         </span>
       </button>
+      {entry.metadata.interrupted === true ? <div className="agent-edit-card-note">Edit interrupted</div> : null}
       {running && livePayload ? (
         <StreamingEditCode payload={livePayload} />
       ) : patch ? (

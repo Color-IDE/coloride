@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { encodeBytesToBase64 } from "../../shared/api/client";
+import { useEffect, useRef, useState } from "react";
+import { api, encodeBytesToBase64 } from "../../shared/api/client";
 import { useComposerAttachments } from "../../shared/ui/composer/useComposerAttachments";
+import { workspaceFilePath } from "./workspaceFilePath";
 import { externalAgentsApi } from "./api";
 import { ExternalAgentComposer } from "./ExternalAgentComposer";
 import { ExternalAgentPermission } from "./ExternalAgentPermission";
@@ -12,14 +13,35 @@ export function ExternalAgentView({
   active,
   starting = false,
   workspaceKind,
+  workspacePath,
+  onOpenExplorerFile,
 }: {
   sessionId: string;
   active: boolean;
   starting?: boolean;
   workspaceKind: "local" | "ssh";
+  workspacePath?: string | null;
+  onOpenExplorerFile?: (path: string, options?: { line?: number; column?: number }) => void | Promise<unknown>;
 }) {
   const { session, setSession, state, setState, error, setError } =
     useExternalAgentSession(sessionId, active);
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  const editor = useRef({ workspacePath, workspaceKind, onOpenExplorerFile });
+  editor.current = { workspacePath, workspaceKind, onOpenExplorerFile };
+  const openEditorFile = async (request: { path: string; line?: number }) => {
+    const current = editor.current;
+    if (current.workspaceKind !== "local" || !current.workspacePath || !current.onOpenExplorerFile) return;
+    const path = workspaceFilePath(request.path, current.workspacePath, session?.workspacePath);
+    if (!path) return;
+    try {
+      const { entries } = await api.statFiles([current.workspacePath, path]);
+      const [root, file] = entries;
+      if (!mounted.current || editor.current.workspacePath !== current.workspacePath || editor.current.workspaceKind !== "local") return;
+      if (!root?.exists || root.kind !== "dir" || !file?.exists || file.kind !== "file" || !workspaceFilePath(file.path, root.path)) return;
+      await editor.current.onOpenExplorerFile?.(file.path, request.line ? { line: request.line } : undefined);
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not open the file."); }
+  };
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [authenticating, setAuthenticating] = useState(false);
@@ -175,6 +197,9 @@ export function ExternalAgentView({
       ) : (
         <ExternalAgentTimeline
           items={state.items}
+          workspacePath={workspaceKind === "local" ? workspacePath : null}
+          agentWorkspacePath={session?.workspacePath}
+          onOpenFile={onOpenExplorerFile ? openEditorFile : undefined}
           turnActive={state.turnActive}
           name={name}
           ready={Boolean(ready)}

@@ -366,6 +366,8 @@ function AgentTabsWorkspace(props: HostProps & { storageNamespace: string }) {
                         sessionId={tab.sessionId}
                         starting={Boolean(opening[tab.id])}
                         workspaceKind={props.workspaceKind ?? "ssh"}
+                        workspacePath={props.workspacePath}
+                        onOpenExplorerFile={props.onOpenExplorerFile}
                       />
                     </div>
                   ))
@@ -389,6 +391,8 @@ function AgentTabsWorkspace(props: HostProps & { storageNamespace: string }) {
                   sessionId={tab.sessionId}
                   starting={Boolean(opening[tab.id])}
                   workspaceKind={props.workspaceKind ?? "ssh"}
+                  workspacePath={props.workspacePath}
+                  onOpenExplorerFile={props.onOpenExplorerFile}
                 />
               </div>
             ))}

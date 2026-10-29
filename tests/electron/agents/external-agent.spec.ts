@@ -368,3 +368,55 @@ test("Codex accepts image-only prompts from picker, paste and drop, retaining fa
   await page.getByRole("button", { name: "Choose mode", exact: true }).click();
   await expect(page.getByRole("menuitem", { name: "Add images", exact: true })).toHaveCount(0);
 });
+
+test("idle edits stop spinning and only current-workspace files open in the editor", async () => {
+  let updates: Record<string, unknown>[] = [
+    { sessionUpdate: "user_message_chunk", content: { type: "text", text: "Edit files" } },
+    { sessionUpdate: "tool_call", toolCallId: "unfinished-edit", kind: "edit", title: "Editing files", status: "in_progress", content: [
+      { type: "diff", path: "/fixture/project/grid.css", oldText: "body { color: red; }\n", newText: "body { color: blue; }\n" },
+      { type: "diff", path: "/fixture/project-other/outside.css", oldText: "old", newText: "new" },
+      { type: "diff", path: "/fixture/project/../outside.css", oldText: "old", newText: "new" },
+      { type: "diff", path: "/fixture/project/link.css", oldText: "old", newText: "new" },
+    ] },
+  ];
+  let idle = false;
+  await page.route(/\/api\/external-agents\/sessions\/codex-1$/, route => route.fulfill({ json: {
+    id: "codex-1", title: "Codex", workspacePath: "/fixture/project", phase: "ready", turn: idle ? "idle" : "running", configOptions: [], authMethods: [],
+  } }));
+  await page.route(/\/api\/external-agents\/sessions\/[^/]+\/events(?:\?.*)?$/, route => route.fulfill({ json: updates.map((update, i) => ({ sessionId: "codex-1", sequence: i + 1, createdAt: "2026-10-29T00:00:00Z", update })) }));
+  let holdStat = false;
+  let releaseStat: (() => void) | undefined;
+  await page.route(/\/api\/files\/stat$/, async route => {
+    if (holdStat) await new Promise<void>(resolve => { releaseStat = resolve; });
+    const { paths } = route.request().postDataJSON();
+    return route.fulfill({ json: { entries: paths.map((path: string, i: number) => ({ path: path.endsWith("link.css") ? "/outside/real.css" : path, exists: true, kind: i === 0 ? "dir" : "file", size: 0, mtime: 0, etag: "1" })) } });
+  });
+  await page.goto(base + "/tests/external-agent.html");
+  await expect(page.locator(".agent-edit-card.is-running")).toHaveCount(4);
+  idle = true; // Missing tool completion and turn-complete notification: session state is authoritative.
+  await expect(page.locator(".agent-edit-card.is-running")).toHaveCount(0);
+  await expect(page.locator(".agent-edit-card-note").first()).toHaveText("Edit interrupted");
+  const headers = page.locator(".agent-edit-card-head");
+  await expect(headers.nth(1)).toBeDisabled();
+  await expect(headers.nth(2)).toBeDisabled();
+  await headers.nth(3).click(); // Symlink target is outside the canonical workspace.
+  await expect(page.getByLabel("Editor opened file")).toBeEmpty();
+  await headers.first().click();
+  await expect(page.getByLabel("Editor opened file")).toHaveText("/fixture/project/grid.css");
+  await page.getByLabel("Editor opened file").evaluate(element => { element.textContent = ""; });
+  holdStat = true;
+  await headers.first().click();
+  await expect.poll(() => Boolean(releaseStat)).toBe(true);
+  await page.evaluate(() => window.dispatchEvent(new CustomEvent("test-editor-workspace", { detail: "/fixture/other" })));
+  await expect(headers.first()).toBeDisabled();
+  const response = page.waitForResponse(response => new URL(response.url()).pathname === "/api/files/stat");
+  releaseStat!();
+  await response;
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  holdStat = false;
+  await expect(page.getByLabel("Editor opened file")).toBeEmpty();
+  updates = [...updates, { sessionUpdate: "turn_complete" }];
+  await page.reload();
+  await expect(page.locator(".agent-edit-card.is-running")).toHaveCount(0);
+  await expect(page.locator(".agent-edit-card")).toHaveCount(4);
+});

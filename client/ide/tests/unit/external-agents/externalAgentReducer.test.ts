@@ -5,6 +5,7 @@ import {
   hydrateExternalAgentEvents,
   reduceExternalAgentUpdate,
   emptyExternalAgentState,
+  settleExternalAgentState,
 } from "../../../src/features/external-agents/externalAgentReducer";
 
 test("tool updates merge by toolCallId and the turn ends on the ACP response", () => {
@@ -139,4 +140,16 @@ test("image-only and text/image prompts stay in a single user message", () => {
   if (user.kind !== "user") throw Error("Expected user");
   assert.equal(user.text, "Use this layout");
   assert.equal(user.images?.[0]?.name, "reference.png");
+});
+
+test("ending or restoring an idle turn stops pending edits without inventing success", () => {
+  const pending = reduceExternalAgentUpdate(emptyExternalAgentState(), { sessionUpdate: "tool_call", toolCallId: "edit", kind: "edit", title: "Editing files", status: "in_progress" });
+  for (const update of [{ sessionUpdate: "turn_complete" }, { sessionUpdate: "execution_closed" }, { sessionUpdate: "error", message: "Connection closed" }]) {
+    const state = reduceExternalAgentUpdate(pending, update);
+    assert.equal(state.items[0]?.kind === "tool" ? state.items[0].status : "", "interrupted");
+    assert.equal(state.turnActive, false);
+  }
+  assert.equal(settleExternalAgentState(pending, true).items[0]?.kind === "tool" ? (settleExternalAgentState(pending, true).items[0] as { status: string }).status : "", "in_progress");
+  const idle = settleExternalAgentState(pending, false);
+  assert.equal(idle.items[0]?.kind === "tool" ? idle.items[0].status : "", "interrupted");
 });

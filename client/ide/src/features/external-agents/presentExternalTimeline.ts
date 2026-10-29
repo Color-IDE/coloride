@@ -76,7 +76,7 @@ export function toAgentTimelineEntry(
   const rawExitCode = rawOutput && typeof rawOutput === "object" && "exit_code" in rawOutput ? rawOutput.exit_code : undefined;
   const exitCode = item.terminalExit?.exitCode ?? (typeof rawExitCode === "number" ? rawExitCode : undefined);
   const signal = item.terminalExit?.signal;
-  const interrupted = command && (exitCode === 130 || exitCode === 143 || signal === "SIGINT" || signal === "SIGTERM");
+  const interrupted = item.status === "interrupted" || (command && (exitCode === 130 || exitCode === 143 || signal === "SIGINT" || signal === "SIGTERM"));
   const result = rawOutput && typeof rawOutput === "object" && "result" in rawOutput ? rawOutput.result : null;
   const resultContent = result && typeof result === "object" && "content" in result ? result.content : null;
   const output = typeof rawOutput === "string" ? rawOutput
@@ -89,8 +89,8 @@ export function toAgentTimelineEntry(
     title: item.title,
     arguments: mcp ? (args.arguments && typeof args.arguments === "object" ? args.arguments as Record<string, unknown> : {}) : command ? { ...args, command: args.command ?? item.title }
       : { ...args, ...(args.file_path && !args.path ? { path: args.file_path } : {}) },
-    output: item.terminalOutput || output || toolDetails(resultContent) || toolDetails(item.content), metadata: { exitCode, signal, interrupted, ...(review ? { reviewStatus: item.status === "completed" ? "Approved" : item.status === "failed" ? "Not approved" : "Reviewing" } : {}) }, diff: "", preview: "",
-    complete: item.status === "completed" || item.status === "failed",
+    output: item.terminalOutput || output || toolDetails(resultContent) || toolDetails(item.content), metadata: { exitCode, signal, interrupted, ...(review ? { reviewStatus: item.status === "completed" ? "Approved" : item.status === "failed" ? "Not approved" : item.status === "interrupted" ? "Interrupted" : "Reviewing" } : {}) }, diff: "", preview: "",
+    complete: ["completed", "failed", "interrupted"].includes(item.status),
     failed: item.status === "failed" && !interrupted, waitingApproval: false,
   };
 }

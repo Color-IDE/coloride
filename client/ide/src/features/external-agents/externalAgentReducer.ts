@@ -67,7 +67,10 @@ function appendText(
 }
 
 function finishLive(items: ExternalTranscriptItem[]): ExternalTranscriptItem[] {
-  return items.map((item) => (item.kind === "user" || item.kind === "agent" || item.kind === "thought" ? { ...item, live: false } : item));
+  return items.map((item) => {
+    if (item.kind === "tool" && !["completed", "failed", "interrupted"].includes(item.status)) return { ...item, status: "interrupted" };
+    return item.kind === "user" || item.kind === "agent" || item.kind === "thought" ? { ...item, live: false } : item;
+  });
 }
 
 export function reduceExternalAgentUpdate(
@@ -179,8 +182,11 @@ export function reduceExternalAgentEvent(state: ExternalAgentUiState, event: Ext
   return { ...reduceExternalAgentUpdate(state, event.update), lastSequence: event.sequence };
 }
 
+export function settleExternalAgentState(state: ExternalAgentUiState, turnActive: boolean): ExternalAgentUiState {
+  return turnActive ? { ...state, turnActive: true } : { ...state, items: finishLive(state.items), turnActive: false };
+}
+
 export function hydrateExternalAgentEvents(events: ExternalAgentEvent[]): ExternalAgentUiState {
   const state = events.reduce(reduceExternalAgentEvent, emptyExternalAgentState());
-  const closed = events.some((event) => event.update.sessionUpdate === "turn_complete");
-  return closed ? state : { ...state, items: state.items.map((item) => ("live" in item ? { ...item, live: false } : item)), turnActive: false };
+  return settleExternalAgentState(state, false);
 }
