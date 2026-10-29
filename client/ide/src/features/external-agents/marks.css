@@ -5,6 +5,23 @@
   height: 20px;
   color: var(--ui-text-muted);
 }
+.external-agent-model-icon {
+  display: inline-flex;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: inherit;
+}
+.external-agent-model-icon .acp-agent-mark,
+.agent-composer-compact .agent-composer-model-trigger .external-agent-model-icon .acp-agent-mark,
+.agent-composer-model-menu .external-agent-model-icon .acp-agent-mark,
+.agent-composer-model-flyout .external-agent-model-icon .acp-agent-mark {
+  width: 18px;
+  height: 18px;
+  color: inherit;
+  opacity: 1;
+  filter: none;
+}
 .acp-agent-mark-fallback {
   display: inline-flex;
   align-items: center;
@@ -41,4 +58,40 @@ body:not([data-theme="light"]) .agent-add-tab-menu .acp-agent-mark,
 body:not([data-theme="light"]) .agent-sidebar-header-title .acp-agent-mark,
 body:not([data-theme="light"]) .acp-registry .acp-agent-title img {
   filter: grayscale(1) brightness(0) invert(0.72);
+}
+
+.external-agent-config-switch {
+  display: inline-flex;
+  align-items: center;
+  width: 30px;
+  height: 18px;
+  flex: none;
+  padding: 2px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 14%);
+  transition: background 120ms ease;
+}
+
+.external-agent-config-switch > span {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #f4f4f5;
+  transition: transform 120ms ease;
+}
+
+.external-agent-config-switch.is-on {
+  background: var(--ui-accent, #4c8dff);
+}
+
+.external-agent-config-switch.is-on > span {
+  transform: translateX(12px);
+}
+
+body[data-theme="light"] .external-agent-config-switch {
+  background: rgb(24 24 27 / 18%);
+}
+
+body[data-theme="light"] .external-agent-config-switch.is-on {
+  background: var(--ui-accent, #2563eb);
 }

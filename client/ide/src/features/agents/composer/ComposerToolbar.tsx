@@ -9,6 +9,7 @@ import { formatContextTokens, type ComposerContextUsage } from "./contextUsage";
 import { type ComposerModelOption } from "./modelCatalog";
 import { type ComposerReasoning } from "./modelReasoning";
 import { useComposerModelMenu } from "./useComposerModelMenu";
+import { ComposerPlanBadge } from "../../../shared/ui/composer/ComposerPlanBadge";
 
 /** Clip badges for non-default modes. Act is the normal mode and has no badge. */
 const COMPOSER_MODE_BADGES: Partial<
@@ -287,7 +288,15 @@ export function ComposerToolbar({
             )
           : null}
         <AnimatePresence mode="wait">
-          {modeBadgeVisible && COMPOSER_MODE_BADGES[activeMode] ? (
+          {modeBadgeVisible && activeMode === "plan" ? (
+            <ComposerPlanBadge
+              key="plan"
+              compact={!modeLabelVisible}
+              onClear={() =>
+                onChangeMode(workingModeForAccessLevel(accessLevel))
+              }
+            />
+          ) : modeBadgeVisible && COMPOSER_MODE_BADGES[activeMode] ? (
             modeLabelVisible ? (
               <motion.span
                 animate={{ opacity: 1, scale: 1, x: 0 }}

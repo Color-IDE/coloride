@@ -1,16 +1,18 @@
 import { useAvailableComposerModels } from "./useAvailableComposerModels";
 
 import { MenuCheck } from "../../settings/SettingsControls";
-import { motion } from "motion/react";
 import { createPortal } from "react-dom";
-import { Switch as SettingsSwitch } from "../../../shared/ui/Switch";
+import {
+  ComposerChevron,
+  ComposerModelTrigger,
+  ComposerModelToggle,
+  ComposerModelRow,
+  AnimatedComposerModelPanel as AnimatedModelPanel,
+} from "../../../shared/ui/composer/ComposerModelControls";
 import { PaidModelIcon } from "./ComposerModelDetails";
 import { ComposerModelHoverTip } from "./ComposerModelHoverTip";
 import { ComposerModelIcon } from "./ComposerModelIcon";
-import {
-  COMPOSER_MODELS,
-  type ComposerModelOption,
-} from "./modelCatalog";
+import { COMPOSER_MODELS, type ComposerModelOption } from "./modelCatalog";
 import { MODEL_FLYOUT_WIDTH, MODEL_MENU_WIDTH } from "./modelMenuPosition";
 import {
   reasoningLevelsForModel,
@@ -58,14 +60,18 @@ export function ComposerModelSelector({
   setAttachMenuOpen,
 }: SelectorProps) {
   const groups = useAvailableComposerModels(composerModelOpen);
-  const models = [...groups.flatMap(group => group.models), ...COMPOSER_MODELS];
-  const reasoningAllowed = models.find(item => item.model === providerModel)?.capabilities?.reasoning !== false;
+  const models = [
+    ...groups.flatMap((group) => group.models),
+    ...COMPOSER_MODELS,
+  ];
+  const reasoningAllowed =
+    models.find((item) => item.model === providerModel)?.capabilities
+      ?.reasoning !== false;
   return (
     <div className="relative" ref={composerModelRef}>
-      <button
+      <ComposerModelTrigger
         aria-expanded={composerModelOpen}
         aria-haspopup="menu"
-        className="agent-composer-model-trigger flex h-[30px] max-w-[200px] items-center gap-1.5 rounded-full px-2.5 text-xs font-medium"
         onClick={() => {
           setAttachMenuOpen(false);
           setComposerModelOpen((open) => {
@@ -89,15 +95,15 @@ export function ComposerModelSelector({
           model={providerModel}
         />
         <span className="truncate">
-          {models.find((item) => item.model === providerModel)
-            ?.label ?? providerModel}
+          {models.find((item) => item.model === providerModel)?.label ??
+            providerModel}
         </span>
         <ComposerChevron className={composerModelOpen ? "rotate-180" : ""} />
-      </button>
+      </ComposerModelTrigger>
       {composerModelOpen
         ? createPortal(
             <>
-              <motion.div
+              <AnimatedModelPanel
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 className="agent-composer-model-menu agent-composer-model-menu-fixed rounded-[6px] p-1 shadow-none"
                 initial={{ opacity: 0, y: 5, scale: 0.98 }}
@@ -111,60 +117,37 @@ export function ComposerModelSelector({
                 }}
                 transition={{ duration: 0.12, ease: "easeOut" }}
               >
-                <div
-                  aria-checked={autoModel}
-                  className="agent-model-auto flex h-6 w-full cursor-pointer items-center justify-between rounded-[4px] px-2 text-left text-xs"
-                  onClick={(event) => {
-                    // The switch is already a button. Its own handler toggles it;
-                    // anywhere else in this row should toggle exactly once as well.
-                    if (
-                      (event.target as HTMLElement).closest(".settings-toggle")
-                    )
-                      return;
-                    setAutoModel(!autoModel);
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key !== "Enter" && event.key !== " ") return;
-                    event.preventDefault();
-                    setAutoModel(!autoModel);
-                  }}
-                  role="menuitemcheckbox"
-                  tabIndex={0}
-                >
-                  <span>Auto</span>
-                  <SettingsSwitch
-                    checked={autoModel}
-                    label="Automatically select a model"
-                    onChange={setAutoModel}
-                  />
-                </div>
+                <ComposerModelToggle
+                  checked={autoModel}
+                  label="Auto"
+                  onChange={setAutoModel}
+                />
                 {!autoModel && (
                   <>
-                    {reasoningAllowed && reasoningLevelsForModel(providerModel).length > 0 && (
-                      <>
-                        <div className="agent-model-divider" />
-                        <div className="agent-model-label px-2 py-1 text-[11px] font-medium">
-                          Reasoning Effort
-                        </div>
-                        {reasoningLevelsForModel(providerModel).map((level) => (
-                          <button
-                            aria-checked={composerReasoning === level.value}
-                            className="agent-model-menu-item flex h-6 w-full items-center rounded-[4px] px-2 text-left text-xs"
-                            key={level.value}
-                            onClick={() => setComposerReasoning(level.value)}
-                            role="menuitemradio"
-                            type="button"
-                          >
-                            {level.label}
-                            {composerReasoning === level.value && (
-                              <span className="ml-auto flex">
-                                <MenuCheck />
-                              </span>
-                            )}
-                          </button>
-                        ))}
-                      </>
-                    )}
+                    {reasoningAllowed &&
+                      reasoningLevelsForModel(providerModel).length > 0 && (
+                        <>
+                          <div className="agent-model-divider" />
+                          <div className="agent-model-label px-2 py-1 text-[11px] font-medium">
+                            Reasoning Effort
+                          </div>
+                          {reasoningLevelsForModel(providerModel).map(
+                            (level) => (
+                              <ComposerModelRow
+                                selected={composerReasoning === level.value}
+                                key={level.value}
+                                onClick={() =>
+                                  setComposerReasoning(level.value)
+                                }
+                                role="menuitemradio"
+                                type="button"
+                              >
+                                {level.label}
+                              </ComposerModelRow>
+                            ),
+                          )}
+                        </>
+                      )}
                   </>
                 )}
                 <div className="agent-model-divider" />
@@ -191,9 +174,8 @@ export function ComposerModelSelector({
                     model={providerModel}
                   />
                   <span className="min-w-0 flex-1 truncate font-medium">
-                    {models.find(
-                      (item) => item.model === providerModel,
-                    )?.label ?? providerModel}
+                    {models.find((item) => item.model === providerModel)
+                      ?.label ?? providerModel}
                   </span>
                   <ComposerChevron
                     className={`shrink-0 opacity-50 -rotate-90${
@@ -201,10 +183,11 @@ export function ComposerModelSelector({
                     }`}
                   />
                 </button>
-              </motion.div>
+              </AnimatedModelPanel>
 
               {composerModelsFlyoutOpen ? (
-                <motion.div
+                <AnimatedModelPanel
+                  flyout
                   animate={{ opacity: 1, scale: 1 }}
                   className={`agent-composer-model-flyout agent-composer-model-flyout-fixed rounded-[6px] p-1 shadow-none is-side-${modelFlyoutPos?.side ?? "left"}`}
                   initial={{ opacity: 0, scale: 0.98 }}
@@ -218,7 +201,11 @@ export function ComposerModelSelector({
                   }}
                   transition={{ duration: 0.12, ease: "easeOut" }}
                 >
-                  {!groups.length && <p className="px-2 py-2 text-xs opacity-60">Add an API key in Settings to load models.</p>}
+                  {!groups.length && (
+                    <p className="px-2 py-2 text-xs opacity-60">
+                      Add an API key in Settings to load models.
+                    </p>
+                  )}
                   {groups.map((group, groupIndex) => (
                     <div className="flex flex-col gap-px" key={group.label}>
                       {groupIndex > 0 ? (
@@ -299,7 +286,7 @@ export function ComposerModelSelector({
                       })}
                     </div>
                   ))}
-                </motion.div>
+                </AnimatedModelPanel>
               ) : null}
 
               {modelHoverTip ? (
@@ -320,22 +307,5 @@ export function ComposerModelSelector({
           )
         : null}
     </div>
-  );
-}
-
-function ComposerChevron({ className }: { className?: string }) {
-  return (
-    <svg
-      aria-hidden="true"
-      className={`size-1.5 shrink-0 transition-transform ${className ?? ""}`}
-      fill="none"
-      height="6"
-      viewBox="0 0 24 24"
-      width="6"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="M0 0h24v24H0z" fill="none" />
-      <path d="m4 9 8 8 8-8" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-    </svg>
   );
 }
