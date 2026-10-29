@@ -14,6 +14,7 @@ let vite: ChildProcess;
 let sandbox = "";
 let base = "";
 const errors: string[] = [];
+const modelOption = { id: "model", name: "Model", category: "model", type: "select", currentValue: "fixture-model", options: [{ value: "fixture-model", name: "Fixture model" }] };
 const configChanges: Array<{ configId: string; value: string | boolean }> = [];
 
 test.beforeAll(async () => {
@@ -72,7 +73,7 @@ test.beforeAll(async () => {
         json: {
           sessionId: "codex-1",
           pending: {},
-          options: [{ id: "thought", name: "Thinking", category: "thought_level", type: "select", currentValue: "high", options: [{ value: "low", name: "Low" }, { value: "high", name: "High" }] }],
+          options: [modelOption, { id: "thought", name: "Thinking", category: "thought_level", type: "select", currentValue: "high", options: [{ value: "low", name: "Low" }, { value: "high", name: "High" }] }],
         },
       });
     }
@@ -94,7 +95,7 @@ test.beforeAll(async () => {
         processId: null,
         supportsLoad: true,
         authMethods: [{ id: "codex-login", name: "Sign in", type: "agent" }],
-        configOptions: [{ id: "thought", name: "Thinking", category: "thought_level", type: "select", currentValue: "low", options: [{ value: "low", name: "Low" }, { value: "high", name: "High" }] }],
+        configOptions: [modelOption, { id: "thought", name: "Thinking", category: "thought_level", type: "select", currentValue: "low", options: [{ value: "low", name: "Low" }, { value: "high", name: "High" }] }],
         updatedAt: "2026-10-29T00:00:00Z",
       },
     });
@@ -110,9 +111,12 @@ test.afterAll(async () => {
 test("restored Codex conversation sends through the external composer", async () => {
   await page.goto(base + "/tests/external-agent.html");
   await expect(page.getByLabel("Codex conversation")).toContainText("Recovered Codex reply");
-  await expect(page.getByRole("button", { name: "Thinking", exact: true })).toContainText("Low");
-  await page.getByRole("button", { name: "Thinking", exact: true }).click();
+  await page.getByRole("button", { name: "Model", exact: true }).click();
+  await expect(page.getByRole("menuitemradio", { name: "Low", exact: true })).toHaveAttribute("aria-checked", "true");
   await page.getByRole("menuitemradio", { name: "High", exact: true }).click();
+  await expect.poll(() => configChanges).toEqual([{ configId: "thought", value: "high" }]);
+  await expect(page.getByRole("menuitemradio", { name: "High", exact: true })).toHaveAttribute("aria-checked", "true");
+  await page.keyboard.press("Escape");
   await page.getByLabel("Message Codex").fill("Change thinking and edit the file");
   await page.getByRole("button", { name: "Send", exact: true }).click();
   await expect(page.getByLabel("Message Codex")).toHaveValue("");

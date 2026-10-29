@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef } from "react";
+import { AgentTimelineTurn, groupTimelineTurns, type AgentTimelineEntry } from "../agents/AgentTimeline";
 import type { ExternalTranscriptItem } from "./externalAgentReducer";
 
 function toolDetails(content: unknown): string {
@@ -24,14 +25,57 @@ function toolDetails(content: unknown): string {
     .join("\n\n");
 }
 
+/** ACP only adapts data; Coloride owns the conversation presentation. */
+export function toAgentTimelineEntry(
+  item: ExternalTranscriptItem,
+  live: boolean,
+  final = false,
+): AgentTimelineEntry {
+  if (item.kind === "user") return { id: item.id, kind: "user", text: item.text };
+  if (item.kind === "agent") return {
+    id: item.id, kind: "assistant", text: item.text,
+    streaming: live, final, finishedAt: null,
+  };
+  if (item.kind === "thought") return {
+    id: item.id, kind: "activity", activityId: item.id, activityKind: "thinking",
+    label: "Thinking", detail: item.text, state: live ? "running" : "completed",
+    durationMs: null, startedAt: null,
+  };
+  if (item.kind === "notice") return { id: item.id, kind: "status", text: item.text };
+  if (item.kind === "plan") return {
+    id: item.id, kind: "plan", plan: {
+      id: item.id, sessionId: "", title: "Plan", createdAt: "", updatedAt: "",
+      status: item.entries.length > 0 && item.entries.every(entry => entry.status === "completed")
+        ? "completed" : "implementing",
+      steps: item.entries.map((entry, index) => ({
+        id: `${item.id}-${index}`, title: entry.content,
+        status: entry.status === "completed" ? "done"
+          : entry.status === "in_progress" ? "in_progress" : "pending",
+      })),
+    },
+  };
+  if (item.kind !== "tool") return { id: item.id, kind: "status", text: item.text };
+  const command = item.toolKind === "execute";
+  return {
+    id: item.id, kind: "tool", itemId: item.toolCallId,
+    tool: command ? "execute_command" : `acp_${item.toolKind || "tool"}`,
+    title: item.title, arguments: command ? { command: item.title } : {},
+    output: toolDetails(item.content), metadata: {}, diff: "", preview: "",
+    complete: item.status === "completed" || item.status === "failed",
+    failed: item.status === "failed", waitingApproval: false,
+  };
+}
+
 export function ExternalAgentTimeline({
   items,
   name = "External agent",
   ready = false,
+  turnActive = false,
 }: {
   items: ExternalTranscriptItem[];
   name?: string;
   ready?: boolean;
+  turnActive?: boolean;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const pinned = useRef(true);
@@ -46,6 +90,13 @@ export function ExternalAgentTimeline({
       </p>
     );
   }
+  const turns = groupTimelineTurns(items.map((item, index) =>
+    toAgentTimelineEntry(
+      item,
+      turnActive && index === items.length - 1,
+      !turnActive && (index === items.length - 1 || items[index + 1]?.kind === "user"),
+    ),
+  ));
   return (
     <div
       ref={scrollRef}
@@ -57,59 +108,18 @@ export function ExternalAgentTimeline({
             96;
       }}
       aria-label={`${name} conversation`}
-      className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto px-4 py-4"
+      className="agent-timeline agent-timeline-native agent-chat-column min-h-0 flex-1 overflow-x-hidden overflow-y-auto pt-3.5"
     >
-      {items.map((item) => {
-        if (item.kind === "tool") {
-          return (
-            <article
-              className="rounded-control border border-[var(--agent-border,#333)] px-3 py-2 text-sm"
-              key={item.id}
-            >
-              <header className="flex justify-between gap-3">
-                <span>{item.title}</span>
-                <span className="text-xs uppercase text-[#8d8d8d]">
-                  {item.status}
-                </span>
-              </header>
-              {item.content != null ? (
-                <details className="mt-2">
-                  <summary className="cursor-pointer text-xs text-[var(--agent-muted)]">
-                    Details
-                  </summary>
-                  <pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words text-xs">
-                    {toolDetails(item.content)}
-                  </pre>
-                </details>
-              ) : null}
-            </article>
-          );
-        }
-        if (item.kind === "plan") {
-          return (
-            <ol
-              className="rounded-control border border-[var(--agent-border,#333)] px-3 py-2 text-sm"
-              key={item.id}
-            >
-              {item.entries.map((entry) => (
-                <li key={entry.content}>
-                  {entry.status}: {entry.content}
-                </li>
-              ))}
-            </ol>
-          );
-        }
-        return (
-          <article className="text-sm text-[var(--agent-text)]" key={item.id}>
-            {item.kind === "thought" ? (
-              <span className="mb-1 block text-xs uppercase text-[#8d8d8d]">
-                Thinking
-              </span>
-            ) : null}
-            <p className="whitespace-pre-wrap">{item.text}</p>
-          </article>
-        );
-      })}
+      <div className="agent-timeline-content agent-chat-measure">
+        {turns.map((turn, index) => (
+          <AgentTimelineTurn
+            key={turn.id}
+            user={turn.user}
+            items={turn.items}
+            turnActive={turnActive && index === turns.length - 1}
+          />
+        ))}
+      </div>
     </div>
   );
 }

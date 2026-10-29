@@ -1,5 +1,6 @@
 {
   "agents": [
+    "AgentTimeline",
     "AgentView",
     "agentViewTypes",
     "providerSettings"

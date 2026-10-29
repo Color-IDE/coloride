@@ -155,6 +155,7 @@ export function ExternalAgentView({
       ) : (
         <ExternalAgentTimeline
           items={state.items}
+          turnActive={state.turnActive}
           name={name}
           ready={Boolean(ready)}
         />
