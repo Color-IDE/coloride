@@ -84,9 +84,10 @@ export function ExternalAgentTimeline({
     if (element && pinned.current) element.scrollTop = element.scrollHeight;
   }, [items]);
   if (!items.length) {
+    if (ready) return <div className="min-h-0 flex-1" />;
     return (
       <p className="min-h-0 flex-1 px-4 py-6 text-sm text-[var(--agent-muted)]">
-        {ready ? `${name} is ready in this project.` : `Connecting to ${name}…`}
+        {`Connecting to ${name}…`}
       </p>
     );
   }

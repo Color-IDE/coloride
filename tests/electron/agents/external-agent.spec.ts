@@ -138,3 +138,10 @@ test("restored Codex conversation sends through the external composer", async ()
   await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test("ready Codex chat stays empty until the first message", async () => {
+  await page.route(/\/api\/external-agents\/sessions\/[^/]+\/events(?:\?.*)?$/, (route) => route.fulfill({ json: [] }));
+  await page.goto(base + "/tests/external-agent.html");
+  await expect(page.getByLabel("Message Codex")).toBeEnabled();
+  await expect(page.getByText("Codex is ready in this project.", { exact: true })).toHaveCount(0);
+});
