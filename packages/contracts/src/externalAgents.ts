@@ -91,6 +91,7 @@ export type ExternalAgentSession = ExternalAgentSessionIdentity & {
   turn: ExternalAgentTurnState;
   processId: string | null;
   supportsLoad: boolean;
+  supportsImages?: boolean;
   authMethods: ExternalAgentAuthMethod[];
   configOptions: ExternalAgentConfigOption[];
   error?: string | null;
@@ -159,4 +160,10 @@ export type ExternalAgentTerminalAuth = {
   command: string;
   args: string[];
   cwd: string;
+};
+
+export type ExternalAgentImage = {
+  data: string;
+  mimeType: string;
+  name: string;
 };

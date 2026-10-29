@@ -114,7 +114,7 @@ def external_agent_router() -> APIRouter:
     @router.post("/sessions/{session_id}/prompts", status_code=202)
     async def prompt(request: Request, session_id: str, body: PromptBody) -> JSONResponse:
         try:
-            payload = await manager(request).prompt(session_id, body.text)
+            payload = await manager(request).prompt(session_id, body.text, body.images)
         except ExternalAgentError as exc:
             return failure(exc)
         return JSONResponse(payload, status_code=202)

@@ -1,12 +1,13 @@
 import type {
   ExternalAgentConfigOption,
+  ExternalAgentImage,
   ExternalAgentEvent,
   ExternalAgentPermissionRequest,
   ExternalAgentSessionUpdate,
 } from "@coloride/contracts";
 
 export type ExternalTranscriptItem =
-  | { id: string; kind: "user" | "agent" | "thought"; text: string; live: boolean }
+  | { id: string; kind: "user" | "agent" | "thought"; text: string; live: boolean; images?: ExternalAgentImage[] }
   | { id: string; kind: "plan"; entries: Array<{ content: string; status: string; priority: string }> }
   | {
       id: string;
@@ -16,6 +17,10 @@ export type ExternalTranscriptItem =
       status: string;
       toolKind: string | null;
       content: unknown;
+      rawInput?: Record<string, unknown>;
+      rawOutput?: unknown;
+      terminalOutput?: string;
+      terminalExit?: { exitCode?: number; signal?: string };
     }
   | { id: string; kind: "notice"; text: string };
 
@@ -62,7 +67,10 @@ function appendText(
 }
 
 function finishLive(items: ExternalTranscriptItem[]): ExternalTranscriptItem[] {
-  return items.map((item) => (item.kind === "user" || item.kind === "agent" || item.kind === "thought" ? { ...item, live: false } : item));
+  return items.map((item) => {
+    if (item.kind === "tool" && !["completed", "failed", "interrupted"].includes(item.status)) return { ...item, status: "interrupted" };
+    return item.kind === "user" || item.kind === "agent" || item.kind === "thought" ? { ...item, live: false } : item;
+  });
 }
 
 export function reduceExternalAgentUpdate(
@@ -71,6 +79,14 @@ export function reduceExternalAgentUpdate(
 ): ExternalAgentUiState {
   const kind = update.sessionUpdate;
   if (kind === "user_message_chunk") {
+    const content = update.content;
+    if (content && typeof content === "object" && "type" in content && content.type === "image" && "data" in content && typeof content.data === "string" && "mimeType" in content && typeof content.mimeType === "string") {
+      const image = { data: content.data, mimeType: content.mimeType, name: "name" in content && typeof content.name === "string" ? content.name : "Image" };
+      const items = appendText(state.items, "user", "");
+      const last = items.at(-1)!;
+      if (last.kind === "user") items[items.length - 1] = { ...last, images: [...(last.images ?? []), image] };
+      return { ...state, items, turnActive: true };
+    }
     return { ...state, items: appendText(state.items, "user", textOf(update)), turnActive: true };
   }
   if (kind === "agent_message_chunk") {
@@ -98,6 +114,13 @@ export function reduceExternalAgentUpdate(
   if (kind === "tool_call" || kind === "tool_call_update") {
     const toolCallId = String(update.toolCallId ?? "");
     const existing = state.items.find((item) => item.kind === "tool" && item.toolCallId === toolCallId);
+    const meta = update._meta && typeof update._meta === "object"
+      ? update._meta as Record<string, unknown> : {};
+    const chunk = meta.terminal_output_delta ?? meta.terminal_output;
+    const data = chunk && typeof chunk === "object" && "data" in chunk && typeof chunk.data === "string" ? chunk.data : "";
+    const previousOutput = existing?.kind === "tool" ? existing.terminalOutput ?? "" : "";
+    const exit = meta.terminal_exit && typeof meta.terminal_exit === "object" ? meta.terminal_exit as Record<string, unknown> : null;
+    const terminalExit = exit ? { exitCode: typeof exit.exit_code === "number" ? exit.exit_code : undefined, signal: typeof exit.signal === "string" ? exit.signal : undefined } : existing?.kind === "tool" ? existing.terminalExit : undefined;
     const next = {
       id: existing?.id ?? `tool-${toolCallId}`,
       kind: "tool" as const,
@@ -106,6 +129,12 @@ export function reduceExternalAgentUpdate(
       status: String(update.status ?? (existing && existing.kind === "tool" ? existing.status : "pending")),
       toolKind: typeof update.kind === "string" ? update.kind : existing && existing.kind === "tool" ? existing.toolKind : null,
       content: update.content ?? (existing && existing.kind === "tool" ? existing.content : null),
+      rawInput: update.rawInput && typeof update.rawInput === "object" && !Array.isArray(update.rawInput)
+        ? update.rawInput as Record<string, unknown>
+        : existing?.kind === "tool" ? existing.rawInput : undefined,
+      rawOutput: update.rawOutput ?? (existing?.kind === "tool" ? existing.rawOutput : undefined),
+      terminalOutput: previousOutput + data,
+      terminalExit,
     };
     const items = existing
       ? state.items.map((item) => (item.kind === "tool" && item.toolCallId === toolCallId ? next : item))
@@ -153,8 +182,11 @@ export function reduceExternalAgentEvent(state: ExternalAgentUiState, event: Ext
   return { ...reduceExternalAgentUpdate(state, event.update), lastSequence: event.sequence };
 }
 
+export function settleExternalAgentState(state: ExternalAgentUiState, turnActive: boolean): ExternalAgentUiState {
+  return turnActive ? { ...state, turnActive: true } : { ...state, items: finishLive(state.items), turnActive: false };
+}
+
 export function hydrateExternalAgentEvents(events: ExternalAgentEvent[]): ExternalAgentUiState {
   const state = events.reduce(reduceExternalAgentEvent, emptyExternalAgentState());
-  const closed = events.some((event) => event.update.sessionUpdate === "turn_complete");
-  return closed ? state : { ...state, items: state.items.map((item) => ("live" in item ? { ...item, live: false } : item)), turnActive: false };
+  return settleExternalAgentState(state, false);
 }

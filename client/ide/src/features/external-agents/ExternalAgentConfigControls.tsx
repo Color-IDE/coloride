@@ -36,11 +36,15 @@ function optionLabel(option: ExternalAgentConfigOption, value: string) {
 
 export function ExternalAgentConfigControls({
   options,
+  newTask = false,
+  onAttachImages,
   pending,
   disabled,
   onChange,
 }: {
   options: ExternalAgentConfigOption[];
+  newTask?: boolean;
+  onAttachImages?: () => void;
   pending: Record<string, string | boolean>;
   disabled: boolean;
   onChange: (configId: string, value: string | boolean) => void;
@@ -136,7 +140,7 @@ export function ExternalAgentConfigControls({
     const menuHeight = modelMenuRef.current?.offsetHeight || 260;
     const triggerRect = trigger.getBoundingClientRect();
     setModelMenuPosition(
-      placeMenuAboveTrigger(triggerRect, MODEL_MENU_WIDTH, menuHeight),
+      placeMenuAboveTrigger(triggerRect, MODEL_MENU_WIDTH, menuHeight, newTask),
     );
 
     if (!modelsOpen) {
@@ -166,7 +170,7 @@ export function ExternalAgentConfigControls({
       left: placement.left,
       side: placement.side,
     });
-  }, [modelOpen, modelsOpen]);
+  }, [modelOpen, modelsOpen, newTask]);
 
   useLayoutEffect(() => {
     setHoverTip(null);
@@ -215,7 +219,7 @@ export function ExternalAgentConfigControls({
     };
   }, [plusOpen, modelOpen]);
 
-  if (!options.length) return null;
+  if (!options.length && !onAttachImages) return null;
   return (
     <div className="relative flex h-[30px] items-center gap-1.5" ref={rootRef}>
       <button
@@ -270,6 +274,7 @@ export function ExternalAgentConfigControls({
       ) : null}
       {mode ? (
         <ExternalAgentAccessSelector
+          newTask={newTask}
           onOpen={() => {
             setPlusOpen(false);
             setModelOpen(false);
@@ -284,11 +289,12 @@ export function ExternalAgentConfigControls({
       {plusOpen ? (
         <motion.div
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          className="absolute bottom-[calc(100%+4px)] left-0 z-40"
+          className={`absolute ${newTask ? "top-[calc(100%+4px)]" : "bottom-[calc(100%+4px)]"} left-0 z-40`}
           initial={{ opacity: 0, y: 5, scale: 0.98 }}
           transition={{ duration: 0.12, ease: "easeOut" }}
         >
           <Menu className="min-w-44">
+            {onAttachImages ? <MenuItem compact onClick={() => { setPlusOpen(false); onAttachImages(); }}>Add images</MenuItem> : null}
             {extras.map((option) => {
               const value = pending[option.id] ?? option.currentValue;
               if (option.type === "boolean") {

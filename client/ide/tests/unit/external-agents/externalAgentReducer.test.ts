@@ -5,6 +5,7 @@ import {
   hydrateExternalAgentEvents,
   reduceExternalAgentUpdate,
   emptyExternalAgentState,
+  settleExternalAgentState,
 } from "../../../src/features/external-agents/externalAgentReducer";
 
 test("tool updates merge by toolCallId and the turn ends on the ACP response", () => {
@@ -93,4 +94,62 @@ test("resolved permissions disappear immediately and a closed execution stops th
   });
   assert.equal(state.turnActive, false);
   assert.equal(state.permissions.length, 0);
+});
+
+test("tool status updates retain original command arguments and captured output", () => {
+  let state = reduceExternalAgentUpdate(emptyExternalAgentState(), {
+    sessionUpdate: "tool_call", toolCallId: "command", kind: "execute",
+    title: "pwd && ls", rawInput: { command: "pwd && ls", cwd: "/project" },
+    content: [{ type: "terminal", terminalId: "exec-1" }],
+  });
+  state = reduceExternalAgentUpdate(state, {
+    sessionUpdate: "tool_call_update", toolCallId: "command", title: "Ran command pwd",
+    status: "completed", rawOutput: { stdout: "/project", exit_code: 0 },
+  });
+  state = reduceExternalAgentUpdate(state, {
+    sessionUpdate: "tool_call_update", toolCallId: "command", status: "completed",
+  });
+  const tool = state.items[0];
+  assert.equal(tool.kind, "tool");
+  if (tool.kind !== "tool") throw new Error("Expected tool");
+  assert.deepEqual(tool.rawInput, { command: "pwd && ls", cwd: "/project" });
+  assert.deepEqual(tool.rawOutput, { stdout: "/project", exit_code: 0 });
+});
+
+test("streamed terminal chunks survive status updates and replay without duplicates", () => {
+  const events: ExternalAgentEvent[] = [
+    { sessionId: "s", sequence: 1, createdAt: "", update: { sessionUpdate: "tool_call", toolCallId: "exec-1", kind: "execute", title: "pwd", status: "in_progress" } },
+    { sessionId: "s", sequence: 2, createdAt: "", update: { sessionUpdate: "tool_call_update", toolCallId: "exec-1", _meta: { terminal_output_delta: { terminal_id: "exec-1", data: "/project\n" } } } },
+    { sessionId: "s", sequence: 3, createdAt: "", update: { sessionUpdate: "tool_call_update", toolCallId: "exec-1", _meta: { terminal_output: { terminal_id: "exec-1", data: "café ✓\n" } } } },
+    { sessionId: "s", sequence: 4, createdAt: "", update: { sessionUpdate: "tool_call_update", toolCallId: "exec-1", status: "completed", rawOutput: { exit_code: 0 }, _meta: { terminal_exit: { terminal_id: "exec-1", exit_code: 0 } } } },
+  ];
+  const state = hydrateExternalAgentEvents([...events, ...events]);
+  const tool = state.items[0];
+  assert.equal(tool.kind, "tool");
+  if (tool.kind !== "tool") throw Error("Expected tool");
+  assert.equal(tool.terminalOutput, "/project\ncafé ✓\n");
+  assert.equal(tool.status, "completed");
+});
+
+test("image-only and text/image prompts stay in a single user message", () => {
+  let state = reduceExternalAgentUpdate(emptyExternalAgentState(), { sessionUpdate: "user_message_chunk", content: { type: "image", data: "aGk=", mimeType: "image/png", name: "reference.png" } });
+  state = reduceExternalAgentUpdate(state, { sessionUpdate: "user_message_chunk", content: { type: "text", text: "Use this layout" } });
+  assert.equal(state.items.length, 1);
+  const user = state.items[0];
+  assert.equal(user.kind, "user");
+  if (user.kind !== "user") throw Error("Expected user");
+  assert.equal(user.text, "Use this layout");
+  assert.equal(user.images?.[0]?.name, "reference.png");
+});
+
+test("ending or restoring an idle turn stops pending edits without inventing success", () => {
+  const pending = reduceExternalAgentUpdate(emptyExternalAgentState(), { sessionUpdate: "tool_call", toolCallId: "edit", kind: "edit", title: "Editing files", status: "in_progress" });
+  for (const update of [{ sessionUpdate: "turn_complete" }, { sessionUpdate: "execution_closed" }, { sessionUpdate: "error", message: "Connection closed" }]) {
+    const state = reduceExternalAgentUpdate(pending, update);
+    assert.equal(state.items[0]?.kind === "tool" ? state.items[0].status : "", "interrupted");
+    assert.equal(state.turnActive, false);
+  }
+  assert.equal(settleExternalAgentState(pending, true).items[0]?.kind === "tool" ? (settleExternalAgentState(pending, true).items[0] as { status: string }).status : "", "in_progress");
+  const idle = settleExternalAgentState(pending, false);
+  assert.equal(idle.items[0]?.kind === "tool" ? idle.items[0].status : "", "interrupted");
 });

@@ -12,17 +12,9 @@ import {
 } from "./ComposerAttachments";
 import type { ComposerCodeRef } from "./ComposerCodeReferences";
 
-export const MAX_COMPOSER_ATTACHMENTS = 12;
-/** Any file type (fonts, zip, pdf, binaries…) — same ceiling as tree upload. */
-export const MAX_COMPOSER_ATTACHMENT_BYTES = 50 * 1024 * 1024;
+import { MAX_COMPOSER_ATTACHMENTS, MAX_COMPOSER_ATTACHMENT_BYTES, isImageFile, createComposerAttachment } from "../../../shared/ui/composer/attachmentFiles";
+export { MAX_COMPOSER_ATTACHMENTS, MAX_COMPOSER_ATTACHMENT_BYTES, isImageFile, createComposerAttachment };
 export const AGENT_UPLOAD_DIR = ".coloride/uploads";
-
-export function isImageFile(file: File): boolean {
-  if (file.type.startsWith("image/")) return true;
-  return /\.(avif|bmp|gif|heic|heif|jpe?g|png|svg|tiff?|webp)$/i.test(
-    file.name,
-  );
-}
 
 export function looksLikeTextAttachment(item: ComposerAttachment): boolean {
   if (item.kind === "image") return false;
@@ -38,20 +30,6 @@ export function looksLikeTextAttachment(item: ComposerAttachment): boolean {
   return /\.(txt|md|markdown|json|ya?ml|toml|csv|tsv|xml|html?|css|scss|less|js|jsx|ts|tsx|mjs|cjs|py|rb|go|rs|java|kt|swift|c|cc|cpp|h|hpp|cs|php|sh|bash|zsh|sql|env|ini|cfg|conf|log|gitignore|dockerignore|editorconfig|svg)$/i.test(
     item.name,
   );
-}
-
-export function createComposerAttachment(file: File): ComposerAttachment {
-  const kind = isImageFile(file) ? "image" : "file";
-  return {
-    id: `${file.name}-${file.size}-${file.lastModified}-${Math.random().toString(36).slice(2, 9)}`,
-    file,
-    name: file.name || "untitled",
-    mime:
-      file.type || (kind === "image" ? "image/*" : "application/octet-stream"),
-    size: file.size,
-    kind,
-    previewUrl: kind === "image" ? URL.createObjectURL(file) : null,
-  };
 }
 
 export function safeUploadFileName(name: string): string {

@@ -33,6 +33,7 @@ from acp.schema import (
     FileSystemCapabilities,
     Implementation,
     InitializeResponse,
+    ImageContentBlock,
     KillTerminalResponse,
     LoadSessionResponse,
     NewSessionResponse,
@@ -56,7 +57,7 @@ from acp.schema import (
 from acp.utils import request_model_from_dict
 
 from .files import AcpFileBridge
-from .models import AuthMethodRecord, ConfigOptionRecord
+from .models import AuthMethodRecord, ConfigOptionRecord, PromptImage
 from .processes import OwnedProcess
 from .terminals import AcpTerminalBridge
 
@@ -354,10 +355,10 @@ class AcpConnection:
         )
         return config_options_from(response.config_options)
 
-    async def prompt(self, session_id: str, text: str) -> PromptResponse:
+    async def prompt(self, session_id: str, text: str, images: list[PromptImage] | None = None) -> PromptResponse:
         return await self.connection.prompt(
             session_id=session_id,
-            prompt=[TextContentBlock(type="text", text=text)],
+            prompt=([TextContentBlock(type="text", text=text)] if text else []) + [ImageContentBlock(type="image", data=image.data, mimeType=image.mime_type) for image in images or []],
         )
 
     async def cancel(self, session_id: str) -> None:

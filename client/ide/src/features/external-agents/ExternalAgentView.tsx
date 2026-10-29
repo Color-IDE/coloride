@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { api, encodeBytesToBase64 } from "../../shared/api/client";
+import { useComposerAttachments } from "../../shared/ui/composer/useComposerAttachments";
+import { workspaceFilePath } from "./workspaceFilePath";
 import { externalAgentsApi } from "./api";
 import { ExternalAgentComposer } from "./ExternalAgentComposer";
 import { ExternalAgentPermission } from "./ExternalAgentPermission";
@@ -10,21 +13,58 @@ export function ExternalAgentView({
   active,
   starting = false,
   workspaceKind,
+  workspacePath,
+  onOpenExplorerFile,
 }: {
   sessionId: string;
   active: boolean;
   starting?: boolean;
   workspaceKind: "local" | "ssh";
+  workspacePath?: string | null;
+  onOpenExplorerFile?: (path: string, options?: { line?: number; column?: number }) => void | Promise<unknown>;
 }) {
   const { session, setSession, state, setState, error, setError } =
     useExternalAgentSession(sessionId, active);
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  const editor = useRef({ workspacePath, workspaceKind, onOpenExplorerFile });
+  editor.current = { workspacePath, workspaceKind, onOpenExplorerFile };
+  const openEditorFile = async (request: { path: string; line?: number }) => {
+    const current = editor.current;
+    if (current.workspaceKind !== "local" || !current.workspacePath || !current.onOpenExplorerFile) return;
+    const path = workspaceFilePath(request.path, current.workspacePath, session?.workspacePath);
+    if (!path) return;
+    try {
+      const { entries } = await api.statFiles([current.workspacePath, path]);
+      const [root, file] = entries;
+      if (!mounted.current || editor.current.workspacePath !== current.workspacePath || editor.current.workspaceKind !== "local") return;
+      if (!root?.exists || root.kind !== "dir" || !file?.exists || file.kind !== "file" || !workspaceFilePath(file.path, root.path)) return;
+      await editor.current.onOpenExplorerFile?.(file.path, request.line ? { line: request.line } : undefined);
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not open the file."); }
+  };
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [authenticating, setAuthenticating] = useState(false);
+  const emptyChat = state.items.length === 0 && !state.turnActive && !sending;
   const ssh = workspaceKind === "ssh";
   const needsLogin =
     session?.phase === "needs-login" || session?.phase === "authenticating";
   const ready = session?.phase === "ready" && !ssh;
+  const { attachments, addFiles, clearAttachments, removeAttachment } = useComposerAttachments(!ready || sending || state.turnActive);
+  const addImages = (files: File[]) => {
+    if (!ready || sending || state.turnActive) return;
+    if (!session?.supportsImages) { setError("This agent does not support image prompts."); return; }
+    const types: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", gif: "image/gif" };
+    const images = files.map(file => file.type ? file : new File([file], file.name, { type: types[file.name.split(".").pop()?.toLowerCase() ?? ""] ?? "", lastModified: file.lastModified }));
+    if (images.some(file => !Object.values(types).includes(file.type) || !file.size || file.size > 10 * 1024 * 1024)) {
+      setError("Use PNG, JPEG, WebP or GIF images up to 10 MiB each."); return;
+    }
+    if (attachments.length + images.length > 12 || [...attachments.map(item => item.file), ...images].reduce((sum, file) => sum + file.size, 0) > 20 * 1024 * 1024) {
+      setError("Attach up to 12 images, with at most 20 MiB in total."); return;
+    }
+    setError("");
+    addFiles(images);
+  };
   const name = session?.title || "External agent";
   const connecting =
     starting ||
@@ -51,11 +91,13 @@ export function ExternalAgentView({
 
   const submit = async () => {
     const text = draft.trim();
-    if (!text || sending || state.turnActive) return;
+    if ((!text && !attachments.length) || sending || state.turnActive) return;
     setSending(true);
     setError("");
     try {
-      await externalAgentsApi.prompt(sessionId, text);
+      const images = await Promise.all(attachments.map(async item => ({ name: item.name, mimeType: item.mime, data: encodeBytesToBase64(await item.file.arrayBuffer()) })));
+      await externalAgentsApi.prompt(sessionId, text, images);
+      clearAttachments();
       setDraft("");
       setState((current) => ({ ...current, turnActive: true }));
     } catch (reason) {
@@ -74,7 +116,7 @@ export function ExternalAgentView({
   return (
     <section
       aria-label={`${name} agent`}
-      className="agent-view external-agent-view flex h-full min-h-0 flex-col bg-[var(--agent-surface,#212121)]"
+      className={`agent-view external-agent-view agent-main agent-chat-column${emptyChat ? " is-empty-chat" : ""} flex h-full min-h-0 flex-col bg-[var(--agent-surface,#212121)]`}
     >
       {connecting ? (
         <div
@@ -155,6 +197,9 @@ export function ExternalAgentView({
       ) : (
         <ExternalAgentTimeline
           items={state.items}
+          workspacePath={workspaceKind === "local" ? workspacePath : null}
+          agentWorkspacePath={session?.workspacePath}
+          onOpenFile={onOpenExplorerFile ? openEditorFile : undefined}
           turnActive={state.turnActive}
           name={name}
           ready={Boolean(ready)}
@@ -194,6 +239,11 @@ export function ExternalAgentView({
       ))}
       {connecting ? null : (
       <ExternalAgentComposer
+        newTask={emptyChat}
+        attachments={attachments}
+        supportsImages={session?.supportsImages === true}
+        onAddImages={addImages}
+        onRemoveImage={id => { if (!sending) removeAttachment(id); }}
         disabled={!ready || sending}
         draft={draft}
         onCancel={() =>

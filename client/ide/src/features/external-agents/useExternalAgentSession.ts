@@ -8,6 +8,7 @@ import { externalAgentsApi } from "./api";
 import {
   emptyExternalAgentState,
   reduceExternalAgentEvent,
+  settleExternalAgentState,
   type ExternalAgentUiState,
 } from "./externalAgentReducer";
 
@@ -133,9 +134,8 @@ export function useExternalAgentSession(
           if (last) sequence = last.sequence;
           setSession(loaded);
           setState((current) => ({
-            ...events.reduce(reduceExternalAgentEvent, current),
+            ...settleExternalAgentState(events.reduce(reduceExternalAgentEvent, current), loaded.turn !== "idle"),
             config: loaded.configOptions,
-            turnActive: loaded.turn !== "idle",
           }));
           setError("");
         } while (again && !disposed);

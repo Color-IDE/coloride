@@ -12,12 +12,14 @@ import { placeMenuAboveTrigger } from "../../shared/ui/composer/modelMenuPositio
 
 export function ExternalAgentAccessSelector({
   option,
+  newTask = false,
   disabled,
   pending,
   onChange,
   onOpen,
 }: {
   option: ExternalAgentConfigOption;
+  newTask?: boolean;
   disabled: boolean;
   pending?: string | boolean;
   onChange(id: string, value: string | boolean): void;
@@ -43,6 +45,7 @@ export function ExternalAgentAccessSelector({
             trigger.current.getBoundingClientRect(),
             224,
             panel.current?.offsetHeight ?? 160,
+            newTask,
           ),
         );
     };
@@ -53,7 +56,7 @@ export function ExternalAgentAccessSelector({
       window.removeEventListener("resize", reposition);
       window.removeEventListener("scroll", reposition, true);
     };
-  }, [open]);
+  }, [open, newTask]);
   useEffect(() => {
     if (!open) return;
     const outside = (event: PointerEvent) => {

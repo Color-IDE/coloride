@@ -464,6 +464,7 @@ export type {
   ExternalAgentEvent,
   ExternalAgentExecutionTarget,
   ExternalAgentInstallation,
+  ExternalAgentImage,
   ExternalAgentInstallationStatus,
   ExternalAgentPermissionOption,
   ExternalAgentPermissionRequest,

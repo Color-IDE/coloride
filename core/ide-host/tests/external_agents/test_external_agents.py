@@ -169,3 +169,18 @@ def _installed(manager: ExternalAgentManager, root: Path) -> None:
             location=str(root),
         )
     )
+
+
+def test_image_prompt_validation_rejects_invalid_base64_and_unsupported_types():
+    from pydantic import ValidationError
+    from coloride_desktop.external_agents.models import PromptBody
+
+    for image in [
+        {"data": "not base64", "mimeType": "image/png"},
+        {"data": "", "mimeType": "image/png"},
+        {"data": "aGk=", "mimeType": "image/svg+xml"},
+    ]:
+        with pytest.raises(ValidationError):
+            PromptBody.model_validate({"images": [image]})
+    with pytest.raises(ValidationError):
+        PromptBody.model_validate({"images": [{"data": "aGk=", "mimeType": "image/png"}] * 13})
