@@ -16,6 +16,15 @@ components:
       type: http
       scheme: bearer
   schemas:
+    ExternalAgentHistoryEntry:
+      type: object
+      required: [session, firstMessage, preview, snippet, matches]
+      properties:
+        session: { $ref: "#/components/schemas/ExternalAgentSession" }
+        firstMessage: { type: string }
+        preview: { type: string }
+        snippet: { type: string }
+        matches: { type: boolean }
     ExternalAgentAccountUsage:
       type: object
       required: [agentId, name, status, windows, updatedAt]
@@ -1649,6 +1658,21 @@ paths:
       responses:
         "200":
           description: Path renamed.
+  /api/external-agents/history:
+    get:
+      operationId: externalAgentsHistory
+      parameters:
+        - name: query
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Persisted external-agent conversations with searchable message previews.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ExternalAgentHistoryEntry" }
   /api/external-agents/usage:
     get:
       operationId: externalAgentsAccountUsage

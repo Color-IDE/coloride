@@ -63,6 +63,10 @@ def external_agent_router() -> APIRouter:
             return failure(exc)
         return JSONResponse({"ok": True})
 
+    @router.get("/history")
+    async def history(request: Request, query: str = "") -> list[dict]:
+        return await manager(request).history(query)
+
     @router.post("/sessions")
     async def open_session(request: Request, body: OpenSessionRequest) -> JSONResponse:
         try:

@@ -176,3 +176,11 @@ export type ExternalAgentAccountUsage = {
   windows: { usedPercent: number; windowMinutes: number; resetsAt: number | null }[];
   updatedAt: string | null;
 };
+
+export type ExternalAgentHistoryEntry = {
+  session: ExternalAgentSession;
+  firstMessage: string;
+  preview: string;
+  snippet: string;
+  matches: boolean;
+};

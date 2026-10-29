@@ -1,3 +1,4 @@
+import { ExternalAgentChanges } from "./ExternalAgentChanges";
 import { useLayoutEffect, useRef } from "react";
 import { AgentTimelineTurn, groupTimelineTurns, type AgentOpenFileRequest } from "../agents/AgentTimeline";
 import type { ExternalTranscriptItem } from "./externalAgentReducer";
@@ -5,6 +6,7 @@ import { workspaceFilePath } from "./workspaceFilePath";
 import { toAgentTimelineEntries } from "./presentExternalTimeline";
 
 export function ExternalAgentTimeline({
+  sessionId,
   items,
   workspacePath,
   agentWorkspacePath,
@@ -13,6 +15,7 @@ export function ExternalAgentTimeline({
   ready = false,
   turnActive = false,
 }: {
+  sessionId: string;
   items: ExternalTranscriptItem[];
   workspacePath?: string | null;
   agentWorkspacePath?: string | null;
@@ -70,6 +73,9 @@ export function ExternalAgentTimeline({
       {turns.map((turn, index) => (
         <div key={turn.id} className="agent-timeline-virtual-item agent-chat-measure">
           <AgentTimelineTurn
+            checkpointCard={<ExternalAgentChanges key={`${sessionId}:${turn.id}`} sessionId={sessionId} turnId={turn.id}
+              entries={turn.items} workspacePath={workspacePath} agentWorkspacePath={agentWorkspacePath}
+              turnActive={turnActive && index === turns.length - 1} onOpenFile={onOpenFile} />}
             onOpenFile={onOpenFile}
             user={turn.user}
             items={turn.items}

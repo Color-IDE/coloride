@@ -19,3 +19,5 @@ export {
   type CheckpointFileStat,
   type ExploreTimelineItem,
 } from "./timeline/types";
+
+export { parseUnifiedDiff } from "./timeline/formatting";

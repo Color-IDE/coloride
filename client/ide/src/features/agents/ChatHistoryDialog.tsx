@@ -1,5 +1,7 @@
+import { externalAgentsApi } from "../external-agents/api";
 import type {
   AgentChatHistoryEntry,
+  ExternalAgentHistoryEntry,
   AgentSessionSummary,
 } from "@coloride/contracts";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -84,6 +86,7 @@ export function ChatHistoryDialog(props: {
   newChatShortcut: string;
   onClose: () => void;
   onSelect: (id: string) => void;
+  onSelectExternal?: (session: {sessionId:string; agentId:string; workspacePath:string}) => void;
   onNew: () => void;
   onDetails: (details: AgentChatHistoryEntry[]) => void;
   onRename: (id: string, title: string) => void;
@@ -93,6 +96,34 @@ export function ChatHistoryDialog(props: {
   onRestore: (id: string) => Promise<void>;
 }) {
   const [query, setQuery] = useState("");
+  const [externalHistory, setExternalHistory] = useState<ExternalAgentHistoryEntry[]>([]);
+  const [externalError, setExternalError] = useState("");
+  useEffect(() => {
+    if (props.workspaceKind !== "local") return;
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      void externalAgentsApi.history(query.trim()).then(history => {
+        if (cancelled) return;
+        setExternalHistory(history);
+        setExternalError("");
+      }).catch(() => {
+        if (!cancelled) setExternalError("Codex history is unavailable. Restart the local host to load it.");
+      });
+    }, query ? 180 : 0);
+    return () => {cancelled = true; clearTimeout(timer);};
+  }, [query, props.workspaceKind]);
+  const historySessions = useMemo<AgentSessionSummary[]>(() => [
+    ...props.sessions,
+    ...externalHistory.map(({session, firstMessage}) => ({
+      sessionId:`external:${session.id}`, agent:session.agentId,
+      task:/^(codex|external agent|new chat)$/i.test(session.title) ? firstMessage || session.title : session.title,
+      cwd:session.workspacePath, workspaceKind:"local" as const, connectionId:"local",
+      filesystemScope:"workspace" as const, mode:"act" as const,
+      state:session.turn === "running" ? "running" as const : "idle" as const,
+      spentUsd:0, startedAt:session.updatedAt, updatedAt:session.updatedAt,
+    })),
+  ], [props.sessions, externalHistory]);
+
   const [view, setView] = useState("chats");
   const [project, setProject] = useState(() =>
     props.workspacePath
@@ -126,6 +157,10 @@ export function ChatHistoryDialog(props: {
         bottom: node.scrollHeight - node.clientHeight - node.scrollTop > 1,
       });
   };
+  const combinedDetails = useMemo(() => ({...details, ...Object.fromEntries(externalHistory.map(entry => [
+    `external:${entry.session.id}`, {sessionId:`external:${entry.session.id}`, firstMessage:entry.firstMessage,
+      preview:entry.preview, snippet:entry.snippet, matches:entry.matches},
+  ]))}), [details, externalHistory]);
   const dialogRef = useRef<HTMLElement>(null);
   const previousFocus = useRef(
     document.activeElement instanceof HTMLElement
@@ -194,13 +229,13 @@ export function ChatHistoryDialog(props: {
     () =>
       [
         ...new Map(
-          props.sessions.map((session) => [
+          historySessions.map((session) => [
             projectKey(session),
             { name: projectName(session.cwd), path: session.cwd },
           ]),
         ).entries(),
       ].sort((a, b) => a[1].name.localeCompare(b[1].name)),
-    [props.sessions],
+    [historySessions],
   );
   const rows = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -208,7 +243,7 @@ export function ChatHistoryDialog(props: {
     midnight.setHours(0, 0, 0, 0);
     const yesterday = new Date(midnight);
     yesterday.setDate(yesterday.getDate() - 1);
-    return props.sessions
+    return historySessions
       .filter((session) => {
         const trash = props.hiddenIds.includes(session.sessionId);
         const archived = Boolean(
@@ -223,7 +258,7 @@ export function ChatHistoryDialog(props: {
         )
           return false;
         if (project !== "all" && projectKey(session) !== project) return false;
-        const detail = details[session.sessionId];
+        const detail = combinedDetails[session.sessionId];
         return (
           !needle ||
           `${chatTitle(session, props.titles, detail)} ${session.cwd}`
@@ -248,10 +283,10 @@ export function ChatHistoryDialog(props: {
               : date >= yesterday
                 ? "Yesterday"
                 : "Earlier";
-        return { session, detail: details[session.sessionId], group };
+        return { session, detail: combinedDetails[session.sessionId], group };
       });
   }, [
-    props.sessions,
+    historySessions,
     props.titles,
     props.hiddenIds,
     props.archivedIds,
@@ -259,7 +294,7 @@ export function ChatHistoryDialog(props: {
     query,
     project,
     view,
-    details,
+    combinedDetails,
   ]);
   useEffect(() => {
     setActive(0);
@@ -280,7 +315,12 @@ export function ChatHistoryDialog(props: {
     return () => observer.disconnect();
   }, [rows, loading]);
   const choose = (id: string) => {
-    props.onSelect(id);
+    const external = externalHistory.find(entry => `external:${entry.session.id}` === id);
+    if (external) {
+      if (!props.onSelectExternal) {setError("This view cannot open external agent conversations."); return;}
+      props.onSelectExternal({sessionId:external.session.id, agentId:external.session.agentId,
+        workspacePath:external.session.workspacePath});
+    } else props.onSelect(id);
     props.onClose();
   };
   const rename = (id: string) => {
@@ -440,9 +480,9 @@ export function ChatHistoryDialog(props: {
               : `${rows.length} ${rows.length === 1 ? "chat" : "chats"}`}
           </span>
         </div>
-        {error ? (
+        {error || externalError ? (
           <p role="alert" className="agent-history-notice">
-            {error}
+            {error || externalError}
           </p>
         ) : null}
         <div className="agent-history-scroll">
@@ -496,6 +536,7 @@ export function ChatHistoryDialog(props: {
                           : detail?.preview || "No message preview yet"}
                       </span>
                       <span className="agent-history-meta" title={session.cwd}>
+                        {session.sessionId.startsWith("external:") ? `${session.agent === "codex-acp" ? "Codex" : session.agent} · ` : ""}
                         {projectName(session.cwd)} ·{" "}
                         {new Intl.DateTimeFormat(undefined, {
                           month: "short",
@@ -655,11 +696,11 @@ export function ChatHistoryDialog(props: {
             >
               <MenuItem
                 onClick={() => {
-                  const session = props.sessions.find(
+                  const session = historySessions.find(
                     (item) => item.sessionId === menu.id,
                   )!;
                   setRenameText(
-                    chatTitle(session, props.titles, details[menu.id]),
+                    chatTitle(session, props.titles, combinedDetails[menu.id]),
                   );
                   setRenaming(menu.id);
                   setMenu(null);

@@ -285,11 +285,13 @@ export function useWorkspaceRefresh({
     void checkPresence();
     const timer = window.setInterval(() => void checkPresence(), 1000);
     window.addEventListener("focus", checkPresence);
+    window.addEventListener("coloride:workspace-files-changed", checkPresence);
     document.addEventListener("visibilitychange", checkPresence);
     return () => {
       disposed = true;
       clearInterval(timer);
       window.removeEventListener("focus", checkPresence);
+      window.removeEventListener("coloride:workspace-files-changed", checkPresence);
       document.removeEventListener("visibilitychange", checkPresence);
     };
   }, [connectionState, workspacePath]);
@@ -456,6 +458,11 @@ export function useWorkspaceRefresh({
     const onVisibility = () => {
       if (!document.hidden) void watchTick();
     };
+    const onFilesChanged = () => {
+      suppressEditorWatchUntilRef.current = 0;
+      void watchTick();
+    };
+    window.addEventListener("coloride:workspace-files-changed", onFilesChanged);
     document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
@@ -465,6 +472,7 @@ export function useWorkspaceRefresh({
       }
       window.clearTimeout(initial);
       document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("coloride:workspace-files-changed", onFilesChanged);
     };
     // handleConnectionUnavailable is stable enough for disconnect handling.
     // eslint-disable-next-line react-hooks/exhaustive-deps

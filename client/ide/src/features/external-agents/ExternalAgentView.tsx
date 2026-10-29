@@ -196,6 +196,7 @@ export function ExternalAgentView({
         </div>
       ) : (
         <ExternalAgentTimeline
+          sessionId={sessionId}
           items={state.items}
           workspacePath={workspaceKind === "local" ? workspacePath : null}
           agentWorkspacePath={session?.workspacePath}

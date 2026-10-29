@@ -463,6 +463,7 @@ export type {
   ExternalAgentConnectionPhase,
   ExternalAgentDistributionKind,
   ExternalAgentEvent,
+  ExternalAgentHistoryEntry,
   ExternalAgentExecutionTarget,
   ExternalAgentInstallation,
   ExternalAgentImage,

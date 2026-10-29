@@ -3,6 +3,7 @@ import type {
   ExternalAgentAccountUsage,
   ExternalAgentImage,
   ExternalAgentEvent,
+  ExternalAgentHistoryEntry,
   ExternalAgentInstallation,
   ExternalAgentPromptAcceptance,
   ExternalAgentRegistryEntry,
@@ -13,6 +14,7 @@ import { request } from "../../shared/api/client";
 const root = "/api/external-agents";
 
 export const externalAgentsApi = {
+  history: (query = "") => request<ExternalAgentHistoryEntry[]>(`${root}/history?query=${encodeURIComponent(query)}`),
   usage: () => request<ExternalAgentAccountUsage[]>(`${root}/usage`),
   registry: () => request<ExternalAgentRegistryEntry[]>(`${root}/registry`),
   installations: () => request<ExternalAgentInstallation[]>(`${root}/installations`),
