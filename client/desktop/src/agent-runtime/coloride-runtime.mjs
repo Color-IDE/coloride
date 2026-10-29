@@ -1,4 +1,4 @@
-/** Coloride stdio entry point. The filename is retained for host compatibility. */
+/** Coloride stdio entry point for the agent turn scheduler. */
 import { createInterface } from "node:readline";
 import { runTurn } from "./turn-loop.mjs";
 

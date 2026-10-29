@@ -65,7 +65,7 @@ import { isWindowsDesktop } from "../shared/ui/WindowsWindowControls";
 
 // Keep chat rendering and secondary views out of the initial editor bundle.
 // Their loading boundaries must not suspend the workspace tree or editor.
-const AgentView = lazy(() => import("../features/agents/AgentView").then(module => ({ default: module.AgentView })));
+const AgentView = lazy(() => import("./shell/AgentTabsHost").then(module => ({ default: module.AgentTabsHost })));
 const SettingsView = lazy(() => import("../features/settings/SettingsView").then(module => ({ default: module.SettingsView })));
 const loadServerView = () => import("../features/server/ServerView");
 const ServerView = lazy(() => loadServerView().then(module => ({ default: module.ServerView })));
@@ -733,7 +733,7 @@ export function App() {
       setTerminalHeight,
     });
   const openSettings = useCallback((section?: string) => {
-    const known = new Set(["general", "appearance", "shortcuts", "editor", "terminal", "agent", "providers", "security", "updates", "diagnostics", "about"]);
+    const known = new Set(["general", "appearance", "shortcuts", "editor", "terminal", "agent", "external-agents", "providers", "security", "updates", "diagnostics", "about"]);
     const requested = section === "account" ? "general" : section;
     const next = requested && known.has(requested) ? requested as SettingsSection : undefined;
     if (window.colorideDesktop?.openSettings) {

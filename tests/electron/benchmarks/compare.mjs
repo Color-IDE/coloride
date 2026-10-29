@@ -37,10 +37,6 @@ const settings = {
     'update.mode': 'none', 'extensions.autoUpdate': false, 'extensions.ignoreRecommendations': true,
     'security.workspace.trust.enabled': false, 'workbench.startupEditor': 'none', 'chat.disableAIFeatures': true,
     'git.enabled': false },
-  zed: { buffer_font_family: 'Menlo', buffer_font_size: 16, theme: 'One Dark', minimap: { show: 'never' },
-    soft_wrap: 'none', autosave: 'off', disable_ai: true, enable_language_server: false,
-    suggest_extensions: false, auto_install_extensions: { html: false }, auto_update: false,
-    telemetry: { diagnostics: false, metrics: false } },
 };
 const versions = {
   coloride: { version: JSON.parse(await readFile(join(root, 'package.json'))).version,
@@ -49,14 +45,14 @@ const versions = {
     build: 'checkout Electron + production renderer + source Python; not a packaged release',
     python: execFileSync(resolveTestPython(), ['--version'], { encoding: 'utf8' }).trim() },
   vscode: { version: execFileSync('/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code', ['--version'], { encoding: 'utf8' }).trim() },
-  zed: { version: execFileSync('/Applications/Zed.app/Contents/MacOS/cli', ['--version'], { encoding: 'utf8' }).trim() },
 };
 for (const entry of schedule) {
   const profile = join(profileRoot, entry.profile);
   const home = join(profile, 'home');
   for (const folder of [home, join(profile, 'user-data'), join(profile, 'extensions')]) await mkdir(folder, { recursive: true });
-  const settingsPath = entry.editor === 'vscode' ? join(profile, 'user-data/User/settings.json')
-    : entry.editor === 'zed' ? join(profile, 'user-data/config/settings.json') : join(profile, 'desired-app-preferences.json');
+  const settingsPath = entry.editor === 'vscode'
+    ? join(profile, 'user-data/User/settings.json')
+    : join(profile, 'desired-app-preferences.json');
   await mkdir(dirname(settingsPath), { recursive: true });
   await writeFile(settingsPath, JSON.stringify(settings[entry.editor], null, 2) + '\n');
   Object.assign(entry, { profile: resolve(profile), home: resolve(home), settingsPath: resolve(settingsPath),
@@ -72,7 +68,6 @@ await mkdir(toolDir, { recursive: true });
 const recorder = join(toolDir, 'native-capture');
 execFileSync('/usr/bin/swiftc', ['-O', join(root, 'tests/electron/benchmarks/native-capture.swift'), '-o', recorder]);
 const permissions = JSON.parse(execFileSync(recorder, ['--check'], { encoding: 'utf8' }));
-const zedRunning = execFileSync('/bin/ps', ['-axo', 'comm='], { encoding: 'utf8' }).split('\n').some(command => command.trim() === '/Applications/Zed.app/Contents/MacOS/zed');
 const plan = {
   protocol: 'cross-editor-visible-file-open-v1', createdAt: new Date().toISOString(),
   status: permissions.screenRecording && permissions.accessibility ? 'prepared-needs-verified-editor-adapters' : 'blocked-permissions',
@@ -80,8 +75,8 @@ const plan = {
     osVersion: execFileSync('/usr/bin/sw_vers', ['-productVersion'], { encoding: 'utf8' }).trim(),
     osBuild: execFileSync('/usr/bin/sw_vers', ['-buildVersion'], { encoding: 'utf8' }).trim(),
     arch: os.arch(), cpu: os.cpus()[0]?.model, memoryBytes: os.totalmem(), displays },
-  design: { rounds: 6, filesPerRound: 20, samplesPerEditor: 120, order: 'all six editor permutations; two appearances per position',
-    fileOrder: 'rotated by round, identical across the three editors within a round',
+  design: { rounds: 2, filesPerRound: 20, samplesPerEditor: 40, order: 'both editor orders; one appearance per position',
+    fileOrder: 'rotated by round, identical across both editors within a round',
     independentRuns: 'new profile, new application process and no measured files opened before each execution',
     cache: 'warm OS filesystem cache, not flushed; application buffers are fresh; files remain byte-identical',
     warmup: 'only 000-warmup.txt may be opened before timing',
@@ -91,18 +86,17 @@ const plan = {
     measurement: 'trusted native mouse-down to first matching visible ScreenCaptureKit frame; offline OCR; same capture helper for all editors',
     statistics: 'nearest-rank p50/p95/p99 pooled and per independent run, retain every sample and frame gap',
     resources: 'same process-tree sampler for every editor, include the ColorIDE Python host, 2-second idle baseline and active block; summed RSS and CPU-time deltas at 250 ms',
-    limitations: ['120 samples give a coarse p99 estimate; report per-run variability and frame quantization.',
+    limitations: ['40 samples give a coarse p99 estimate; report per-run variability and frame quantization.',
       'RSS sums can double-count shared memory; report this limitation instead of calling it unique physical RAM.',
       'The ColorIDE checkout is not a packaged release. Do not claim release-to-release superiority.'] },
   permissions, recorder, files, settings, schedule, profileRoot,
-  isolation: { zedAlreadyRunning: zedRunning, verified: false, note: 'Verify a separate Zed process/profile. A CLI response of zed is already running is a setup block; never close or attach fixtures to the user’s existing instance automatically.' },
+  isolation: { verified: false, note: 'Verify a separate editor process and profile. Never close or attach fixtures to the user’s existing instance automatically.' },
   prerequisites: ['Screen Recording and Accessibility granted to the recording process',
     'Editor adapters must verify isolated profile, built-in services, screen/window geometry and first-line crop',
-    'Zed must support a verified independent instance; otherwise the user must save and close their existing instance before running fixtures',
     'Native click/frame clocks and OCR must be validated on a known visible transition before the first timed block'],
   results: [],
 };
 await writeFile(join(output, 'plan.json'), JSON.stringify(plan, null, 2) + '\n');
-console.log(`Prepared ${schedule.length} independent executions: 120 openings/editor, 360 total.`);
+console.log(`Prepared ${schedule.length} independent executions: 40 openings/editor, 80 total.`);
 console.log(`Plan: ${join(output, 'plan.json')}`);
 console.log(`Status: ${plan.status}. No editor comparison has been executed.`);

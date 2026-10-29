@@ -13,6 +13,7 @@ Coloride includes or is built with these projects. Their licenses travel with th
 | Pydantic | MIT |
 | httpx | BSD-3-Clause |
 | asyncssh | EPL-2.0 |
+| Agent Client Protocol Python SDK | Apache-2.0 |
 
 ## Packaged notices
 

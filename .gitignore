@@ -48,7 +48,7 @@ core/ide-host/build/
 core/ide-host/dist/
 core/ide-host/*.spec
 
-# Generated Cline SDK bundle (rebuilt by electron-builder beforePack)
+# Generated agent runtime bundle (rebuilt by electron-builder beforePack)
 client/desktop/resources/agent-runtime/
 
 # Isolated Electron terminal test artifacts

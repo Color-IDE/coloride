@@ -52,6 +52,7 @@ try {
     --collect-all uvicorn `
     --collect-all asyncssh `
     --collect-all keyring `
+    --collect-all acp `
     pyinstaller_entry.py
 } finally {
   Pop-Location

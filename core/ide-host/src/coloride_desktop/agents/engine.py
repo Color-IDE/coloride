@@ -13,9 +13,9 @@ from collections.abc import AsyncGenerator, Awaitable, Callable
 from pathlib import Path
 from typing import Any, cast
 
-from .cline_runtime import (
-    ClineRuntime,
-    ClineRuntimeError,
+from .runtime import (
+    AgentRuntime,
+    AgentRuntimeError,
     bundled_runtime_script,
     runtime_executable,
 )
@@ -384,7 +384,7 @@ class ColorideAgentEngine:
         attachments: list[dict[str, Any]] | None = None,
     ) -> None:
         """Serve the Coloride runtime. It owns the next model/tool decision."""
-        runtime = ClineRuntime()
+        runtime = AgentRuntime()
         responses = self._model_turns(
             session=session, message=message, cancel_event=cancel_event, attachments=attachments,
         )
@@ -401,8 +401,8 @@ class ColorideAgentEngine:
         try:
             await self.tools.prepare(session)
             if bundled_runtime_script() is None or runtime_executable() is None:
-                raise ClineRuntimeError(
-                    "The Coloride runtime is missing. Rebuild Coloride; no external agent installation is used."
+                raise AgentRuntimeError(
+                    "The Coloride runtime is missing. Rebuild Coloride."
                 )
             advertised = _runtime_tool_descriptors([*self.tools.schemas_for(AgentMode.ACT, session), COMPLETE_TASK_SCHEMA])
             allowed = {
@@ -512,7 +512,7 @@ class ColorideAgentEngine:
                     await self.emit(
                         "activity",
                         {
-                            "activityId": f"{session.active_turn_id or 'turn'}:cline-status",
+                            "activityId": f"{session.active_turn_id or 'turn'}:runtime-status",
                             "kind": "context",
                             "label": str(request.get("message") or "Runtime notice"),
                             "state": "completed",
@@ -582,16 +582,16 @@ class ColorideAgentEngine:
                         return
                     if request.get("status") != "completed":
                         self._raise_if_cancelled(cancel_event)
-                        raise ClineRuntimeError(str(request.get("error") or "Coloride runtime stopped unexpectedly"))
+                        raise AgentRuntimeError(str(request.get("error") or "Coloride runtime stopped unexpectedly"))
                     try:
                         await responses.asend("complete")
                     except StopAsyncIteration:
                         return
-                    raise ClineRuntimeError("Runtime completion did not settle the host turn")
+                    raise AgentRuntimeError("Runtime completion did not settle the host turn")
                 elif operation == "fatal":
-                    raise ClineRuntimeError(str(request.get("error") or "Coloride runtime failed"))
+                    raise AgentRuntimeError(str(request.get("error") or "Coloride runtime failed"))
                 else:
-                    raise ClineRuntimeError(str(request.get("error") or "Unknown Coloride runtime operation"))
+                    raise AgentRuntimeError(str(request.get("error") or "Unknown Coloride runtime operation"))
         finally:
             await runtime.close()
             await responses.aclose()

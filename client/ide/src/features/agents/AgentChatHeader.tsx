@@ -8,6 +8,7 @@ import { IconButton } from "../../shared/ui/IconButton";
 import { Tab } from "../../shared/ui/Tab";
 import { notify } from "../../shared/ui/notifications";
 import { closeManagedTerminalSession } from "../terminal/TerminalSessionManager";
+import { AgentMark } from "../external-agents";
 import { chatTitle } from "./ChatHistoryDialog";
 
 interface Props {
@@ -31,6 +32,15 @@ interface Props {
   setHeaderTabMenu: Dispatch<SetStateAction<{ x: number; y: number } | null>>;
   setChatHistoryOpen: Dispatch<SetStateAction<boolean>>;
   onCloseSidebar?: () => void;
+  externalAgentTabs?: Array<{
+    id: string;
+    agentId: string;
+    title: string;
+    icon?: string | null;
+  }>;
+  activeExternalAgentId?: string | null;
+  onSelectExternalAgent?: (id: string) => void;
+  onCloseExternalAgent?: (id: string) => void;
 }
 export function AgentChatHeader({
   chatTabsScrollRef,
@@ -50,6 +60,10 @@ export function AgentChatHeader({
   setHeaderTabMenu,
   setChatHistoryOpen,
   onCloseSidebar,
+  externalAgentTabs = [],
+  activeExternalAgentId = null,
+  onSelectExternalAgent,
+  onCloseExternalAgent,
 }: Props) {
   // Titles replace "Chat" after the tab row has already been measured.
   useLayoutEffect(() => {
@@ -58,6 +72,8 @@ export function AgentChatHeader({
     chatHistoryDetails,
     chatTitles,
     openChatTabs,
+    externalAgentTabs,
+    activeExternalAgentId,
     sessionTitle,
     sessions,
     updateChatTabScroll,
@@ -68,18 +84,38 @@ export function AgentChatHeader({
         <div
           ref={chatTabsScrollRef}
           onScroll={updateChatTabScroll}
-          className="editor-tabs-scroll flex h-full min-w-0 items-center gap-1 overflow-x-auto overflow-y-hidden"
+          className="editor-tabs-scroll flex h-full min-w-0 items-center overflow-x-auto overflow-y-hidden"
           role="tablist"
           aria-label="Open chats"
         >
-          {openChatTabs.map((id) => {
+          {openChatTabs.map((id, index) => {
             const terminal = id?.startsWith("header-terminal-") ?? false;
-            const active = terminal
-              ? id === activeHeaderTerminal
-              : !activeHeaderTerminal && id === selectedSessionId;
-            const title = terminal
-              ? "Terminal"
-              : id === null
+            const external = externalAgentTabs.find((tab) => tab.id === id);
+            if (id?.startsWith("external-agent:") && !external) return null;
+            const next = openChatTabs
+              .slice(index + 1)
+              .find((item) => !item?.startsWith("external-agent:") || externalAgentTabs.some((tab) => tab.id === item));
+            const nextActive = next
+              ? next.startsWith("external-agent:")
+                ? next === activeExternalAgentId
+                : next.startsWith("header-terminal-")
+                  ? !activeExternalAgentId && next === activeHeaderTerminal
+                  : !activeExternalAgentId &&
+                    !activeHeaderTerminal &&
+                    next === selectedSessionId
+              : false;
+            const active = external
+              ? id === activeExternalAgentId
+              : terminal
+                ? !activeExternalAgentId && id === activeHeaderTerminal
+                : !activeExternalAgentId &&
+                  !activeHeaderTerminal &&
+                  id === selectedSessionId;
+            const title = external
+              ? external.title
+              : terminal
+                ? "Terminal"
+                : id === null
                 ? "New chat"
                 : (() => {
                     const session = sessions.find(
@@ -96,28 +132,53 @@ export function AgentChatHeader({
                         : "Chat";
                   })();
             return (
+              <div className="flex shrink-0 items-center" key={id ?? "new-chat"}>
               <Tab
-                key={id ?? "new-chat"}
                 active={active}
                 className="agent-sidebar-tab editor-file-tab"
               >
                 <button
                   role="tab"
                   aria-selected={active}
-                  className="agent-sidebar-header-title min-w-0 truncate text-left"
+                  className="absolute inset-0 rounded-[4px]"
                   title={title}
-                  onClick={() =>
-                    terminal ? setActiveHeaderTerminal(id) : selectSession(id)
-                  }
                   type="button"
-                >
-                  {title}
-                </button>
+                  onClick={() => {
+                    if (external) {
+                      setActiveHeaderTerminal(null);
+                      onSelectExternalAgent?.(external.id);
+                      return;
+                    }
+                    onSelectExternalAgent?.("");
+                    if (terminal) setActiveHeaderTerminal(id);
+                    else {
+                      setActiveHeaderTerminal(null);
+                      selectSession(id);
+                    }
+                  }}
+                />
+                <span className="agent-sidebar-header-title pointer-events-none relative flex min-w-0 items-center gap-1.5">
+                  {external ? (
+                    <AgentMark
+                      agentId={external.agentId}
+                      icon={external.icon}
+                      name={external.title}
+                    />
+                  ) : null}
+                  <span className="min-w-0 truncate">{title}</span>
+                </span>
                 <IconButton
                   label={`Close chat: ${title}`}
                   size="sm"
                   className="absolute right-1.5 z-10"
                   onClick={async () => {
+                    if (external) {
+                      setOpenChatTabs((tabs) =>
+                        tabs.filter((tab) => tab !== external.id),
+                      );
+                      onCloseExternalAgent?.(external.id);
+                      return;
+                    }
                     if (terminal && id) {
                       try { await closeManagedTerminalSession(id); }
                       catch {
@@ -158,6 +219,15 @@ export function AgentChatHeader({
                   </svg>
                 </IconButton>
               </Tab>
+              {next ? (
+                <span
+                  aria-hidden="true"
+                  className={`editor-tab-separator mx-0.5 h-3 w-px flex-shrink-0 bg-white/[0.06] transition-opacity duration-150 ${
+                    active || nextActive ? "opacity-0" : ""
+                  }`}
+                />
+              ) : null}
+              </div>
             );
           })}
         </div>

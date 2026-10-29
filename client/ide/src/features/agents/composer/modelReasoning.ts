@@ -17,7 +17,7 @@ const REASONING_LEVELS: ComposerReasoningLevel[] = [
 
 const ACTIVE_LEVELS: ComposerReasoning[] = ["low", "medium", "high", "xhigh", "max"];
 
-// Advertised effort values from Cline's model catalog. First match wins.
+// Provider effort values. First match wins.
 const MODEL_EFFORTS: {
   needle: string;
   efforts: ComposerReasoning[];

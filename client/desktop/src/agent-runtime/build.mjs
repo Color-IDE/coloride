@@ -4,17 +4,15 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-const entry = fileURLToPath(new URL("./cline-runtime.mjs", import.meta.url));
+const entry = fileURLToPath(new URL("./coloride-runtime.mjs", import.meta.url));
 const outfile = fileURLToPath(
-	new URL("../../resources/agent-runtime/cline-runtime.mjs", import.meta.url),
+	new URL("../../resources/agent-runtime/coloride-runtime.mjs", import.meta.url),
 );
 
 export default async function buildAgentRuntime() {
 	fs.mkdirSync(path.dirname(outfile), { recursive: true });
-	// Retired generated bundles must not be included by extraResources.
-	for (const name of ["cline-runtime.mjs.LEGAL.txt", "coloride-runtime.mjs", "coloride-runtime.mjs.LEGAL.txt"]) {
-		fs.rmSync(path.join(path.dirname(outfile), name), { force: true });
-	}
+	const retired = path.join(path.dirname(outfile), "coloride-runtime.mjs.LEGAL.txt");
+	fs.rmSync(retired, { force: true });
 	await build({
 		entryPoints: [entry],
 		outfile,

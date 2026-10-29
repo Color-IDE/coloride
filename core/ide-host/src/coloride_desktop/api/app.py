@@ -38,6 +38,9 @@ from ..certs.store import (
 from ..cloud import cloud_api_base, cloud_enabled
 from ..config import LaunchConfig
 from ..events import EventHub
+from ..external_agents.files import AcpFileBridge
+from ..external_agents.routes import external_agent_router
+from ..external_agents.service import ExternalAgentManager, user_data_root
 from ..files.local import WorkspaceFileService
 from ..files.search import ProjectSearchService, SearchConnectionError
 from ..files.service import (
@@ -243,6 +246,9 @@ def create_app(config: LaunchConfig) -> FastAPI:
                 if terminal.local:
                     application.state.terminals.close(terminal.term_id, preserve_history=True)
             await application.state.search.close()
+            external = getattr(application.state, "external_agents", None)
+            if external is not None:
+                await external.shutdown()
 
     app = FastAPI(title="Coloride Desktop Backend", version="0.1.0", lifespan=lifespan)
     app.state.config = config
@@ -432,6 +438,36 @@ def create_app(config: LaunchConfig) -> FastAPI:
     app.state.agents.bind_lsp(app.state.lsp)
 
     auth = Depends(bearer_auth(config.bearer_token))
+
+    async def _external_stat(path: str) -> Any:
+        return await external_local_files.stat_path(path)
+
+    async def _external_read(path: str) -> tuple[str, str, bool]:
+        return await external_local_files.read(path)
+
+    async def _external_write(path: str, content_b64: str, etag: str | None) -> str:
+        return await external_local_files.write(path, content_b64, etag)
+
+    def _known_etag(path: str) -> str | None:
+        return None
+
+    # ACP sessions retain their own local workspace even when the IDE switches
+    # its main filesystem service to a different folder or SSH connection.
+    from ..files.local import LocalFileService
+    external_local_files = LocalFileService(str(Path.home()))
+
+    app.state.external_agents = ExternalAgentManager(
+        user_data_root(),
+        app.state.events.publish,
+        AcpFileBridge(
+            Path.home(),
+            stat_file=_external_stat,
+            read_file=_external_read,
+            write_file=_external_write,
+            known_etag=_known_etag,
+        ),
+    )
+    app.include_router(external_agent_router(), dependencies=[auth])
 
     # Ensure all errors use structured ErrorPayload
     app.exception_handler(HTTPException)(_http_exception_handler)

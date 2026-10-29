@@ -137,6 +137,7 @@ interface Window {
     openSettings?: (section?: string) => Promise<void>;
     onSettingsSectionChange?: (callback: (section: string) => void) => () => void;
     getRuntime: () => Promise<ColorideRuntimeConfig>;
+    restartHost?: () => Promise<void>;
     getAppInfo: () => Promise<ColorideAppInfo>;
     openExternal: (externalUrl: string) => Promise<boolean>;
     /** After cloud device login is approved — bring Coloride to the front. */

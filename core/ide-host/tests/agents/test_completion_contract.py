@@ -9,7 +9,7 @@ from typing import Any
 import httpx
 import pytest
 
-from coloride_desktop.agents.cline_runtime import ClineRuntime
+from coloride_desktop.agents.runtime import AgentRuntime
 from coloride_desktop.agents.completion import complete, record_result, verification_command
 from coloride_desktop.agents.config import AgentProviderSettings
 from coloride_desktop.agents.provider import (
@@ -29,7 +29,7 @@ async def test_empty_response_after_tool_cannot_complete_unverified_task():
     The engine/runtime must NOT mark the task completed on empty response; it must
     issue recovery requests instead.
     """
-    runtime = ClineRuntime()
+    runtime = AgentRuntime()
     cancel = asyncio.Event()
     models = 0
     try:
@@ -597,7 +597,7 @@ def test_unknown_or_mutating_commands_still_invalidate_checks(command):
 
 @pytest.mark.asyncio
 async def test_rejected_completion_stops_even_with_successful_inspections_between():
-    runtime = ClineRuntime()
+    runtime = AgentRuntime()
     cancel = asyncio.Event()
     rejected = 0
     models = 0

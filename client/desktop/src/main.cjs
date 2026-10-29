@@ -635,16 +635,16 @@ loadRepoDotEnv();
 const cloudConfig = require("./cloud-config.cjs").resolveCloudConfig();
 ipcMain.on("coloride:cloudConfig", (event) => { event.returnValue = cloudConfig; });
 
-function clineRuntimeBundlePath() {
+function agentRuntimeBundlePath() {
   if (app.isPackaged) {
-    return path.join(process.resourcesPath, "agent-runtime", "cline-runtime.mjs");
+    return path.join(process.resourcesPath, "agent-runtime", "coloride-runtime.mjs");
   }
-  return path.join(getRepoRoot(), "client", "desktop", "resources", "agent-runtime", "cline-runtime.mjs");
+  return path.join(getRepoRoot(), "client", "desktop", "resources", "agent-runtime", "coloride-runtime.mjs");
 }
 
 /** Dev checkouts gitignore the bundle. Build it so Windows (and Mac) can start the agent. */
-function ensureClineRuntime() {
-  const built = clineRuntimeBundlePath();
+function ensureAgentRuntime() {
+  const built = agentRuntimeBundlePath();
   if (fs.existsSync(built) || app.isPackaged) {
     return built;
   }
@@ -660,7 +660,7 @@ function ensureClineRuntime() {
   });
   if (result.status !== 0) {
     console.error(
-      "[agent-runtime] failed to build cline-runtime.mjs:",
+      "[agent-runtime] failed to build coloride-runtime.mjs:",
       result.stderr || result.stdout || (result.error && result.error.message),
     );
   }
@@ -676,8 +676,11 @@ function sidecarEnv(mode) {
   env.COLORIDE_AGENT_NODE = process.execPath;
   // Always the esbuild bundle. The source host imports TypeScript, which
   // Electron's embedded Node cannot load. beforePack rebuilds this file.
-  env.COLORIDE_CLINE_RUNTIME = ensureClineRuntime();
+  env.COLORIDE_AGENT_RUNTIME = ensureAgentRuntime();
   env.COLORIDE_TERMINAL_STATE_DIR = path.join(app.getPath("userData"), "terminal-host", "sessions");
+  env.COLORIDE_EXTERNAL_AGENTS_DIR = path.join(app.getPath("userData"), "external-agents");
+  // External agents use real Node/npm (or a private downloaded runtime).
+  // Electron's embedded Node remains reserved for Coloride's bundled runtime.
   // Only needed when launching via python -m from the monorepo.
   if (mode === "python") {
     const root = getRepoRoot();
@@ -1117,6 +1120,7 @@ async function gracefulQuit() {
     // ignore
   }
   try {
+    await requestSidecarShutdown("/api/external-agents/suspend", 5000);
     await suspendSidecar();
   } catch (error) {
     console.warn("[quit] terminal suspend failed:", error && error.message);
@@ -1879,7 +1883,7 @@ async function createWindow() {
   await mainWindow.loadURL(url);
 }
 
-const settingsSections = new Set(["general", "appearance", "shortcuts", "editor", "terminal", "agent", "providers", "security", "updates", "diagnostics", "about"]);
+const settingsSections = new Set(["general", "appearance", "shortcuts", "editor", "terminal", "agent", "external-agents", "providers", "security", "updates", "diagnostics", "about"]);
 async function openSettingsWindow(section) {
   // Old account links open General. Account is no longer a settings section.
   const requested = section === "account" ? "general" : section;
@@ -1955,6 +1959,31 @@ ipcMain.handle("coloride:openSettings", (event, section) => {
 });
 
 ipcMain.handle("coloride:getRuntime", () => sidecarConfig);
+
+ipcMain.handle("coloride:restartHost", async (event) => {
+  if (event.senderFrame !== event.sender.mainFrame ||
+      (event.sender !== mainWindow?.webContents && event.sender !== settingsWindow?.webContents)) {
+    throw new Error("Host restart is only available to application windows");
+  }
+  if (!sidecarConfig) throw new Error("The local host is not running.");
+  // Explicit Settings action: the button explains that terminal processes close.
+  const base = `http://${sidecarConfig.host}:${sidecarConfig.port}`;
+  const headers = { Authorization: `Bearer ${sidecarConfig.token}` };
+  const response = await fetch(`${base}/api/term`, { headers, signal: AbortSignal.timeout(5000) });
+  if (!response.ok) throw new Error("Could not inspect terminals. The host was preserved.");
+  const terminals = await response.json();
+  for (const terminal of terminals) {
+    const closed = await fetch(`${base}/api/term/${encodeURIComponent(terminal.termId)}/close`, {
+      method: "POST", headers, signal: AbortSignal.timeout(5000),
+    });
+    if (!closed.ok) throw new Error("A terminal could not be closed. The host was preserved.");
+  }
+  // Retire discovery only after the explicit close succeeds. The old listener
+  // may drain independently; the next launch always boots the current source.
+  fs.rmSync(sidecarDiscoveryPath(), { force: true });
+  app.relaunch();
+  app.quit();
+});
 
 ipcMain.handle("coloride:getAppInfo", () => ({
   version: getColorideVersion(),

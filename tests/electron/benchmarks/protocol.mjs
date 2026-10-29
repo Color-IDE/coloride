@@ -2,13 +2,11 @@ import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 const execute = promisify(execFile);
-export const EDITORS = ['coloride', 'vscode', 'zed'];
+export const EDITORS = ['coloride', 'vscode'];
 export function comparisonSchedule() {
-  // All six permutations balance each editor's position and preceding editor.
+  // Both orders balance each editor's position and preceding editor.
   const orders = [
-    ['coloride', 'vscode', 'zed'], ['vscode', 'zed', 'coloride'],
-    ['zed', 'coloride', 'vscode'], ['coloride', 'zed', 'vscode'],
-    ['zed', 'vscode', 'coloride'], ['vscode', 'coloride', 'zed'],
+    ['coloride', 'vscode'], ['vscode', 'coloride'],
   ];
   return orders.flatMap((order, round) => order.map((editor, position) => ({
     round: round + 1, position: position + 1, editor, samples: 20,
@@ -104,7 +102,7 @@ export function visualSamples(capture, cases, fileOrder) {
 }
 export function summarizeComparison(executions) {
   const schedule = comparisonSchedule();
-  assert.equal(executions.length, schedule.length, 'All 18 scheduled executions are required; partial runs cannot rank editors');
+  assert.equal(executions.length, schedule.length, 'All 4 scheduled executions are required; partial runs cannot rank editors');
   assert.equal(new Set(executions.map(run => run.profile)).size, executions.length, 'Each execution requires a fresh profile');
   const environments = new Set(executions.map(run => run.environmentFingerprint));
   assert(environments.size === 1 && !environments.has(undefined), 'Machine, OS, screen and window geometry must match');

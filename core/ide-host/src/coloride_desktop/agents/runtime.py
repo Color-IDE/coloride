@@ -1,6 +1,5 @@
 """Private stdio transport to the Coloride turn scheduler.
 
-The module, class and environment names retain compatibility with older hosts.
 Python owns credentials, context, providers, policy and workspace execution.
 """
 from __future__ import annotations
@@ -15,26 +14,27 @@ from pathlib import Path
 from typing import Any
 
 
-class ClineRuntimeError(RuntimeError):
+class AgentRuntimeError(RuntimeError):
     pass
 
 
 def _runtime_candidates() -> list[Path]:
-    """Ordered host paths. A missing COLORIDE_CLINE_RUNTIME must not hide later files.
+    """Ordered host paths. A missing override must not hide later files.
 
-    Electron always sets that env var. On Windows dev checkouts the esbuild
+    Electron sets COLORIDE_AGENT_RUNTIME. On Windows dev checkouts the esbuild
     bundle is gitignored and often absent, so discovery has to keep looking.
     """
     candidates: list[Path] = []
-    override = (os.environ.get("COLORIDE_CLINE_RUNTIME") or "").strip()
+    override = (os.environ.get("COLORIDE_AGENT_RUNTIME") or "").strip()
     if override:
         candidates.append(Path(override))
     meipass = getattr(sys, "_MEIPASS", "")
     if meipass:
-        candidates.append(Path(meipass) / "agent-runtime" / "cline-runtime.mjs")
+        candidates.append(Path(meipass) / "agent-runtime" / "coloride-runtime.mjs")
     root = Path(__file__).resolve().parents[5]
-    # Prefer the packaged bundle used by Electron and release builds.
-    candidates.append(root / "client" / "desktop" / "resources" / "agent-runtime" / "cline-runtime.mjs")
+    candidates.append(
+        root / "client" / "desktop" / "resources" / "agent-runtime" / "coloride-runtime.mjs"
+    )
     return candidates
 
 
@@ -65,7 +65,7 @@ def runtime_executable() -> str | None:
     return shutil.which("node") or shutil.which("node.exe")
 
 
-class ClineRuntime:
+class AgentRuntime:
     def __init__(self) -> None:
         self.process: asyncio.subprocess.Process | None = None
         self._stderr_task: asyncio.Task[None] | None = None
@@ -83,13 +83,13 @@ class ClineRuntime:
         script = bundled_runtime_script()
         executable = runtime_executable()
         if script is None:
-            raise ClineRuntimeError(
-                "The Coloride runtime is missing. Rebuild Coloride; no external agent installation is used."
+            raise AgentRuntimeError(
+                "The Coloride runtime is missing. Rebuild Coloride."
             )
         if not executable:
-            raise ClineRuntimeError(
+            raise AgentRuntimeError(
                 "The Coloride runtime needs Electron's embedded Node "
-                "(COLORIDE_AGENT_NODE). No external agent installation is used."
+                "(COLORIDE_AGENT_NODE)."
             )
         env = dict(os.environ)
         if os.environ.get("COLORIDE_AGENT_NODE"):
@@ -141,13 +141,13 @@ class ClineRuntime:
             await asyncio.gather(reader, cancelled, return_exceptions=True)
         if not line:
             detail = f" {self._stderr.strip()}" if self._stderr.strip() else ""
-            raise ClineRuntimeError(f"Coloride runtime exited before completing the turn.{detail}")
+            raise AgentRuntimeError(f"Coloride runtime exited before completing the turn.{detail}")
         try:
             value = json.loads(line)
         except ValueError as exc:
-            raise ClineRuntimeError("Coloride runtime returned an invalid transport message.") from exc
+            raise AgentRuntimeError("Coloride runtime returned an invalid transport message.") from exc
         if not isinstance(value, dict):
-            raise ClineRuntimeError("Coloride runtime returned an invalid transport message.")
+            raise AgentRuntimeError("Coloride runtime returned an invalid transport message.")
         return value
 
     async def reply(self, request: dict[str, Any], result: dict[str, Any]) -> None:
@@ -159,7 +159,7 @@ class ClineRuntime:
     async def _send(self, value: dict[str, Any]) -> None:
         process = self.process
         if process is None or process.stdin is None:
-            raise ClineRuntimeError("Coloride runtime is not running.")
+            raise AgentRuntimeError("Coloride runtime is not running.")
         try:
             if process.returncode is not None or process.stdin.is_closing():
                 raise BrokenPipeError("Runtime input is closed")
@@ -167,7 +167,7 @@ class ClineRuntime:
             await process.stdin.drain()
         except (OSError, RuntimeError) as exc:
             detail = f" {self._stderr.strip()}" if self._stderr.strip() else ""
-            raise ClineRuntimeError(
+            raise AgentRuntimeError(
                 "Coloride runtime closed before receiving the tool/model result."
                 f"{detail}"
             ) from exc
@@ -175,7 +175,7 @@ class ClineRuntime:
     async def close(self) -> None:
         process = self.process
         if process is not None and process.returncode is None:
-            with contextlib.suppress(ClineRuntimeError, BrokenPipeError, ConnectionResetError, AssertionError):
+            with contextlib.suppress(AgentRuntimeError, BrokenPipeError, ConnectionResetError, AssertionError):
                 await self._send({"op": "cancel", "reason": "Coloride host closed the turn"})
                 assert process.stdin
                 process.stdin.close()

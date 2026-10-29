@@ -78,6 +78,7 @@ echo "==> pyinstaller onedir $NAME"
     --collect-all uvicorn \
     --collect-all asyncssh \
     --collect-all keyring \
+    --collect-all acp \
     pyinstaller_entry.py
 )
 

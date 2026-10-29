@@ -1,5 +1,33 @@
 # Provider registry
 
+## External agents through ACP
+
+Settings → External Agents → ACP Registry installs optional agents into the
+application's user-data directory. The catalog supports search and installed
+filters. Installs use the registry version, retain the program across restarts
+and provision a private Node/npm or uv runtime when needed. Installing executes
+the selected agent's published package; it does not change Coloride's dependencies.
+
+Installed agents appear in the agent panel's `+` menu. They own their tools,
+authentication and model connection. Coloride is an ACP client: it presents
+messages, permissions and the model/mode/thinking options announced by each
+session. These agents do not run through Coloride's provider registry or tool loop.
+The initial implementation supports local projects and protocol-driven login.
+Interactive terminal authentication is not advertised yet. Conversation recovery
+depends on the agent's `loadSession` capability; unsupported histories remain
+read-only. Closing a tab or quitting stops its execution and keeps its history.
+
+After a backend update, a persistent development host can still be serving the
+old API. Settings identifies that case and offers **Restart host and close
+terminals**. Save work first: that explicit action closes terminal processes.
+If the desktop preload itself is old, close terminal tabs and restart `pnpm dev`.
+
+`node tests/electron/smoke/external-agents.mjs` uses an isolated HOME/profile,
+downloads the real catalog and Codex package, then checks the conversation with
+a deterministic ACP process. It never signs into an account or sends paid prompts.
+
+## Built-in agent providers
+
 `core/ide-host/src/coloride_desktop/agents/provider_registry.py` owns provider
 definitions, supported API protocols and model capability resolution. The agent
 loop receives the same provider interface regardless of the service's name.
