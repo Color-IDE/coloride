@@ -55,6 +55,7 @@ import {
   StartProcessIcon,
   StopProcessIcon,
   SwitchUserIcon,
+  ThoughtIcon,
   toolIcon,
 } from "./icons";
 import {
@@ -1679,6 +1680,29 @@ export function AgentToolRow({ entry }: { entry: ToolTimelineEntry }) {
           )}
         </CollapsibleSection>
       )}
+    </div>
+  );
+}
+
+
+/** Agent-side reviews use the same compact activity shell as other IDE work. */
+export function AgentReviewRow({ entry }: { entry: ToolTimelineEntry }) {
+  const [expanded, setExpanded] = useState(false);
+  const running = !entry.complete && !entry.failed;
+  const status = String(entry.metadata.reviewStatus ?? (running ? "Reviewing" : entry.failed ? "Not approved" : "Approved"));
+  const hasDetail = Boolean(entry.output.trim());
+  return (
+    <div className={`agent-thinking agent-review-row${running ? " is-running" : ""}${entry.failed ? " is-failed" : ""}`}>
+      <button className="agent-thinking-toggle" type="button" disabled={!hasDetail}
+        aria-expanded={hasDetail ? expanded : undefined} onClick={() => setExpanded(value => !value)}>
+        <span className="agent-thinking-icon" aria-hidden="true"><ThoughtIcon /></span>
+        <ShimmerActionLabel className="agent-thinking-label" running={running}
+          text={`Guardian Review · ${status}`} verb="Guardian Review" detail={running ? "" : status} />
+        {hasDetail ? <span className={`agent-thinking-chevron${expanded ? " is-open" : ""}`}><ExpandChevronIcon /></span> : null}
+      </button>
+      <CollapsibleSection className="agent-thinking-detail" open={expanded && hasDetail}>
+        <div className="agent-browser-tool-note whitespace-pre-wrap">{entry.output}</div>
+      </CollapsibleSection>
     </div>
   );
 }

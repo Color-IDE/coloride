@@ -218,3 +218,52 @@ test("Codex uses native thinking, command and file rows", async () => {
   expect(aligned).toBe(true);
   await page.screenshot({ path: "artifacts/codex-native-tools.png" });
 });
+
+test("intermediate replies keep activity visible and edits/reviews use native presentation", async () => {
+  let running = true;
+  const updates: Record<string, unknown>[] = [
+    { sessionUpdate: "user_message_chunk", content: { type: "text", text: "Build the page" } },
+    { sessionUpdate: "agent_message_chunk", content: { type: "text", text: "I will create the page and styles." } },
+  ];
+  await page.route(/\/api\/external-agents\/sessions\/codex-1$/, (route) => route.fulfill({ json: {
+    id: "codex-1", title: "Codex", phase: "ready", turn: running ? "running" : "idle", configOptions: [], authMethods: [],
+  } }));
+  await page.route(/\/api\/external-agents\/sessions\/[^/]+\/events(?:\?.*)?$/, (route) => route.fulfill({ json: updates.map((update, i) => ({ sessionId: "codex-1", sequence: i + 1, createdAt: "2026-10-29T00:00:00Z", update })) }));
+  const open = async () => {
+    await page.goto(base + "/tests/external-agent.html");
+    await page.locator("main").evaluate(element => element.classList.add("agent-view-sidebar"));
+    await page.evaluate(() => { document.body.dataset.theme = "light"; });
+  };
+  await open();
+  await expect(page.locator(".agent-thinking.is-running")).toContainText("Thinking");
+  updates.push({ sessionUpdate: "tool_call", toolCallId: "edit-1", kind: "edit", title: "Editing files", status: "in_progress", content: [
+    { type: "diff", path: "/fixture/index.html", oldText: null, newText: "<main>Hello</main>\n" },
+    { type: "diff", path: "/fixture/styles.css", oldText: "a { color: red; }\n", newText: "a { color: blue; }\n" },
+  ] });
+  await open();
+  await expect(page.locator(".agent-edit-card.is-running")).toHaveCount(2);
+  await expect(page.locator(".agent-edit-card").first()).toContainText("index.html");
+  await expect(page.locator(".agent-edit-card").first()).toContainText("<main>Hello</main>");
+  updates.push(
+    { sessionUpdate: "tool_call_update", toolCallId: "edit-1", status: "completed" },
+    { sessionUpdate: "tool_call", toolCallId: "guardian_assessment:review-1", kind: "think", title: "Guardian Review", status: "in_progress", content: [{ type: "content", content: { type: "text", text: "Status: In progress" } }] },
+  );
+  await open();
+  await expect(page.locator(".agent-review-row.is-running")).toBeVisible();
+  updates.push(
+    { sessionUpdate: "tool_call_update", toolCallId: "guardian_assessment:review-1", status: "completed", content: [{ type: "content", content: { type: "text", text: "Status: Approved\nRisk: low\nRationale: Preview requested by the user" } }] },
+    { sessionUpdate: "turn_complete" },
+  );
+  running = false;
+  await open();
+  await expect(page.locator(".agent-edit-card")).toHaveCount(2);
+  await expect(page.locator(".agent-edit-card").first()).toContainText("+1");
+  await expect(page.locator(".agent-review-row")).toContainText("Approved");
+  const review = page.locator(".agent-review-row .agent-thinking-toggle");
+  await expect(review).toHaveAttribute("aria-expanded", "false");
+  await review.click();
+  await expect(page.getByText("Status: Approved", { exact: false })).toBeVisible();
+  await expect(page.getByText("Rationale: Preview requested by the user", { exact: false })).toBeVisible();
+  await expect.poll(() => page.locator(".agent-review-row .agent-thinking-detail").evaluate(element => element.closest(".agent-collapse")!.getBoundingClientRect().height >= element.scrollHeight - 1)).toBe(true);
+  await page.screenshot({ path: "artifacts/codex-native-edits-review.png" });
+});

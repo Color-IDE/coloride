@@ -27,6 +27,7 @@ import {
   AgentMcpToolRow,
   AgentMovePathRow,
   AgentReadFileRow,
+  AgentReviewRow,
   AgentReadProcessRow,
   AgentRenamePathRow,
   AgentSearchFilesRow,
@@ -97,6 +98,8 @@ export function AgentTimelineItem(props: AgentTimelineItemProps) {
       entry.tool === "complete_task"
     ) {
       node = null;
+    } else if (entry.tool === "guardian_review") {
+      node = <AgentReviewRow entry={entry} />;
     } else if (entry.tool === "read_file") {
       node = <AgentReadFileRow entry={entry} onOpenFile={props.onOpenFile} />;
     } else if (entry.tool === "search_files") {
