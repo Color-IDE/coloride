@@ -94,3 +94,23 @@ test("resolved permissions disappear immediately and a closed execution stops th
   assert.equal(state.turnActive, false);
   assert.equal(state.permissions.length, 0);
 });
+
+test("tool status updates retain original command arguments and captured output", () => {
+  let state = reduceExternalAgentUpdate(emptyExternalAgentState(), {
+    sessionUpdate: "tool_call", toolCallId: "command", kind: "execute",
+    title: "pwd && ls", rawInput: { command: "pwd && ls", cwd: "/project" },
+    content: [{ type: "terminal", terminalId: "exec-1" }],
+  });
+  state = reduceExternalAgentUpdate(state, {
+    sessionUpdate: "tool_call_update", toolCallId: "command", title: "Ran command pwd",
+    status: "completed", rawOutput: { stdout: "/project", exit_code: 0 },
+  });
+  state = reduceExternalAgentUpdate(state, {
+    sessionUpdate: "tool_call_update", toolCallId: "command", status: "completed",
+  });
+  const tool = state.items[0];
+  assert.equal(tool.kind, "tool");
+  if (tool.kind !== "tool") throw new Error("Expected tool");
+  assert.deepEqual(tool.rawInput, { command: "pwd && ls", cwd: "/project" });
+  assert.deepEqual(tool.rawOutput, { stdout: "/project", exit_code: 0 });
+});

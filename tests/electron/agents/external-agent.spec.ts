@@ -178,3 +178,43 @@ test("ready Codex chat stays empty until the first message", async () => {
   await page.keyboard.press("Escape");
   await page.screenshot({ path: "artifacts/codex-docked-composer.png" });
 });
+
+test("Codex uses native thinking, command and file rows", async () => {
+  let running = true;
+  let updates: Record<string, unknown>[] = [
+    { sessionUpdate: "user_message_chunk", content: { type: "text", text: "Inspect the project" } },
+    { sessionUpdate: "agent_thought_chunk", content: { type: "text", text: "Reviewing the project structure" } },
+  ];
+  await page.route(/\/api\/external-agents\/sessions\/codex-1$/, (route) => route.fulfill({ json: {
+    id: "codex-1", title: "Codex", phase: "ready", turn: running ? "running" : "idle", configOptions: [], authMethods: [],
+  } }));
+  await page.route(/\/api\/external-agents\/sessions\/[^/]+\/events(?:\?.*)?$/, (route) => route.fulfill({ json: updates.map((update, i) => ({ sessionId: "codex-1", sequence: i + 1, createdAt: "2026-10-29T00:00:00Z", update })) }));
+  await page.goto(base + "/tests/external-agent.html");
+  await page.locator("main").evaluate((element) => element.classList.add("agent-view-sidebar"));
+  await expect(page.locator(".agent-thinking.is-running")).toContainText("Thinking");
+  updates = [updates[0]!];
+  await page.reload();
+  await expect(page.locator(".agent-thinking.is-running")).toContainText("Thinking");
+  running = false;
+  updates.push(
+    { sessionUpdate: "agent_thought_chunk", content: { type: "text", text: "Reviewing the project structure" } },
+    { sessionUpdate: "tool_call", toolCallId: "exec-1", kind: "execute", title: "pwd && ls", rawInput: { command: "pwd && ls" }, content: [{ type: "terminal", terminalId: "exec-1" }] },
+    { sessionUpdate: "tool_call_update", toolCallId: "exec-1", title: "Ran command pwd", status: "completed" },
+    { sessionUpdate: "agent_message_chunk", content: { type: "text", text: "Checking files next." } },
+    { sessionUpdate: "tool_call", toolCallId: "list-1", kind: "read", title: "List files", status: "completed" },
+    { sessionUpdate: "turn_complete" },
+  );
+  await page.reload();
+  await page.locator("main").evaluate((element) => element.classList.add("agent-view-sidebar"));
+  await page.evaluate(() => { document.body.dataset.theme = "light"; });
+  await expect(page.locator(".agent-thinking-toggle").first()).toContainText("Thought");
+  await expect(page.locator(".agent-tool-row.is-command")).toContainText("pwd && ls");
+  await expect(page.getByText('"terminalId"', { exact: false })).toHaveCount(0);
+  await expect(page.locator(".agent-list-files-row")).toBeVisible();
+  const aligned = await page.locator(".agent-turn-body").evaluate((body) => {
+    const left = body.getBoundingClientRect().left;
+    return [...body.querySelectorAll(".agent-thinking, .agent-tool-row")].every((row) => Math.abs(row.getBoundingClientRect().left - left) <= 1);
+  });
+  expect(aligned).toBe(true);
+  await page.screenshot({ path: "artifacts/codex-native-tools.png" });
+});

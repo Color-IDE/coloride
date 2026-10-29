@@ -16,6 +16,8 @@ export type ExternalTranscriptItem =
       status: string;
       toolKind: string | null;
       content: unknown;
+      rawInput?: Record<string, unknown>;
+      rawOutput?: unknown;
     }
   | { id: string; kind: "notice"; text: string };
 
@@ -106,6 +108,10 @@ export function reduceExternalAgentUpdate(
       status: String(update.status ?? (existing && existing.kind === "tool" ? existing.status : "pending")),
       toolKind: typeof update.kind === "string" ? update.kind : existing && existing.kind === "tool" ? existing.toolKind : null,
       content: update.content ?? (existing && existing.kind === "tool" ? existing.content : null),
+      rawInput: update.rawInput && typeof update.rawInput === "object" && !Array.isArray(update.rawInput)
+        ? update.rawInput as Record<string, unknown>
+        : existing?.kind === "tool" ? existing.rawInput : undefined,
+      rawOutput: update.rawOutput ?? (existing?.kind === "tool" ? existing.rawOutput : undefined),
     };
     const items = existing
       ? state.items.map((item) => (item.kind === "tool" && item.toolCallId === toolCallId ? next : item))
