@@ -20,10 +20,10 @@ delete env.ELECTRON_RUN_AS_NODE;
 delete env.COLORIDE_WEB_DEV_URL;
 env.COLORIDE_DEV = '0';
 env.COLORIDE_PYTHON = resolveTestPython();
-let app, runtime;
+let app, runtime, page;
 try {
   app = await _electron.launch({executablePath: binary, args: source ? [resolve("client/desktop/src/main.cjs")] : [], env, timeout: 60000});
-  const page = await app.firstWindow();
+  page = await app.firstWindow();
   page.setDefaultTimeout(15000);
   const pageErrors=[];
   page.on("pageerror", error => pageErrors.push(error.message));
@@ -83,15 +83,19 @@ try {
   await expect.poll(async () => {try {return await readFile(join(sandbox,'project with spaces','smoke.txt'),'utf8');} catch{return '';}}).toBe('PACKAGED_LOCAL\n');
   const outputRow = page.locator('.xterm-rows > div').filter({hasText:'PACKAGED_LOCAL'}).first();
   await expect(outputRow).toBeVisible();
-  const bounds = await outputRow.boundingBox();
-  if (!bounds) throw new Error('Packaged terminal output has no bounds');
-  const clip = {x:Math.ceil(bounds.x),y:Math.ceil(bounds.y),width:Math.floor(bounds.width),height:Math.floor(bounds.height)};
-  await expect.poll(async () => (await app.browserWindow(page)).evaluate(async (win,clip) => {
-    const bitmap = (await win.capturePage(clip)).toBitmap();
-    let ink=0;
-    for(let i=0;i<bitmap.length;i+=4) if(Math.max(bitmap[i],bitmap[i+1],bitmap[i+2])>100) ink++;
-    return ink;
-  },clip)).toBeGreaterThan(30);
+  // zsh can redraw its prompt after the output first appears. Follow the
+  // matching row on every capture rather than sampling a stale rectangle.
+  await expect.poll(async () => {
+    const bounds = await outputRow.boundingBox();
+    if (!bounds || bounds.width < 1 || bounds.height < 1) return 0;
+    const clip = {x:Math.ceil(bounds.x),y:Math.ceil(bounds.y),width:Math.floor(bounds.width),height:Math.floor(bounds.height)};
+    return (await app.browserWindow(page)).evaluate(async (win,clip) => {
+      const bitmap = (await win.capturePage(clip)).toBitmap();
+      let ink=0;
+      for(let i=0;i<bitmap.length;i+=4) if(Math.max(bitmap[i],bitmap[i+1],bitmap[i+2])>100) ink++;
+      return ink;
+    },clip);
+  }).toBeGreaterThan(30);
   await writeFile(resolve('artifacts/terminal-smoke/packaged-terminal.png'), await (await app.browserWindow(page)).evaluate(async win => (await win.capturePage()).toPNG()));
   // Exercise the real TerminalPanel layer, not the component harness.
   const viewport = page.locator('.xterm-viewport').first();
@@ -226,6 +230,13 @@ try {
 
   expect(pageErrors).toEqual([]);
   console.log(`${source ? 'Source' : 'Packaged'} full IDE: local PTY, native scroll, resizing and splits PASS`);
+} catch (error) {
+  if (page && !page.isClosed()) {
+    await page.screenshot({path:resolve('artifacts/terminal-smoke/failure.png')}).catch(()=>{});
+    await page.locator('.xterm-rows').evaluateAll(rows => rows.map(row => ({text:row.textContent, bounds:row.getBoundingClientRect().toJSON()})))
+      .then(rows => writeFile(resolve('artifacts/terminal-smoke/failure-terminal.json'), JSON.stringify(rows, null, 2))).catch(()=>{});
+  }
+  throw error;
 } finally {
   await app?.close().catch(()=>{});
   if (!runtime) {try {runtime=JSON.parse(await readFile(join(sandbox,'user-data','terminal-host.json'),'utf8'));} catch {}}

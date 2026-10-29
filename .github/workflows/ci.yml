@@ -110,4 +110,7 @@ jobs:
         if: failure()
         with:
           name: terminal-${{ matrix.shell }}
-          path: artifacts/electron
+          path: |
+            artifacts/electron
+            artifacts/terminal-smoke
+            artifacts/notifications
