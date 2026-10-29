@@ -15,6 +15,7 @@ let sandbox = "";
 let base = "";
 const errors: string[] = [];
 const modelOption = { id: "model", name: "Model", category: "model", type: "select", currentValue: "fixture-model", options: [{ value: "fixture-model", name: "Fixture model" }] };
+const accessOption = { id: "mode", name: "Access", category: "mode", type: "select", currentValue: "default", options: [{ value: "read-only", name: "Read-only" }, { value: "default", name: "Auto review" }] };
 const configChanges: Array<{ configId: string; value: string | boolean }> = [];
 
 test.beforeAll(async () => {
@@ -78,7 +79,7 @@ test.beforeAll(async () => {
         json: {
           sessionId: "codex-1",
           pending: {},
-          options: [modelOption, { id: "thought", name: "Thinking", category: "thought_level", type: "select", currentValue: "high", options: [{ value: "low", name: "Low" }, { value: "high", name: "High" }] }],
+          options: [modelOption, accessOption, { id: "thought", name: "Thinking", category: "thought_level", type: "select", currentValue: "high", options: [{ value: "low", name: "Low" }, { value: "high", name: "High" }] }],
         },
       });
     }
@@ -100,7 +101,7 @@ test.beforeAll(async () => {
         processId: null,
         supportsLoad: true,
         authMethods: [{ id: "codex-login", name: "Sign in", type: "agent" }],
-        configOptions: [modelOption, { id: "thought", name: "Thinking", category: "thought_level", type: "select", currentValue: "low", options: [{ value: "low", name: "Low" }, { value: "high", name: "High" }] }],
+        configOptions: [modelOption, accessOption, { id: "thought", name: "Thinking", category: "thought_level", type: "select", currentValue: "low", options: [{ value: "low", name: "Low" }, { value: "high", name: "High" }] }],
         updatedAt: "2026-10-29T00:00:00Z",
       },
     });
@@ -158,10 +159,22 @@ test("ready Codex chat stays empty until the first message", async () => {
   });
   await expect.poll(composerGeometry).toMatchObject({ left: 6, right: 6, top: 2, inputHeight: 110 });
   await expect(page.getByText("Codex is ready in this project.", { exact: true })).toHaveCount(0);
-  await page.screenshot({ path: "artifacts/codex-empty-composer.png" });
+  await page.getByRole("button", { name: "Access level", exact: true }).click();
+  const menuDirection = () => page.getByText("Read-only", { exact: true }).evaluate((element) => {
+    const trigger = document.querySelector('[aria-label="Access level"]')!;
+    return element.getBoundingClientRect().top >= trigger.getBoundingClientRect().bottom;
+  });
+  await expect.poll(menuDirection).toBe(true);
+  await expect.poll(composerGeometry).toMatchObject({ top: 2, inputHeight: 110 });
+  await page.screenshot({ path: "artifacts/codex-empty-access-menu.png" });
+  await page.keyboard.press("Escape");
   await page.getByLabel("Message Codex").fill("Analyze the project");
+  await expect.poll(composerGeometry).toMatchObject({ top: 2, inputHeight: 110 });
   await page.getByRole("button", { name: "Send", exact: true }).click();
   await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeVisible();
   await expect.poll(composerGeometry).toMatchObject({ left: 6, right: 6, bottom: 6, inputHeight: 22 });
+  await page.getByRole("button", { name: "Access level", exact: true }).click();
+  await expect.poll(menuDirection).toBe(false);
+  await page.keyboard.press("Escape");
   await page.screenshot({ path: "artifacts/codex-docked-composer.png" });
 });

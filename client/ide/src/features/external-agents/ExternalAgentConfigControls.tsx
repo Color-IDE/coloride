@@ -36,11 +36,13 @@ function optionLabel(option: ExternalAgentConfigOption, value: string) {
 
 export function ExternalAgentConfigControls({
   options,
+  newTask = false,
   pending,
   disabled,
   onChange,
 }: {
   options: ExternalAgentConfigOption[];
+  newTask?: boolean;
   pending: Record<string, string | boolean>;
   disabled: boolean;
   onChange: (configId: string, value: string | boolean) => void;
@@ -136,7 +138,7 @@ export function ExternalAgentConfigControls({
     const menuHeight = modelMenuRef.current?.offsetHeight || 260;
     const triggerRect = trigger.getBoundingClientRect();
     setModelMenuPosition(
-      placeMenuAboveTrigger(triggerRect, MODEL_MENU_WIDTH, menuHeight),
+      placeMenuAboveTrigger(triggerRect, MODEL_MENU_WIDTH, menuHeight, newTask),
     );
 
     if (!modelsOpen) {
@@ -166,7 +168,7 @@ export function ExternalAgentConfigControls({
       left: placement.left,
       side: placement.side,
     });
-  }, [modelOpen, modelsOpen]);
+  }, [modelOpen, modelsOpen, newTask]);
 
   useLayoutEffect(() => {
     setHoverTip(null);
@@ -270,6 +272,7 @@ export function ExternalAgentConfigControls({
       ) : null}
       {mode ? (
         <ExternalAgentAccessSelector
+          newTask={newTask}
           onOpen={() => {
             setPlusOpen(false);
             setModelOpen(false);
@@ -284,7 +287,7 @@ export function ExternalAgentConfigControls({
       {plusOpen ? (
         <motion.div
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          className="absolute bottom-[calc(100%+4px)] left-0 z-40"
+          className={`absolute ${newTask ? "top-[calc(100%+4px)]" : "bottom-[calc(100%+4px)]"} left-0 z-40`}
           initial={{ opacity: 0, y: 5, scale: 0.98 }}
           transition={{ duration: 0.12, ease: "easeOut" }}
         >

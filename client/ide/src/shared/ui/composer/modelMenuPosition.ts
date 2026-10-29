@@ -47,7 +47,7 @@ export function placeBesideRect(
   return { top, left, side, caretOffsetY };
 }
 
-export function placeMenuAboveTrigger(trigger: DOMRect, width: number, estimatedHeight: number): { top: number; left: number } {
+export function placeMenuAboveTrigger(trigger: DOMRect, width: number, estimatedHeight: number, preferBelow = false): { top: number; left: number } {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   let left = trigger.right - width;
@@ -55,7 +55,9 @@ export function placeMenuAboveTrigger(trigger: DOMRect, width: number, estimated
   // Prefer above the trigger; if not enough room, drop below.
   const above = trigger.top - MODEL_MENU_GAP - estimatedHeight;
   const below = trigger.bottom + MODEL_MENU_GAP;
-  let top = above >= 8 ? above : Math.min(below, vh - estimatedHeight - 8);
+  let top = preferBelow && below + estimatedHeight <= vh - 8
+    ? below
+    : above >= 8 ? above : Math.min(below, vh - estimatedHeight - 8);
   top = Math.max(8, top);
   return { top, left };
 }

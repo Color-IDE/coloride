@@ -94,6 +94,7 @@ export function ExternalAgentComposer({
             </div>
             <div className="agent-centered-composer-actions flex h-[30px] shrink-0 items-center gap-1.5">
               <ExternalAgentConfigControls
+                newTask={newTask}
                 disabled={disabled || Object.keys(pending).length > 0}
                 onChange={onConfigChange}
                 options={options}
