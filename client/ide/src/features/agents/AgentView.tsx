@@ -17,7 +17,6 @@ import {
 import { createPortal } from "react-dom";
 import { api } from "../../shared/api/client";
 import { AgentMark } from "../external-agents";
-import "../settings/styles/external-agents.css";
 import { Menu, MenuItem, MenuLabel, MenuSeparator } from "../../shared/ui/Menu";
 import { useContextMenuPosition } from "../../shared/ui/useContextMenuPosition";
 import {

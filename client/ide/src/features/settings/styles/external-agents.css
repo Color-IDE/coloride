@@ -179,16 +179,11 @@ body[data-theme="light"] .settings-workbench .acp-registry .settings-preference-
   gap: 9px;
   min-width: 0;
 }
-.acp-agent-title img,
-.acp-agent-mark {
+.acp-agent-title img {
   object-fit: contain;
   flex: none;
   width: auto;
   height: 20px;
-  color: var(--ui-text-muted);
-}
-body:not([data-theme="light"]) .acp-registry .acp-agent-title img {
-  filter: grayscale(1) brightness(0) invert(0.72);
 }
 .acp-agent-title h3 {
   font-size: 13px;
@@ -200,42 +195,8 @@ body:not([data-theme="light"]) .acp-registry .acp-agent-title img {
   color: var(--ui-text-muted);
   font-size: 12px;
 }
-.acp-agent-mark-fallback {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 14px;
-  border-radius: 3px;
-  background: var(--ui-tab-active);
-  color: var(--ui-text-muted);
-  font-size: 9px;
-  font-weight: 500;
-  line-height: 14px;
-}
 .external-agent-composer .agent-composer-input {
   min-height: 24px;
-}
-.agent-add-tab-separator {
-  height: 1px;
-  margin: 4px 6px;
-  background: rgb(255 255 255 / 8%);
-}
-body[data-theme="light"] .agent-add-tab-separator {
-  background: rgb(24 24 27 / 8%);
-}
-.agent-add-tab-menu .acp-agent-mark {
-  width: auto;
-  height: 14px;
-  overflow: visible;
-}
-.agent-add-tab-menu .acp-agent-mark-fallback {
-  width: 14px;
-  height: 14px;
-  font-size: 9px;
-  line-height: 14px;
-}
-body:not([data-theme="light"]) .agent-add-tab-menu .acp-agent-mark {
-  filter: grayscale(1) brightness(0) invert(0.72);
 }
 .acp-agent-fallback {
   display: grid;
