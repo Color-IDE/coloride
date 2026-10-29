@@ -114,3 +114,18 @@ test("tool status updates retain original command arguments and captured output"
   assert.deepEqual(tool.rawInput, { command: "pwd && ls", cwd: "/project" });
   assert.deepEqual(tool.rawOutput, { stdout: "/project", exit_code: 0 });
 });
+
+test("streamed terminal chunks survive status updates and replay without duplicates", () => {
+  const events: ExternalAgentEvent[] = [
+    { sessionId: "s", sequence: 1, createdAt: "", update: { sessionUpdate: "tool_call", toolCallId: "exec-1", kind: "execute", title: "pwd", status: "in_progress" } },
+    { sessionId: "s", sequence: 2, createdAt: "", update: { sessionUpdate: "tool_call_update", toolCallId: "exec-1", _meta: { terminal_output_delta: { terminal_id: "exec-1", data: "/project\n" } } } },
+    { sessionId: "s", sequence: 3, createdAt: "", update: { sessionUpdate: "tool_call_update", toolCallId: "exec-1", _meta: { terminal_output: { terminal_id: "exec-1", data: "café ✓\n" } } } },
+    { sessionId: "s", sequence: 4, createdAt: "", update: { sessionUpdate: "tool_call_update", toolCallId: "exec-1", status: "completed", rawOutput: { exit_code: 0 }, _meta: { terminal_exit: { terminal_id: "exec-1", exit_code: 0 } } } },
+  ];
+  const state = hydrateExternalAgentEvents([...events, ...events]);
+  const tool = state.items[0];
+  assert.equal(tool.kind, "tool");
+  if (tool.kind !== "tool") throw Error("Expected tool");
+  assert.equal(tool.terminalOutput, "/project\ncafé ✓\n");
+  assert.equal(tool.status, "completed");
+});

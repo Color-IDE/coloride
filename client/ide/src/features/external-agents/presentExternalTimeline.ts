@@ -77,7 +77,7 @@ export function toAgentTimelineEntry(
     title: item.title,
     arguments: command ? { ...args, command: args.command ?? item.title }
       : { ...args, ...(args.file_path && !args.path ? { path: args.file_path } : {}) },
-    output: output || toolDetails(item.content), metadata: review ? { reviewStatus: item.status === "completed" ? "Approved" : item.status === "failed" ? "Not approved" : "Reviewing" } : {}, diff: "", preview: "",
+    output: item.terminalOutput || output || toolDetails(item.content), metadata: review ? { reviewStatus: item.status === "completed" ? "Approved" : item.status === "failed" ? "Not approved" : "Reviewing" } : {}, diff: "", preview: "",
     complete: item.status === "completed" || item.status === "failed",
     failed: item.status === "failed", waitingApproval: false,
   };

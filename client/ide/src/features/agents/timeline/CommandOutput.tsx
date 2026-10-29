@@ -67,7 +67,10 @@ export function CommandSourceBlock({ command }: { command: string }) {
 }
 
 export function CommandOutput({ entry }: { entry: ToolTimelineEntry }) {
-  const { scrollRef, fadeEdges } = useScrollFadeEdges([entry.output]);
+  const emptyMessage = entry.failed ? "Command failed without output."
+    : entry.complete ? "Command finished without output." : "Waiting for command output…";
+  const output = entry.output.trim() ? entry.output : emptyMessage;
+  const { scrollRef, fadeEdges } = useScrollFadeEdges([output]);
 
   const fadeClass = [
     "agent-command-output-fade",
@@ -83,7 +86,7 @@ export function CommandOutput({ entry }: { entry: ToolTimelineEntry }) {
         ref={scrollRef}
         className="agent-event-output agent-tool-output agent-terminal-output whitespace-pre-wrap"
       >
-        <TerminalHighlighted text={entry.output} mode="output" />
+        <TerminalHighlighted text={output} mode="output" />
       </pre>
     </div>
   );

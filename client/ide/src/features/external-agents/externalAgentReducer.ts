@@ -18,6 +18,7 @@ export type ExternalTranscriptItem =
       content: unknown;
       rawInput?: Record<string, unknown>;
       rawOutput?: unknown;
+      terminalOutput?: string;
     }
   | { id: string; kind: "notice"; text: string };
 
@@ -100,6 +101,11 @@ export function reduceExternalAgentUpdate(
   if (kind === "tool_call" || kind === "tool_call_update") {
     const toolCallId = String(update.toolCallId ?? "");
     const existing = state.items.find((item) => item.kind === "tool" && item.toolCallId === toolCallId);
+    const meta = update._meta && typeof update._meta === "object"
+      ? update._meta as Record<string, unknown> : {};
+    const chunk = meta.terminal_output_delta ?? meta.terminal_output;
+    const data = chunk && typeof chunk === "object" && "data" in chunk && typeof chunk.data === "string" ? chunk.data : "";
+    const previousOutput = existing?.kind === "tool" ? existing.terminalOutput ?? "" : "";
     const next = {
       id: existing?.id ?? `tool-${toolCallId}`,
       kind: "tool" as const,
@@ -112,6 +118,7 @@ export function reduceExternalAgentUpdate(
         ? update.rawInput as Record<string, unknown>
         : existing?.kind === "tool" ? existing.rawInput : undefined,
       rawOutput: update.rawOutput ?? (existing?.kind === "tool" ? existing.rawOutput : undefined),
+      terminalOutput: previousOutput + data,
     };
     const items = existing
       ? state.items.map((item) => (item.kind === "tool" && item.toolCallId === toolCallId ? next : item))

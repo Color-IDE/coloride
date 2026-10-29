@@ -36,3 +36,10 @@ test("guardian results keep their details in the compact review row", () => {
   assert.equal(entry.failed, true);
   assert.match(entry.output, /Needs permission/);
 });
+
+test("terminal chunks take precedence over exit-only metadata and terminal references", () => {
+  const entry = toAgentTimelineEntry({ ...edit, toolKind: "execute", terminalOutput: "actual command output\n", rawOutput: { exit_code: 0 }, content: [{ type: "terminal", terminalId: "exec-1" }] }, false);
+  assert.equal(entry.kind, "tool");
+  if (entry.kind !== "tool") throw Error("Expected tool");
+  assert.equal(entry.output, "actual command output\n");
+});

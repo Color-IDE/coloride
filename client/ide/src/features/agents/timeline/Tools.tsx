@@ -1592,8 +1592,7 @@ export function AgentToolRow({ entry }: { entry: ToolTimelineEntry }) {
   // Always show the $ command body in chat (including while waiting Allow) so the user
   // can read the full command before approving from the composer dock.
   const showCommandShell = isCommand && Boolean(command);
-  const showCommandOutput =
-    isCommand && expanded && Boolean(entry.output.trim());
+  const showCommandOutput = isCommand && expanded;
 
   useEffect(() => {
     // While waiting for Allow, keep output collapsed (command source stays visible).

@@ -267,3 +267,37 @@ test("intermediate replies keep activity visible and edits/reviews use native pr
   await expect.poll(() => page.locator(".agent-review-row .agent-thinking-detail").evaluate(element => element.closest(".agent-collapse")!.getBoundingClientRect().height >= element.scrollHeight - 1)).toBe(true);
   await page.screenshot({ path: "artifacts/codex-native-edits-review.png" });
 });
+
+test("command expansion streams terminal output and restores it from history", async () => {
+  let running = true;
+  const updates: Record<string, unknown>[] = [
+    { sessionUpdate: "user_message_chunk", content: { type: "text", text: "List project files" } },
+    { sessionUpdate: "tool_call", toolCallId: "exec-output", kind: "execute", title: "pwd && ls", status: "in_progress", rawInput: { command: "pwd && ls" }, content: [{ type: "terminal", terminalId: "exec-output" }] },
+  ];
+  await page.route(/\/api\/external-agents\/sessions\/codex-1$/, (route) => route.fulfill({ json: {
+    id: "codex-1", title: "Codex", phase: "ready", turn: running ? "running" : "idle", configOptions: [], authMethods: [],
+  } }));
+  await page.route(/\/api\/external-agents\/sessions\/[^/]+\/events(?:\?.*)?$/, (route) => route.fulfill({ json: updates.map((update, i) => ({ sessionId: "codex-1", sequence: i + 1, createdAt: "2026-10-29T00:00:00Z", update })) }));
+  await page.goto(base + "/tests/external-agent.html");
+  const command = page.locator(".agent-tool-row.is-command").first();
+  await command.locator(".agent-tool-header").click();
+  await expect(command).toContainText("Waiting for command output…");
+  updates.push(
+    { sessionUpdate: "tool_call_update", toolCallId: "exec-output", _meta: { terminal_output_delta: { terminal_id: "exec-output", data: "/fixture\n" } } },
+    { sessionUpdate: "tool_call_update", toolCallId: "exec-output", _meta: { terminal_output_delta: { terminal_id: "exec-output", data: "index.html\n" } } },
+  );
+  await expect(command.locator(".agent-terminal-output")).toHaveText("/fixture\nindex.html\n");
+  updates.push(
+    { sessionUpdate: "tool_call_update", toolCallId: "exec-output", status: "completed", rawOutput: { exit_code: 0 } },
+    { sessionUpdate: "tool_call", toolCallId: "exec-empty", kind: "execute", title: "true", rawInput: { command: "true" }, status: "completed" },
+    { sessionUpdate: "turn_complete" },
+  );
+  running = false;
+  await expect(page.locator(".agent-tool-row.is-command")).toHaveCount(2);
+  await page.reload();
+  await command.locator(".agent-tool-header").click();
+  await expect(command.locator(".agent-terminal-output")).toHaveText("/fixture\nindex.html\n");
+  const empty = page.locator(".agent-tool-row.is-command").last();
+  await empty.locator(".agent-tool-header").click();
+  await expect(empty).toContainText("Command finished without output.");
+});
