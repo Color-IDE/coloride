@@ -8,6 +8,7 @@ import { ComposerPlanBadge } from "../../shared/ui/composer/ComposerPlanBadge";
 
 export function ExternalAgentComposer({
   draft,
+  newTask = false,
   disabled,
   running,
   options,
@@ -19,6 +20,7 @@ export function ExternalAgentComposer({
   name = "External agent",
 }: {
   draft: string;
+  newTask?: boolean;
   disabled: boolean;
   running: boolean;
   options: ExternalAgentConfigOption[];
@@ -51,9 +53,11 @@ export function ExternalAgentComposer({
   useLayoutEffect(() => {
     const input = inputRef.current;
     if (!input) return;
-    input.style.height = "auto";
-    input.style.height = `${Math.min(180, input.scrollHeight)}px`;
-  }, [draft]);
+    const minHeight = newTask ? 110 : 22;
+    input.style.setProperty("min-height", `${minHeight}px`, "important");
+    input.style.setProperty("height", "auto", "important");
+    input.style.setProperty("height", `${Math.max(minHeight, Math.min(132, input.scrollHeight))}px`, "important");
+  }, [draft, newTask]);
 
   const submit = () => {
     if (disabled || running || !draft.trim()) return;
@@ -71,14 +75,15 @@ export function ExternalAgentComposer({
   };
 
   return (
-    <footer className="agent-composer-wrap external-agent-composer shrink-0 px-2.5 pb-2.5 pt-0">
+    <footer className={`agent-composer-wrap external-agent-composer shrink-0 px-2.5 pb-2.5 pt-0${newTask ? " is-new-task" : ""}`}>
       <div className="agent-composer-stack relative mx-auto flex w-full flex-col">
         <div className="agent-composer-card-slot relative">
-          <ComposerSurface compact disabled={disabled} inputRef={inputRef}>
+          <ComposerSurface compact newTask={newTask} disabled={disabled} inputRef={inputRef}>
             <div className="agent-composer-input-row">
               <ComposerInput
                 aria-label={`Message ${name}`}
                 compact
+                newTask={newTask}
                 disabled={disabled}
                 onChange={(event) => onDraftChange(event.target.value)}
                 onKeyDown={onKeyDown}

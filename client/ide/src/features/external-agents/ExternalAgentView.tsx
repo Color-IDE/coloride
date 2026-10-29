@@ -21,6 +21,7 @@ export function ExternalAgentView({
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [authenticating, setAuthenticating] = useState(false);
+  const emptyChat = state.items.length === 0 && !state.turnActive && !sending;
   const ssh = workspaceKind === "ssh";
   const needsLogin =
     session?.phase === "needs-login" || session?.phase === "authenticating";
@@ -74,7 +75,7 @@ export function ExternalAgentView({
   return (
     <section
       aria-label={`${name} agent`}
-      className="agent-view external-agent-view flex h-full min-h-0 flex-col bg-[var(--agent-surface,#212121)]"
+      className={`agent-view external-agent-view agent-main agent-chat-column${emptyChat ? " is-empty-chat" : ""} flex h-full min-h-0 flex-col bg-[var(--agent-surface,#212121)]`}
     >
       {connecting ? (
         <div
@@ -194,6 +195,7 @@ export function ExternalAgentView({
       ))}
       {connecting ? null : (
       <ExternalAgentComposer
+        newTask={emptyChat}
         disabled={!ready || sending}
         draft={draft}
         onCancel={() =>

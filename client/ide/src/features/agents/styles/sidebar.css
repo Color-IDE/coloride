@@ -71,7 +71,8 @@ body[data-theme="light"] .agent-sidebar-header {
   max-height: 132px !important;
 }
 
-.agent-view-sidebar .agent-composer-wrap {
+.agent-view-sidebar .agent-composer-wrap,
+.agent-view-sidebar .agent-chat-column > .agent-composer-wrap.external-agent-composer {
   padding: 8px 6px 6px !important;
 }
 .agent-view-sidebar .agent-chat-column.is-empty-chat > .agent-composer-wrap {

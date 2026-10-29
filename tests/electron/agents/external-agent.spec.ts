@@ -140,8 +140,28 @@ test("restored Codex conversation sends through the external composer", async ()
 });
 
 test("ready Codex chat stays empty until the first message", async () => {
-  await page.route(/\/api\/external-agents\/sessions\/[^/]+\/events(?:\?.*)?$/, (route) => route.fulfill({ json: [] }));
+  let sent = false;
+  await page.route(/\/api\/external-agents\/sessions\/[^/]+\/prompts$/, (route) => {
+    sent = true;
+    return route.fulfill({ status: 202, json: { accepted: true, sessionId: "codex-1", turnId: "turn-1" } });
+  });
+  await page.route(/\/api\/external-agents\/sessions\/[^/]+\/events(?:\?.*)?$/, (route) => route.fulfill({ json: sent ? [{ sessionId: "codex-1", sequence: 1, createdAt: "2026-10-29T00:00:00Z", update: { sessionUpdate: "user_message_chunk", content: { type: "text", text: "Analyze the project" } } }] : [] }));
   await page.goto(base + "/tests/external-agent.html");
   await expect(page.getByLabel("Message Codex")).toBeEnabled();
+  await page.locator("main").evaluate((element) => element.classList.add("agent-view-sidebar"));
+  await page.evaluate(() => { document.body.dataset.theme = "light"; });
+  const composerGeometry = () => page.locator(".agent-composer").evaluate((element) => {
+    const view = element.closest(".external-agent-view")!.getBoundingClientRect();
+    const card = element.getBoundingClientRect();
+    const input = element.querySelector("textarea")!.getBoundingClientRect();
+    return { left: card.left - view.left, right: view.right - card.right, top: card.top - view.top, bottom: view.bottom - card.bottom, inputHeight: input.height };
+  });
+  await expect.poll(composerGeometry).toMatchObject({ left: 6, right: 6, top: 2, inputHeight: 110 });
   await expect(page.getByText("Codex is ready in this project.", { exact: true })).toHaveCount(0);
+  await page.screenshot({ path: "artifacts/codex-empty-composer.png" });
+  await page.getByLabel("Message Codex").fill("Analyze the project");
+  await page.getByRole("button", { name: "Send", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeVisible();
+  await expect.poll(composerGeometry).toMatchObject({ left: 6, right: 6, bottom: 6, inputHeight: 22 });
+  await page.screenshot({ path: "artifacts/codex-docked-composer.png" });
 });
