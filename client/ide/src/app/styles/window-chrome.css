@@ -748,3 +748,14 @@ body[data-theme="light"] .app-menu-submenu-panel {
   border-color:rgb(24 24 27 / 5%); background:var(--ui-surface-raised); box-shadow:none;
 }
 @media (max-width:1100px) { .app-menu-trigger { padding-inline:6px; } }
+
+/* Welcome chrome continues the start surface above and below the content. */
+.app-start-surface > .desktop-titlebar,
+.app-start-surface > .app-status-bar {
+  background: #171717;
+}
+
+body[data-theme="light"] .app-start-surface > .desktop-titlebar,
+body[data-theme="light"] .app-start-surface > .app-status-bar {
+  background-color: #f7f7f8 !important;
+}

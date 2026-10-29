@@ -311,6 +311,27 @@ export function App() {
     [localFolderOpening, navigateTo, workspace],
   );
 
+  const openRecentLocalWorkspace = async (path: string) => {
+    if (localFolderOpening) return;
+    setLocalFolderOpening(true);
+    dismissNotification("open-local-folder");
+    dismissNotification("local-mode");
+    try {
+      const opened = await workspace.openLocalWorkspace(path);
+      if (!opened) return;
+      // Match Open Project: navigation runs before React commits connection state.
+      serverConnectedRef.current = true;
+      navigateTo({ activeTab: "explorer", serverSubTab: "health" });
+    } catch (error) {
+      notify({
+        id: "open-local-folder", kind: "error", title: "Unable to open folder",
+        description: error instanceof Error ? error.message : "Unable to open this recent project.",
+      });
+    } finally {
+      setLocalFolderOpening(false);
+    }
+  };
+
   /** Opens Coloride Browser in its own native window, never in the Monaco pane. */
   const openColorideBrowser = useCallback(() => {
     if (!serverConnectedRef.current) {
@@ -976,6 +997,7 @@ export function App() {
         <section
           className={cx(
             "app-canvas flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[#171717] [-webkit-app-region:no-drag]",
+            activeTab === null && "app-start-surface",
             isElectron
               ? "border-0 shadow-none"
               : "rounded-xl border border-white/10 shadow-[0_24px_60px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.03)]",
@@ -1221,11 +1243,7 @@ export function App() {
                           workspace.handleNewFile();
                         }}
                         onOpenProject={() => void openLocalFolderPicker()}
-                        onOpenRecent={(path) => {
-                          void workspace.openLocalWorkspace(path).then((opened) => {
-                            if (opened) navigateTo({ activeTab: "explorer", serverSubTab: "health" });
-                          });
-                        }}
+                        onOpenRecent={(path) => void openRecentLocalWorkspace(path)}
                         recents={workspace.localRecentWorkspaces}
                         servers={[]}
                       />

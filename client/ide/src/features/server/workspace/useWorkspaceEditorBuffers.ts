@@ -29,10 +29,11 @@ import {
   itemDepthUnderRoot,
   normalizeRemotePath,
 } from "./treeModel";
-import { type ConnectionState, type EditorBuffer } from "./types";
+import { type ConnectionState, type EditorBuffer, type TreeUndoEntry } from "./types";
 import { isUntitledPath } from "./untitledFile";
 
 interface Dependencies {
+  treeUndoStackRef: RefObject<TreeUndoEntry[]>;
   selectedFile: string | null;
   editorBuffersRef: RefObject<Map<string, EditorBuffer>>;
   editorDirtyRef: RefObject<boolean>;
@@ -73,6 +74,7 @@ interface Dependencies {
   setMissingFiles: Dispatch<SetStateAction<ReadonlySet<string>>>;
 }
 export function useWorkspaceEditorBuffers({
+  treeUndoStackRef,
   selectedFile,
   editorBuffersRef,
   editorDirtyRef,
@@ -110,7 +112,7 @@ export function useWorkspaceEditorBuffers({
     editorBuffersRef.current.set(selectedFile, {
       dirty: editorDirtyRef.current,
       error: editorError,
-      missing: isMissingFileError(editorError),
+      missing: Boolean(prev?.missing) || isMissingFileError(editorError),
       etag: editorEtagRef.current,
       imageUrl: editorImageUrlRef.current,
       truncated: editorTruncatedRef.current,
@@ -247,17 +249,29 @@ export function useWorkspaceEditorBuffers({
       current.includes(path) ? current : [...current, path],
     );
     setSelectedFile(path);
-    if (shouldReveal) {
+    if (shouldReveal && !editorBuffersRef.current.get(path)?.missing) {
       void revealInTree(path);
     }
     const requestId = editorLoadRequestRef.current + 1;
     editorLoadRequestRef.current = requestId;
 
-    const cached = editorBuffersRef.current.get(path);
+    let cached = editorBuffersRef.current.get(path);
+    if (cached?.missing && !cached.value && !cached.imageUrl) {
+      // Recover a tab that an earlier deletion handler left empty, using the
+      // exact file snapshot already retained by tree Undo; do not restore to disk.
+      const saved = [...treeUndoStackRef.current].reverse()
+        .flatMap(entry => entry.type === "delete" ? entry.files : [])
+        .find(file => file.path === path);
+      if (saved && (imageMimeType || !isProbablyBinaryBase64(saved.contentBase64))) {
+        cached = {...cached, error:"", value:imageMimeType ? "" : decodeBase64ToText(saved.contentBase64),
+          imageUrl:imageMimeType ? `data:${imageMimeType};base64,${saved.contentBase64}` : null};
+        editorBuffersRef.current.set(path, cached);
+      }
+    }
     if (cached) {
       // Pending Keep/Undo review: if the buffer was reset to the pre-agent
       // baseline, restore the post-agent text so green/red can paint again.
-      const restoredValue = resolveReviewBufferText(path, cached.value);
+      const restoredValue = cached.missing ? cached.value : resolveReviewBufferText(path, cached.value);
       const buffer =
         restoredValue === cached.value
           ? cached
@@ -277,7 +291,7 @@ export function useWorkspaceEditorBuffers({
       setEditorLoading(false);
       // Nudge editor to (re)paint green/red for this path.
       setAgentEditReviewTick((n) => n + 1);
-      if (buffer.imageUrl === null && !buffer.truncated && !buffer.error) {
+      if (!buffer.missing && buffer.imageUrl === null && !buffer.truncated && !buffer.error) {
         void lspSyncOpen(path, buffer.value);
       }
       return;
@@ -423,14 +437,17 @@ export function useWorkspaceEditorBuffers({
       }
     } catch (error) {
       const missing = isApiNotFound(error);
+      const previous = editorBuffersRef.current.get(path);
       const buffer: EditorBuffer = {
-        dirty: false,
-        error: missing ? "" : messageFromError(error),
-        etag: null,
-        imageUrl: imageMimeType ? "" : null,
+        dirty: previous?.dirty ?? false,
+        error: missing
+          ? previous ? "" : "This file has been deleted. No cached content is available."
+          : messageFromError(error),
+        etag: previous?.etag ?? null,
+        imageUrl: previous?.imageUrl ?? (imageMimeType ? "" : null),
         missing,
-        truncated: false,
-        value: "",
+        truncated: previous?.truncated ?? false,
+        value: previous?.value ?? "",
       };
       setMissingFiles((current) => {
         const has = current.has(path);
@@ -442,11 +459,11 @@ export function useWorkspaceEditorBuffers({
       });
       editorBuffersRef.current.set(path, buffer);
       if (editorLoadRequestRef.current !== requestId) return;
-      setEditorValue("");
+      setEditorValue(buffer.value);
       setEditorImageUrl(buffer.imageUrl);
-      setEditorEtag(null);
-      setEditorDirty(false);
-      setEditorTruncated(false);
+      setEditorEtag(buffer.etag);
+      setEditorDirty(buffer.dirty);
+      setEditorTruncated(buffer.truncated);
       setEditorError(buffer.error);
     } finally {
       if (editorLoadRequestRef.current === requestId) setEditorLoading(false);

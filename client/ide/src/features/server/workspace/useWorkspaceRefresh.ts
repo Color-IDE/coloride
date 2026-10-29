@@ -64,6 +64,9 @@ interface Dependencies {
   loadDirectoryRef: RefObject<(path: string, depth: number, replaceRoot?: boolean, allowDuringConnect?: boolean, options?: { quiet?: boolean; force?: boolean; }) => Promise<boolean>>;
   openFilesRef: RefObject<string[]>;
   editorEtagRef: RefObject<string | null>;
+  editorValueRef: RefObject<string>;
+  editorImageUrlRef: RefObject<string | null>;
+  editorTruncatedRef: RefObject<boolean>;
 }
 
 export function useWorkspaceRefresh({
@@ -105,6 +108,9 @@ export function useWorkspaceRefresh({
   loadDirectoryRef,
   openFilesRef,
   editorEtagRef,
+  editorValueRef,
+  editorImageUrlRef,
+  editorTruncatedRef,
 }: Dependencies) {
   const refreshExpandedTree = async (options?: {
     quiet?: boolean;
@@ -224,6 +230,69 @@ export function useWorkspaceRefresh({
     setMissingFiles,
     reloadEditorFromRemoteRef,
   });
+
+  const markOpenFileMissing = (path: string) => {
+    const cached = editorBuffersRef.current.get(path);
+    const active = selectedFileRef.current === path;
+    const visibleSnapshot = active && cached && cached.etag === editorEtagRef.current;
+    editorBuffersRef.current.set(path, {
+      dirty: active ? editorDirtyRef.current : cached?.dirty ?? false,
+      error: cached?.error.includes("No cached content") ? cached.error : "",
+      etag: cached?.etag ?? null,
+      imageUrl: visibleSnapshot ? editorImageUrlRef.current : cached?.imageUrl ?? null,
+      missing: true,
+      truncated: visibleSnapshot ? editorTruncatedRef.current : cached?.truncated ?? false,
+      value: visibleSnapshot ? editorValueRef.current : cached?.value ?? "",
+      agentStreaming: cached?.agentStreaming,
+    });
+    setMissingFiles(current => current.has(path) ? current : new Set(current).add(path));
+    if (active) setEditorError(current => current.includes("no longer exists") ? "" : current);
+  };
+
+  // Presence must not wait for directory scans or the post-save quiet window.
+  useEffect(() => {
+    if (connectionState !== "connected" || !workspacePath) return;
+    const root = workspacePath;
+    let disposed = false;
+    let pending = false;
+    let cursor = 0;
+    const checkPresence = async () => {
+      if (disposed || pending || document.hidden || workspacePathRef.current !== root
+        || connectionStateRef.current !== "connected") return;
+      const paths = [...new Set(openFilesRef.current.filter(path => isAbsoluteWorkspacePath(path) && !isBrowserTabKey(path)))];
+      if (!paths.length) return;
+      const active = selectedFileRef.current;
+      const background = paths.filter(path => path !== active);
+      const batch = background.slice(cursor, cursor + 63);
+      cursor = cursor + 63 >= background.length ? 0 : cursor + 63;
+      if (active && paths.includes(active)) batch.unshift(active);
+      pending = true;
+      try {
+        const stats = await api.statFiles(batch);
+        if (disposed || workspacePathRef.current !== root) return;
+        for (const entry of stats.entries) {
+          if (!openFilesRef.current.includes(entry.path)) continue;
+          if (!entry.exists) markOpenFileMissing(entry.path);
+          else if (editorBuffersRef.current.get(entry.path)?.missing) {
+            // Reload recreated files so an obsolete deleted snapshot is not reused.
+            void reloadEditorFromRemoteRef.current(entry.path);
+          }
+        }
+      } catch {
+        // A failed connection is not evidence that the files were deleted.
+      } finally { pending = false; }
+    };
+    void checkPresence();
+    const timer = window.setInterval(() => void checkPresence(), 1000);
+    window.addEventListener("focus", checkPresence);
+    document.addEventListener("visibilitychange", checkPresence);
+    return () => {
+      disposed = true;
+      clearInterval(timer);
+      window.removeEventListener("focus", checkPresence);
+      document.removeEventListener("visibilitychange", checkPresence);
+    };
+  }, [connectionState, workspacePath]);
 
   // Remote watch: poll expanded tree dirs + open editor etags so external VPS changes show up.
   useEffect(() => {
@@ -359,13 +428,7 @@ export function useWorkspaceRefresh({
             : (cached?.etag ?? null);
 
           if (!entry.exists) {
-            if (isActive && knownEtag) {
-              setEditorError((current) =>
-                current.includes("no longer exists")
-                  ? current
-                  : "This file no longer exists on the server.",
-              );
-            }
+            markOpenFileMissing(path);
             continue;
           }
 

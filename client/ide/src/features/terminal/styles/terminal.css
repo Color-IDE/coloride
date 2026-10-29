@@ -113,8 +113,8 @@ body[data-theme="light"] .filetree-body.filetree-root-drop-active::after {
 }
 
 .coloride-terminal .xterm { height: 100%; padding: 0; }
-.coloride-terminal .xterm-viewport { outline: none; scrollbar-width: auto; cursor: default !important; }
-.coloride-terminal .xterm-viewport::-webkit-scrollbar { width: 6px; }
+.coloride-terminal .xterm-viewport { outline: none; scrollbar-width: none; cursor: default !important; }
+.coloride-terminal .xterm-viewport::-webkit-scrollbar { display: none; width: 0; height: 0; }
 .coloride-terminal .xterm-viewport::-webkit-scrollbar-track { background: transparent; }
 .coloride-terminal .xterm-viewport::-webkit-scrollbar-thumb {
   background: #666; border-radius: 3px; cursor: default;

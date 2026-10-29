@@ -1,0 +1,39 @@
+.agent-account-usage {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--ui-text-muted);
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.agent-account-usage-provider,
+.agent-account-usage-window {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.agent-account-usage-provider { gap: 10px; }
+.agent-account-usage-icon .acp-agent-mark { width: 18px; height: 18px; }
+.agent-account-usage-track {
+  display: block;
+  width: 58px;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 24%, transparent);
+}
+.agent-account-usage-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: currentColor;
+}
+.agent-account-usage-percent { min-width: 3ch; text-align: right; }
+@media (max-width: 600px) {
+  .agent-account-usage-track { width: 24px; }
+  .agent-account-usage-provider { gap: 6px; }
+}

@@ -1,4 +1,5 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
+import { VerticalScrollHairline } from "../../shared/ui/VerticalScrollHairline";
+import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from "react";
 import { Terminal, type ITheme } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
@@ -119,7 +120,9 @@ export const XTerminal = forwardRef<XTerminalHandle, XTerminalProps>(function XT
   const appPreferences = useAppPreferences();
   const resolvedTheme = useResolvedTheme();
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const scrollControlsId = useId();
   const termRef = useRef<Terminal | null>(null);
+  const [scrollMetrics, setScrollMetrics] = useState({ top: 0, height: 0, client: 0 });
   const sessionIdRef = useRef(sessionId);
   sessionIdRef.current = sessionId;
   const fitRef = useRef<FitAddon | null>(null);
@@ -409,6 +412,18 @@ export const XTerminal = forwardRef<XTerminalHandle, XTerminalProps>(function XT
     searchRef.current = searchAddon;
     term.loadAddon(searchAddon);
     term.open(container);
+    let scrollFrame = 0;
+    const updateScrollMetrics = () => {
+      scrollFrame = 0;
+      if (disposed) return;
+      const buffer = term.buffer.active;
+      const next = { top: buffer.viewportY, height: buffer.baseY + term.rows, client: term.rows };
+      setScrollMetrics(old => old.top === next.top && old.height === next.height && old.client === next.client ? old : next);
+    };
+    const scheduleScrollMetrics = () => { if (!scrollFrame) scrollFrame = requestAnimationFrame(updateScrollMetrics); };
+    const scrollSubscriptions = [term.onScroll(scheduleScrollMetrics), term.onWriteParsed(scheduleScrollMetrics),
+      term.onResize(scheduleScrollMetrics), term.buffer.onBufferChange(scheduleScrollMetrics)];
+    scheduleScrollMetrics();
     term.attachCustomWheelEventHandler((event) => {
       const isPrecisionScroll = event.deltaMode === WheelEvent.DOM_DELTA_PIXEL;
       const nextDuration = !isPrecisionScroll && appPreferencesRef.current.terminalSmoothScrolling
@@ -685,6 +700,8 @@ export const XTerminal = forwardRef<XTerminalHandle, XTerminalProps>(function XT
 
     return () => {
       disposed = true;
+      cancelAnimationFrame(scrollFrame);
+      for (const subscription of scrollSubscriptions) subscription.dispose();
       disposedRef.current = true;
       for (const finished of pendingWrites) finished();
       pendingWrites.clear();
@@ -811,15 +828,26 @@ export const XTerminal = forwardRef<XTerminalHandle, XTerminalProps>(function XT
   }, [active, focused]);
 
   return (
-    <div className="coloride-terminal relative h-full w-full bg-[#171717]">
+    <div className="coloride-terminal vertical-scroll-surface relative h-full w-full bg-[#171717]">
       <div
         ref={containerRef}
+        id={scrollControlsId}
         className="h-full w-full"
         data-terminal-surface="true"
         style={{ backgroundColor: "#171717" }}
         // Clicking a split pane must always move input to this xterm.
         onMouseDown={() => termRef.current?.focus()}
       />
+      <VerticalScrollHairline controlsId={scrollControlsId} metrics={scrollMetrics} label="Terminal history scroll"
+        onScrollTo={top => termRef.current?.scrollToLine(Math.round(top))}
+        onWheelScroll={event => {
+          const term = termRef.current;
+          if (!term || !event.deltaY) return;
+          const height = containerRef.current?.clientHeight ?? term.rows * 16;
+          const lines = event.deltaMode === 1 ? event.deltaY : event.deltaMode === 2
+            ? event.deltaY * term.rows : event.deltaY / Math.max(1, height / term.rows);
+          term.scrollLines(Math.sign(lines) * Math.max(1, Math.round(Math.abs(lines))));
+        }} />
     </div>
   );
 });

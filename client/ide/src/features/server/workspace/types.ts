@@ -1,3 +1,4 @@
+import type { FileTreeItem } from "../../explorer/filetree/FileTree";
 import type { ConnDirectRequest, Profile } from "../../../shared/api/types";
 
 export type AuthMethod = "password" | "ssh-key" | "ssh-agent";
@@ -49,7 +50,19 @@ export type TreeUndoDeleteEntry = {
   files: TreeUndoFileSnapshot[];
 };
 
-export type TreeUndoEntry = TreeUndoDeleteEntry;
+export type TreeUndoCreateEntry = {
+  type: "create";
+  items: { path: string; kind: FileTreeItem["kind"] }[];
+};
+
+export type TreeUndoMoveEntry = {
+  type: "move";
+  source: string;
+  destination: string;
+  kind: FileTreeItem["kind"];
+};
+
+export type TreeUndoEntry = TreeUndoDeleteEntry | TreeUndoCreateEntry | TreeUndoMoveEntry;
 
 export type PendingConnection =
   | { kind: "direct"; connection: ConnDirectRequest }

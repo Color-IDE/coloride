@@ -34,6 +34,10 @@ def external_agent_router() -> APIRouter:
         except ExternalAgentError as exc:
             return failure(exc)
 
+    @router.get("/usage")
+    async def account_usage(request: Request) -> list[dict]:
+        return await manager(request).account_usage()
+
     @router.get("/installations")
     async def installations(request: Request) -> list[dict]:
         return manager(request).installations()

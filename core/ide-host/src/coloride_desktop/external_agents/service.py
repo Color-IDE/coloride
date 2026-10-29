@@ -32,6 +32,7 @@ from .processes import ProcessRegistry
 from .registry import RegistryClient, RegistryError
 from .store import ExternalAgentStore
 from .terminals import AcpTerminalBridge
+from .usage import AgentUsageReader
 
 Publish = Callable[[str, dict[str, Any]], Awaitable[None]]
 
@@ -51,6 +52,7 @@ class ExternalAgentManager:
         self.registry = RegistryClient(self.store)
         self.installer = ExternalAgentInstaller(self.store)
         self.processes = ProcessRegistry()
+        self.usage_reader = AgentUsageReader(self.installer)
         self.terminals = AcpTerminalBridge()
         self._connections: dict[str, AcpConnection] = {}
         self._permissions: dict[str, asyncio.Future[str | None]] = {}
@@ -61,6 +63,7 @@ class ExternalAgentManager:
         self._watchers: dict[str, asyncio.Task[None]] = {}
 
     async def shutdown(self) -> None:
+        await self.usage_reader.shutdown()
         await asyncio.gather(*(self.close_execution(session_id) for session_id in list(self._connections)))
         await self.terminals.close_all()
         await self.processes.stop_all()
@@ -82,6 +85,12 @@ class ExternalAgentManager:
                 entry.model_dump(by_alias=True, exclude={"command", "env", "archive_url", "archive_sha256"})
             )
         return public
+
+    async def account_usage(self) -> list[dict[str, Any]]:
+        sessions = [self._session(session_id) for session_id in list(self._connections)]
+        connected = {record.installation_id for record in sessions if record.phase == "ready"}
+        installations = {item.agent_id: item for item in self.store.read_installations() if item.id in connected}
+        return list(await asyncio.gather(*(self.usage_reader.read(item) for item in installations.values())))
 
     def installations(self) -> list[dict[str, Any]]:
         return [

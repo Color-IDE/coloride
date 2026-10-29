@@ -1,6 +1,8 @@
-import type { Dispatch, RefObject, SetStateAction } from "react";
+import { getImageMimeType, isProbablyBinaryBase64 } from "./editorFiles";
+import { useRef, type Dispatch, type RefObject, type SetStateAction } from "react";
 import {
-  api
+  api,
+  decodeBase64ToText,
 } from "../../../shared/api/client";
 import { lspSyncClose } from "../../editor/lsp/documentSync";
 import { isBrowserTabKey } from "../../explorer/BrowserPane";
@@ -49,7 +51,8 @@ interface Dependencies {
   setEditorError: Dispatch<SetStateAction<string>>;
   setEditorLoading: Dispatch<SetStateAction<boolean>>;
   setExplorerError: Dispatch<SetStateAction<string>>;
-  treeUndoStackRef: RefObject<TreeUndoDeleteEntry[]>;
+  treeUndoStackRef: RefObject<TreeUndoEntry[]>;
+  moveTreeItem: (item: FileTreeItem, parent: string) => Promise<boolean>;
   setTreeUndoDepth: Dispatch<SetStateAction<number>>;
   suppressEditorWatchUntilRef: RefObject<number>;
   workspacePathRef: RefObject<string>;
@@ -97,10 +100,16 @@ export function useWorkspaceDeletionUndo({
   dirtyFiles,
   requestWritePermission,
   rememberActiveEditor,
+  moveTreeItem,
 }: Dependencies) {
 
-  const applyDeletedPaths = async (deletedPaths: string[]) => {
+  const undoBusy = useRef(false);
+
+  const applyDeletedPaths = async (deletedPaths: string[], snapshot?: TreeUndoDeleteEntry | null) => {
     if (deletedPaths.length === 0) return;
+    // Agent deletions also arrive here, without the manual-delete snapshot step.
+    // Capture the visible text before marking the tab missing or changing focus.
+    rememberActiveEditor();
 
     const isDeleted = (candidate: string) =>
       deletedPaths.some((path) => isPathOrDescendant(candidate, path));
@@ -146,14 +155,18 @@ export function useWorkspaceDeletionUndo({
       });
       for (const path of deletedOpen) {
         const cached = editorBuffersRef.current.get(path);
+        const saved = snapshot?.files.find(file => file.path === path);
+        const imageMime = getImageMimeType(path);
+        const savedText = saved && !imageMime && !isProbablyBinaryBase64(saved.contentBase64)
+          ? decodeBase64ToText(saved.contentBase64) : "";
         editorBuffersRef.current.set(path, {
           dirty: false,
           error: "",
           etag: cached?.etag ?? null,
-          imageUrl: cached?.imageUrl ?? null,
+          imageUrl: cached?.imageUrl ?? (saved && imageMime ? `data:${imageMime};base64,${saved.contentBase64}` : null),
           missing: true,
           truncated: cached?.truncated ?? false,
-          value: cached?.value ?? "",
+          value: cached?.value ?? savedText,
           agentStreaming: false,
         });
         void lspSyncClose(path);
@@ -317,13 +330,11 @@ export function useWorkspaceDeletionUndo({
       if (parent === workspaceRoot) {
         await loadDirectory(parent, 0, true, false, {
           quiet: true,
-          force: true,
         });
       } else if (workspaceRoot && isUnderWorkspace(parent, workspaceRoot)) {
         const depth = itemDepthUnderRoot(parent, workspaceRoot);
         await loadDirectory(parent, depth + 1, false, false, {
           quiet: true,
-          force: true,
         });
       }
     }
@@ -343,29 +354,40 @@ export function useWorkspaceDeletionUndo({
   };
 
   const undoTreeAction = async (): Promise<boolean> => {
+    if (undoBusy.current) return false;
     if (connectionStateRef.current !== "connected") {
       setExplorerError("Connect to a server first.");
       return false;
     }
-    const stack = treeUndoStackRef.current;
-    const entry = stack[stack.length - 1];
+    if (!requestWritePermission("Undo last file operation")) return false;
+    const entry = treeUndoStackRef.current.at(-1);
     if (!entry) return false;
-    treeUndoStackRef.current = stack.slice(0, -1);
-    setTreeUndoDepth(treeUndoStackRef.current.length);
-
+    undoBusy.current = true;
     try {
+      let restored = false;
       if (entry.type === "delete") {
-        return await restoreDeleteSnapshot(entry);
+        restored = await restoreDeleteSnapshot(entry);
+      } else if (entry.type === "create") {
+        for (const item of [...entry.items].reverse()) {
+          const { entries } = await api.statFiles(item.path);
+          if (entries[0]?.exists) await api.deleteFile(item.path, item.kind === "dir");
+          await applyDeletedPaths([item.path]);
+        }
+        restored = true;
+      } else {
+        restored = await moveTreeItem({id:entry.destination, path:entry.destination,
+          name:entry.destination.split("/").at(-1)!, kind:entry.kind, depth:0}, getParentPath(entry.source));
       }
-      return false;
+      if (restored) {
+        treeUndoStackRef.current = treeUndoStackRef.current.filter(item => item !== entry);
+        setTreeUndoDepth(treeUndoStackRef.current.length);
+      }
+      return restored;
     } catch (error) {
-      // Put entry back so the user can retry.
-      treeUndoStackRef.current = [...treeUndoStackRef.current, entry].slice(
-        -MAX_TREE_UNDO,
-      );
-      setTreeUndoDepth(treeUndoStackRef.current.length);
       setExplorerError(messageFromError(error));
       return false;
+    } finally {
+      undoBusy.current = false;
     }
   };
 
@@ -403,7 +425,7 @@ export function useWorkspaceDeletionUndo({
     }
     try {
       await api.deleteFile(path, item.kind === "dir");
-      await applyDeletedPaths([path]);
+      await applyDeletedPaths([path], snapshot);
       if (snapshot) pushTreeUndo(snapshot);
       return true;
     } catch (error) {
@@ -474,7 +496,7 @@ export function useWorkspaceDeletionUndo({
     }
 
     if (deleted.length > 0) {
-      await applyDeletedPaths(deleted);
+      await applyDeletedPaths(deleted, snapshot);
       if (snapshot) {
         // Only keep undo for paths that actually deleted.
         const deletedSet = new Set(deleted);
@@ -503,5 +525,5 @@ export function useWorkspaceDeletionUndo({
 
     return deleted.length > 0;
   };
-  return { applyDeletedPaths, undoTreeAction, handleDeleteTreeItem, handleDeleteTreeItems };
+  return { applyDeletedPaths, undoTreeAction, handleDeleteTreeItem, handleDeleteTreeItems, pushTreeUndo };
 }

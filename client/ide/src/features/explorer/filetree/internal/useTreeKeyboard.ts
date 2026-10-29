@@ -230,7 +230,7 @@ export function useTreeKeyboard({
         }
       }
 
-      // Ctrl/Cmd+Z → undo last delete (restore files/folders).
+      // Ctrl/Cmd+Z → undo the last tree operation (paste, move, or delete).
       if (
         modKey(event) &&
         !event.altKey &&
@@ -239,6 +239,7 @@ export function useTreeKeyboard({
       ) {
         if (!onUndo || !canUndo) return;
         event.preventDefault();
+        event.stopPropagation();
         void onUndo();
         return;
       }

@@ -1,3 +1,4 @@
+import { ToolScrollArea } from "./ToolScrollArea";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { argumentLabel, formatArgument } from "./formatting";
 import { type TermSegment, type ToolTimelineEntry } from "./types";
@@ -53,7 +54,7 @@ export function CommandSourceBlock({ command }: { command: string }) {
 
   return (
     <div className={fadeClass}>
-      <pre
+      <ToolScrollArea as="pre"
         ref={scrollRef}
         className="agent-command-source agent-terminal-source"
       >
@@ -61,7 +62,7 @@ export function CommandSourceBlock({ command }: { command: string }) {
           <span className="agent-term-prompt">$ </span>
           <TerminalHighlighted text={command} mode="command" />
         </code>
-      </pre>
+      </ToolScrollArea>
     </div>
   );
 }
@@ -82,12 +83,12 @@ export function CommandOutput({ entry }: { entry: ToolTimelineEntry }) {
 
   return (
     <div className={fadeClass}>
-      <pre
+      <ToolScrollArea as="pre"
         ref={scrollRef}
         className="agent-event-output agent-tool-output agent-terminal-output whitespace-pre-wrap"
       >
         <TerminalHighlighted text={output} mode="output" />
-      </pre>
+      </ToolScrollArea>
       {typeof entry.metadata.exitCode === "number" || typeof entry.metadata.signal === "string" ? (
         <div className="px-3 pb-2 text-xs text-muted">
           {entry.metadata.interrupted === true ? "Stopped · " : ""}
@@ -322,13 +323,13 @@ export function ListFilesOutput({
     <div
       className={`agent-list-files-output ${expanded ? "is-expanded" : "is-collapsed"}`}
     >
-      <pre
+      <ToolScrollArea as="pre"
         className="agent-list-files-scroll"
         onScroll={updateFadeEdges}
         ref={scrollRef}
       >
         {output}
-      </pre>
+      </ToolScrollArea>
       <span
         aria-hidden="true"
         className={`scroll-edge-fade agent-list-files-fade pointer-events-none absolute left-0 right-0 top-0 z-10 h-4 transition-opacity duration-150 ${fadeEdges.top ? "opacity-100" : "opacity-0"}`}
@@ -345,9 +346,9 @@ export function ListFilesOutput({
 
 export function ToolOutput({ output }: { output: string }) {
   return (
-    <pre className="agent-event-output agent-tool-output whitespace-pre-wrap text-[11px] leading-5">
+    <ToolScrollArea as="pre" className="agent-event-output agent-tool-output whitespace-pre-wrap text-[11px] leading-5">
       {output}
-    </pre>
+    </ToolScrollArea>
   );
 }
 
