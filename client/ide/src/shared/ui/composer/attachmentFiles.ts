@@ -24,4 +24,3 @@ export function createComposerAttachment(file: File): ComposerAttachment {
     previewUrl: kind === "image" ? URL.createObjectURL(file) : null,
   };
 }
-
