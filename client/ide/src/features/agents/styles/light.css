@@ -524,10 +524,10 @@ body[data-theme="light"] .agent-approval-dock.agent-checkpoint-dock-full.agent-c
 body[data-theme="light"] .agent-approval-dock.agent-checkpoint-dock.agent-checkpoint-card,
 body[data-theme="light"] .agent-checkpoint-card,
 body[data-theme="light"] .agent-turn-checkpoint-card .agent-checkpoint-card {
-  padding: 10px 14px 10px;
+  padding: 6px 10px 8px;
   border: 1px solid #e4e4e6;
-  border-radius: 12px;
-  background: #f1f2f3;
+  border-radius: 8px;
+  background: #f4f4f5;
   box-shadow: none;
 }
 

@@ -199,7 +199,7 @@ body[data-theme="light"] .agent-workspace-add-menu button:hover {
 .agent-turn-checkpoint-card .agent-checkpoint-dock-full.agent-checkpoint-card,
 .agent-turn-checkpoint-card .agent-approval-dock.agent-checkpoint-dock-full.agent-checkpoint-card {
   margin-bottom: 0;
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
   pointer-events: auto;
 }

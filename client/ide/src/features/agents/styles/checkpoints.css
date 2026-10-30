@@ -229,11 +229,11 @@ body[data-theme="light"] .agent-approval-dock.agent-checkpoint-dock-full {
   align-items: stretch;
   gap: 0;
   margin-bottom: 8px;
-  padding: 10px 14px 10px;
+  padding: 6px 10px 8px;
   min-height: 0;
   border: 1px solid rgb(255 255 255 / 7%);
   border-bottom: 1px solid rgb(255 255 255 / 7%);
-  border-radius: 12px;
+  border-radius: 8px;
   background: rgb(44 44 44 / 72%);
   box-shadow: none;
   overflow: hidden;
@@ -248,7 +248,7 @@ body[data-theme="light"] .agent-approval-dock.agent-checkpoint-dock-full {
 }
 
 .agent-checkpoint-card-head {
-  padding: 0 0 6px;
+  padding: 0 0 4px;
 }
 
 .agent-checkpoint-card-copy {
