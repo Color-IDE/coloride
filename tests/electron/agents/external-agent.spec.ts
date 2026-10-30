@@ -420,3 +420,36 @@ test("idle edits stop spinning and only current-workspace files open in the edit
   await expect(page.locator(".agent-edit-card.is-running")).toHaveCount(0);
   await expect(page.locator(".agent-edit-card")).toHaveCount(4);
 });
+
+test("typing keeps the Codex composer and conversation stable", async () => {
+  await page.goto(base + "/tests/external-agent.html");
+  const input = page.getByLabel("Message Codex");
+  await expect(input).toBeEnabled();
+  const measure = () => page.evaluate(() => {
+    const input = document.querySelector<HTMLTextAreaElement>(".external-agent-composer textarea")!;
+    const composer = input.closest("footer")!;
+    const timeline = document.querySelector(".agent-timeline")!;
+    return {
+      top: composer.getBoundingClientRect().top,
+      height: input.getBoundingClientRect().height,
+      scroll: timeline.scrollTop,
+      inputScroll: input.scrollTop,
+    };
+  });
+  const before = await measure();
+  await input.pressSequentially("Estoy escribiendo sin saltos", { delay: 15 });
+  const typed = await measure();
+  expect(typed.top).toBe(before.top);
+  expect(typed.height).toBe(before.height);
+  expect(typed.scroll).toBe(before.scroll);
+  await input.fill(Array.from({ length: 12 }, (_, i) => `Line ${i}`).join("\n"));
+  await input.press("End");
+  await input.pressSequentially(" texto al final", { delay: 15 });
+  const overflow = await measure();
+  expect(overflow.height).toBe(132);
+  expect(overflow.inputScroll).toBeGreaterThan(0);
+  await input.fill("Una línea");
+  expect((await measure()).height).toBe(before.height);
+  await input.fill("");
+  expect((await measure()).top).toBe(before.top);
+});

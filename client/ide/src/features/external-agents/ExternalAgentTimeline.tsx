@@ -1,11 +1,11 @@
 import { ExternalAgentChanges } from "./ExternalAgentChanges";
-import { useLayoutEffect, useRef } from "react";
+import { memo, useLayoutEffect, useRef } from "react";
 import { AgentTimelineTurn, groupTimelineTurns, type AgentOpenFileRequest } from "../agents/AgentTimeline";
 import type { ExternalTranscriptItem } from "./externalAgentReducer";
 import { workspaceFilePath } from "./workspaceFilePath";
 import { toAgentTimelineEntries } from "./presentExternalTimeline";
 
-export function ExternalAgentTimeline({
+export const ExternalAgentTimeline = memo(function ExternalAgentTimeline({
   sessionId,
   items,
   workspacePath,
@@ -86,4 +86,4 @@ export function ExternalAgentTimeline({
       <div className="agent-timeline-virtual-footer" />
     </div>
   );
-}
+});
