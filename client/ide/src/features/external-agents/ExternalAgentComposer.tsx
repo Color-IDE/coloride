@@ -1,5 +1,5 @@
 import type { ExternalAgentConfigOption } from "@coloride/contracts";
-import { useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useRef, useState, type KeyboardEvent } from "react";
 import { ComposerAttachments, type ComposerAttachment } from "../../shared/ui/composer/ComposerAttachments";
 import { ComposerInput } from "../../shared/ui/composer/ComposerInput";
 import { ComposerSurface } from "../../shared/ui/composer/ComposerSurface";
@@ -61,14 +61,7 @@ export function ExternalAgentComposer({
   const normalMode =
     planOption?.options.find((choice) => choice.value === "default") ??
     planOption?.options.find((choice) => choice.value !== "plan");
-  useLayoutEffect(() => {
-    const input = inputRef.current;
-    if (!input) return;
-    const minHeight = newTask ? 110 : 22;
-    input.style.setProperty("min-height", `${minHeight}px`, "important");
-    input.style.setProperty("height", "auto", "important");
-    input.style.setProperty("height", `${Math.max(minHeight, Math.min(132, input.scrollHeight))}px`, "important");
-  }, [draft, newTask]);
+
 
   const submit = () => {
     if (disabled || running || (!draft.trim() && !attachments.length)) return;
