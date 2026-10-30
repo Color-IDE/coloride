@@ -1,3 +1,4 @@
+import { ToolScrollArea } from "./ToolScrollArea";
 import type { AgentApproval } from "@coloride/contracts";
 import { Plug01Icon } from "@hugeicons/core-free-icons";
 import { useEffect, useRef, useState } from "react";
@@ -252,9 +253,9 @@ export function AgentApprovalCard({
           </span>
         </div>
       ) : isUserSwitch ? (
-        <pre className="agent-command-approval-cmd">
+        <ToolScrollArea as="pre" className="agent-command-approval-cmd">
           <code>{`Switch to ${wantedUser || "admin"}`}</code>
-        </pre>
+        </ToolScrollArea>
       ) : (
         <div className="agent-command-approval-term">
           <CommandSourceBlock command={command.trim() || name} />

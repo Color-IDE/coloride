@@ -18,11 +18,24 @@
   margin: 0;
   padding: 0;
   max-height: calc(100vh - 120px);
+  overflow-x: hidden;
   overflow-y: auto;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+  scrollbar-gutter: auto;
+  overscroll-behavior: contain;
+  pointer-events: auto;
 }
-.notification-stack > li { flex: 0 0 auto; }
+/* Keep the stack scrollable without native bars or horizontal animation overflow. */
+.notification-stack::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+.notification-stack > li { flex: 0 0 auto; min-width: 0; }
 .notification-card {
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
   display: flex;
   align-items: flex-start;
   gap: 10px;
@@ -30,7 +43,7 @@
   border: 1px solid var(--ui-border-subtle);
   border-radius: var(--ui-radius-menu, 6px);
   background: var(--ui-surface-raised);
-  box-shadow: 0 4px 18px rgb(0 0 0 / 18%);
+  box-shadow: none;
   pointer-events: auto;
   overflow-wrap: anywhere;
   font-size: 12px;

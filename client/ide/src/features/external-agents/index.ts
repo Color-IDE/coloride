@@ -9,3 +9,5 @@ export {
   writeAgentWorkspaceTabs,
   type AgentWorkspaceTab,
 } from "./useExternalAgentSession";
+
+export { AgentAccountUsage } from "./AgentAccountUsage";

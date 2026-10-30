@@ -598,6 +598,7 @@ export function useServerWorkspace() {
     revealInTree,
     activateEditorFile,
   } = useWorkspaceEditorBuffers({
+    treeUndoStackRef,
     selectedFile,
     editorBuffersRef,
     editorDirtyRef,
@@ -922,6 +923,9 @@ export function useServerWorkspace() {
     loadDirectoryRef,
     openFilesRef,
     editorEtagRef,
+    editorValueRef,
+    editorImageUrlRef,
+    editorTruncatedRef,
   });
   const { handleOpenWorkspaceRoot, handleOpenHomeFolder, handleOpenRemotePath, openRemoteDirectory } = useWorkspaceFolderNavigation({
     connectionState,

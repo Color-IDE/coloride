@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import json
 import os
 import uuid
 from collections.abc import Awaitable, Callable
@@ -32,6 +33,7 @@ from .processes import ProcessRegistry
 from .registry import RegistryClient, RegistryError
 from .store import ExternalAgentStore
 from .terminals import AcpTerminalBridge
+from .usage import AgentUsageReader
 
 Publish = Callable[[str, dict[str, Any]], Awaitable[None]]
 
@@ -51,8 +53,10 @@ class ExternalAgentManager:
         self.registry = RegistryClient(self.store)
         self.installer = ExternalAgentInstaller(self.store)
         self.processes = ProcessRegistry()
+        self.usage_reader = AgentUsageReader(self.installer)
         self.terminals = AcpTerminalBridge()
         self._connections: dict[str, AcpConnection] = {}
+        self._history_text: dict[str, tuple[int, int, list[tuple[str, str]]]] = {}
         self._permissions: dict[str, asyncio.Future[str | None]] = {}
         self._turns: dict[str, asyncio.Task[None]] = {}
         self._locks: dict[str, asyncio.Lock] = {}
@@ -61,6 +65,7 @@ class ExternalAgentManager:
         self._watchers: dict[str, asyncio.Task[None]] = {}
 
     async def shutdown(self) -> None:
+        await self.usage_reader.shutdown()
         await asyncio.gather(*(self.close_execution(session_id) for session_id in list(self._connections)))
         await self.terminals.close_all()
         await self.processes.stop_all()
@@ -82,6 +87,60 @@ class ExternalAgentManager:
                 entry.model_dump(by_alias=True, exclude={"command", "env", "archive_url", "archive_sha256"})
             )
         return public
+
+    async def history(self, query: str = "") -> list[dict[str, Any]]:
+        # Read persisted conversations, including closed tabs. Never start an agent.
+        def collect() -> list[dict[str, Any]]:
+            result = []
+            needle = query.strip().casefold()
+            for session in self.store.list_sessions():
+                events_path = self.store.sessions_dir / session.id / "events.jsonl"
+                try:
+                    stat = events_path.stat()
+                except FileNotFoundError:
+                    continue
+                cached = self._history_text.get(session.id)
+                if cached and cached[:2] == (stat.st_mtime_ns, stat.st_size):
+                    chunks = cached[2]
+                else:
+                    chunks: list[tuple[str, str]] = []
+                    with events_path.open(encoding="utf-8") as stream:
+                        for line in stream:
+                            try:
+                                update = json.loads(line).get("update", {})
+                            except (ValueError, AttributeError):
+                                continue
+                            if not isinstance(update, dict):
+                                continue
+                            kind, content = update.get("sessionUpdate"), update.get("content")
+                            if kind not in {"user_message_chunk", "agent_message_chunk"} or not isinstance(content, dict):
+                                continue
+                            text = content.get("text")
+                            if not isinstance(text, str) or not text:
+                                continue
+                            if chunks and chunks[-1][0] == kind:
+                                chunks[-1] = (kind, chunks[-1][1] + text)
+                            else:
+                                chunks.append((kind, text))
+                    self._history_text[session.id] = (stat.st_mtime_ns, stat.st_size, chunks)
+                messages = [text for _kind, text in chunks if text.strip()]
+                first = next((text.strip() for kind, text in chunks if kind == "user_message_chunk"), "")
+                if not messages:
+                    continue
+                text = "\n".join(messages)
+                position = text.casefold().find(needle) if needle else -1
+                snippet = text[max(0, position - 60):position + 180] if position >= 0 else ""
+                result.append({"session": session.public(), "firstMessage": first[:240],
+                               "preview": messages[-1].strip()[:240], "snippet": snippet,
+                               "matches": not needle or position >= 0})
+            return sorted(result, key=lambda item: item["session"]["updatedAt"], reverse=True)
+        return await asyncio.to_thread(collect)
+
+    async def account_usage(self) -> list[dict[str, Any]]:
+        sessions = [self._session(session_id) for session_id in list(self._connections)]
+        connected = {record.installation_id for record in sessions if record.phase == "ready"}
+        installations = {item.agent_id: item for item in self.store.read_installations() if item.id in connected}
+        return list(await asyncio.gather(*(self.usage_reader.read(item) for item in installations.values())))
 
     def installations(self) -> list[dict[str, Any]]:
         return [

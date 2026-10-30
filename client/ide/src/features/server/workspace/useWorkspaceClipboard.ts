@@ -14,13 +14,15 @@ import {
   getItemPath,
   getParentPath,
   isPathOrDescendant,
-  itemDepthUnderRoot,
+  mergeDirectoryListing,
   joinRemotePath
 } from "./treeModel";
 import {
-  type ConnectionState
+  type ConnectionState,
+  type TreeUndoEntry,
 } from "./types";
 interface Dependencies {
+  pushTreeUndo: (entry: TreeUndoEntry) => void;
   treeClipboardRef: RefObject<{ path: string; name: string; kind: FileTreeItem["kind"]; mode?: "copy" | "cut"; } | null>;
   setTreeClipboard: Dispatch<SetStateAction<{ path: string; name: string; kind: FileTreeItem["kind"]; mode?: "copy" | "cut"; } | null>>;
   setExplorerError: Dispatch<SetStateAction<string>>;
@@ -28,6 +30,7 @@ interface Dependencies {
   workspacePathRef: RefObject<string>;
   workspacePath: string;
   treeItemsRef: RefObject<FileTreeItem[]>;
+  setTreeItems: Dispatch<SetStateAction<FileTreeItem[]>>;
   openFilesRef: RefObject<string[]>;
   connectionState: ConnectionState;
   requestWritePermission: (action: string, dangerous?: boolean, options?: { skipConfirm?: boolean; }) => boolean;
@@ -37,15 +40,13 @@ interface Dependencies {
   requestRevealInTree: (path: string) => void;
   selectedFileRef: RefObject<string | null>;
   selectedFile: string | null;
-  setLoadedDirs: Dispatch<SetStateAction<Set<string>>>;
-  loadedDirsRef: RefObject<Set<string>>;
-  loadDirectory: (path: string, depth: number, replaceRoot?: boolean, allowDuringConnect?: boolean, options?: { quiet?: boolean; force?: boolean; }) => Promise<boolean>;
   connectionStateRef: RefObject<ConnectionState>;
   treeClipboard: { path: string; name: string; kind: FileTreeItem["kind"]; mode?: "copy" | "cut"; } | null;
   handleMoveTreeItem: (item: FileTreeItem, targetDirPath: string) => Promise<boolean>;
 }
 
 export function useWorkspaceClipboard({
+  pushTreeUndo,
   treeClipboardRef,
   setTreeClipboard,
   setExplorerError,
@@ -53,6 +54,7 @@ export function useWorkspaceClipboard({
   workspacePathRef,
   workspacePath,
   treeItemsRef,
+  setTreeItems,
   openFilesRef,
   connectionState,
   requestWritePermission,
@@ -62,9 +64,6 @@ export function useWorkspaceClipboard({
   requestRevealInTree,
   selectedFileRef,
   selectedFile,
-  setLoadedDirs,
-  loadedDirsRef,
-  loadDirectory,
   connectionStateRef,
   treeClipboard,
   handleMoveTreeItem,
@@ -95,7 +94,7 @@ export function useWorkspaceClipboard({
     return true;
   };
 
-  const resolveUniqueDestPath = (
+  const resolveUniqueDestPath = async (
     parent: string,
     preferredName: string,
     forceCopySuffix = false,
@@ -124,8 +123,16 @@ export function useWorkspaceClipboard({
         );
       }
     }
-    const name = buildCopyName(preferredName, siblingNames, forceCopySuffix);
-    return { name, path: joinRemotePath(parent, name) };
+    for (;;) {
+      const name = buildCopyName(preferredName, siblingNames, forceCopySuffix);
+      const path = joinRemotePath(parent, name);
+      // Probe only the proposed destination, including unloaded/hidden files.
+      // Existing copies and writes also refuse occupied destinations.
+      const { entries } = await api.statFiles(path);
+      if (!entries.length) throw new Error("Could not check the paste destination.");
+      if (!entries[0]!.exists) return { name, path };
+      siblingNames.add(name);
+    }
   };
 
   const handleDuplicateTreeItem = async (item: FileTreeItem) => {
@@ -136,27 +143,12 @@ export function useWorkspaceClipboard({
 
     const sourcePath = getItemPath(item);
     const parent = getParentPath(sourcePath);
-    const { name: destName, path: destPath } = resolveUniqueDestPath(
-      parent,
-      item.name,
-      true,
-    );
-
-    if (!requestWritePermission(`Duplicate "${item.name}" as "${destName}"`)) {
-      return false;
-    }
-
     try {
+      const { name: destName, path: destPath } = await resolveUniqueDestPath(parent, item.name, true);
+      if (!requestWritePermission(`Duplicate "${item.name}" as "${destName}"`)) return false;
       await api.copyFile(sourcePath, destPath);
-      if (parent !== workspacePath) {
-        setExpandedIds((current) => {
-          const next = new Set(current).add(parent);
-          expandedIdsRef.current = next;
-          return next;
-        });
-      }
-      await refreshDirectory(parent);
-      requestRevealInTree(destPath);
+      pushTreeUndo({type:"create", items:[{path:destPath, kind:item.kind}]});
+      revealAfterPaste(parent, destPath, item.kind);
       setExplorerError("");
       return true;
     } catch (error) {
@@ -215,44 +207,40 @@ export function useWorkspaceClipboard({
     return workspacePathRef.current || workspacePath || root;
   };
 
-  const revealAfterPaste = async (
+  const revealAfterPaste = (
     destinationParent: string,
     destPath: string,
+    kind: FileTreeItem["kind"] = "file",
+    reconcile = true,
   ) => {
     const root = workspacePathRef.current || workspacePath;
-    // Expand destination first so the refreshed children are visible immediately.
-    if (root && destinationParent !== root) {
-      setExpandedIds((current) => {
-        const next = new Set(current).add(destinationParent);
-        expandedIdsRef.current = next;
-        return next;
-      });
+    if (!root || !isPathOrDescendant(destinationParent, root)) return;
+    if (destinationParent !== root) {
+      const expanded = new Set(expandedIdsRef.current).add(destinationParent);
+      expandedIdsRef.current = expanded;
+      setExpandedIds(expanded);
     }
-    setLoadedDirs((current) => {
-      const next = new Set(current).add(destinationParent);
-      loadedDirsRef.current = next;
+    // The write already succeeded. Insert its known result without waiting
+    // for a directory listing, preserving every loaded sibling subtree.
+    setTreeItems(current => {
+      if (current.some(item => getItemPath(item) === destPath)) return current;
+      const parent = current.find(item => getItemPath(item) === destinationParent);
+      if (destinationParent !== root && !parent) return current;
+      const depth = parent ? parent.depth + 1 : 0;
+      const children = current.filter(item => item.depth === depth && getParentPath(getItemPath(item)) === destinationParent);
+      children.push({id:destPath, path:destPath, name:destPath.split("/").at(-1)!, kind, depth});
+      children.sort((a, b) => a.kind === "dir" && b.kind !== "dir" ? -1
+        : b.kind === "dir" && a.kind !== "dir" ? 1 : a.name.localeCompare(b.name));
+      const next = mergeDirectoryListing(current, destinationParent === root ? null : destinationParent, children);
+      treeItemsRef.current = next;
       return next;
     });
-
-    await refreshDirectory(destinationParent);
-    const stillMissing = !treeItemsRef.current.some(
-      (item) => getItemPath(item) === destPath,
-    );
-    if (stillMissing && root) {
-      const depth =
-        destinationParent === root
-          ? 0
-          : itemDepthUnderRoot(destinationParent, root) + 1;
-      await loadDirectory(
-        destinationParent,
-        depth,
-        destinationParent === root,
-        false,
-        { force: true },
-      );
-    }
-
     requestRevealInTree(destPath);
+    // Do one authoritative reconciliation after paint, without blocking paste.
+    if (reconcile) window.requestAnimationFrame(() => {
+      if ((workspacePathRef.current || workspacePath) !== root) return;
+      void refreshDirectory(destinationParent).catch(error => setExplorerError(messageFromError(error)));
+    });
   };
 
   /**
@@ -275,17 +263,11 @@ export function useWorkspaceClipboard({
     }
 
     let lastPath: string | null = null;
+    const created: {path:string; kind:FileTreeItem["kind"]}[] = [];
     try {
-      // Ensure destination folder exists (and is a dir) before writing children.
-      try {
-        await api.mkdir(destinationParent);
-      } catch {
-        // already exists — fine
-      }
-
       for (const file of files) {
         const preferredName = file.name?.trim() || "uploaded-file";
-        const { name: destName, path: destPath } = resolveUniqueDestPath(
+        const { name: destName, path: destPath } = await resolveUniqueDestPath(
           destinationParent,
           preferredName,
           false,
@@ -298,15 +280,19 @@ export function useWorkspaceClipboard({
         // Empty files are allowed (e.g. placeholder assets).
         // New path → no etag. resolveUniqueDestPath avoids clobbering existing files.
         await api.writeFile(destPath, encodeBytesToBase64(bytes), null);
+        created.push({path:destPath, kind:"file"});
         lastPath = destPath;
+        revealAfterPaste(destinationParent, destPath, "file", false);
       }
 
-      if (lastPath) await revealAfterPaste(destinationParent, lastPath);
+      if (lastPath) revealAfterPaste(destinationParent, lastPath);
       setExplorerError("");
       return true;
     } catch (error) {
       setExplorerError(messageFromError(error) || "Upload failed.");
       return false;
+    } finally {
+      if (created.length) pushTreeUndo({type:"create", items:created});
     }
   };
 
@@ -367,33 +353,30 @@ export function useWorkspaceClipboard({
             },
             destinationParent,
           ));
+        if (moved && getParentPath(clip.path) !== destinationParent) {
+          pushTreeUndo({type:"move", source:clip.path, destination:joinRemotePath(destinationParent, clip.name), kind:clip.kind});
+        }
         if (moved) {
           treeClipboardRef.current = null;
           setTreeClipboard(null);
         }
         return Boolean(moved);
       }
-      const forceSuffix = getParentPath(clip.path) === destinationParent;
-      const { path: destPath } = resolveUniqueDestPath(
-        destinationParent,
-        clip.name,
-        forceSuffix,
-      );
-
-      if (destPath === clip.path) {
-        setExplorerError("Source and destination are the same.");
-        return false;
-      }
-
-      // Paste is intentional (Cmd+V) — no confirm dialog; still honor read-only.
+      // Paste is intentional, but must still honor read-only mode.
       if (appPreferences.permissionMode === "read-only") {
         setExplorerError("Read-only mode: paste is disabled.");
         return false;
       }
-
       try {
+        const forceSuffix = getParentPath(clip.path) === destinationParent;
+        const { path: destPath } = await resolveUniqueDestPath(destinationParent, clip.name, forceSuffix);
+        if (destPath === clip.path) {
+          setExplorerError("Source and destination are the same.");
+          return false;
+        }
         await api.copyFile(clip.path, destPath);
-        await revealAfterPaste(destinationParent, destPath);
+        pushTreeUndo({type:"create", items:[{path:destPath, kind:clip.kind}]});
+        revealAfterPaste(destinationParent, destPath, clip.kind);
         setExplorerError("");
         return true;
       } catch (error) {

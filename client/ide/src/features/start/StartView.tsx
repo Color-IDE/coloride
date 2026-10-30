@@ -39,12 +39,9 @@ function PlusIcon() {
 
 function CloneIcon() {
   return (
-    <svg aria-hidden="true" className="size-3.5" fill="none" viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg">
-      <path d="M0 0h1792v1792H0z" fill="none" />
-      <path
-        d="M1664 1632V544q0-13-9.5-22.5T1632 512H544q-13 0-22.5 9.5T512 544v1088q0 13 9.5 22.5t22.5 9.5h1088q13 0 22.5-9.5t9.5-22.5m128-1088v1088q0 66-47 113t-113 47H544q-66 0-113-47t-47-113V544q0-66 47-113t113-47h1088q66 0 113 47t47 113m-384-384v160h-128V160q0-13-9.5-22.5T1248 128H160q-13 0-22.5 9.5T128 160v1088q0 13 9.5 22.5t22.5 9.5h160v128H160q-66 0-113-47T0 1248V160Q0 94 47 47T160 0h1088q66 0 113 47t47 113"
-        fill="currentColor"
-      />
+    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="1.15em" height="1.15em" viewBox="0 0 512 512">
+      <path d="M0 0h512v512H0z" fill="none" />
+      <path fill="currentColor" d="M464 0H144c-26.51 0-48 21.49-48 48v48H48c-26.51 0-48 21.49-48 48v320c0 26.51 21.49 48 48 48h320c26.51 0 48-21.49 48-48v-48h48c26.51 0 48-21.49 48-48V48c0-26.51-21.49-48-48-48M362 464H54a6 6 0 0 1-6-6V150a6 6 0 0 1 6-6h42v224c0 26.51 21.49 48 48 48h224v42a6 6 0 0 1-6 6m96-96H150a6 6 0 0 1-6-6V54a6 6 0 0 1 6-6h308a6 6 0 0 1 6 6v308a6 6 0 0 1-6 6" />
     </svg>
   );
 }
@@ -64,7 +61,7 @@ export function StartView({
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.metaKey || event.ctrlKey || event.altKey || event.repeat) return;
+      if (localFolderOpening || event.metaKey || event.ctrlKey || event.altKey || event.repeat) return;
       const target = event.target;
       if (
         target instanceof HTMLElement &&
@@ -81,7 +78,7 @@ export function StartView({
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onOpenRecent, recentRows]);
+  }, [localFolderOpening, onOpenRecent, recentRows]);
 
   return (
     <div className="start-screen flex h-full min-h-0 min-w-0 flex-1 items-center justify-center overflow-y-auto bg-[#f7f7f8] px-8 py-12 text-[#3f3f46] dark:bg-[#171717] dark:text-[#d4d4d8]">
@@ -103,6 +100,7 @@ export function StartView({
             <SectionLabel>RECENT PROJECTS</SectionLabel>
             {recentRows.map((item, index) => (
               <StartRow
+                disabled={localFolderOpening}
                 icon={<OpenProjectIcon />}
                 key={item.path}
                 label={item.name}

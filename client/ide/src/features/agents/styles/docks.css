@@ -816,8 +816,8 @@ body[data-theme="light"] .agent-mcp-tool-plugin {
 
 
 /* Agents tab checkpoint bar — full width on composer */
-.agent-approval-dock.agent-checkpoint-dock,
-.agent-checkpoint-dock {
+.agent-approval-dock.agent-checkpoint-dock:not(.agent-checkpoint-card),
+.agent-checkpoint-dock:not(.agent-checkpoint-card) {
   flex-direction: column;
   flex-wrap: nowrap;
   align-items: stretch;
@@ -851,8 +851,8 @@ body[data-theme="light"] .agent-view:not(.agent-view-sidebar) .agent-docks-stack
   border-radius: 8px 8px 0 0;
 }
 
-.agent-view-sidebar .agent-approval-dock.agent-checkpoint-dock,
-.agent-view-sidebar .agent-checkpoint-dock,
+.agent-view-sidebar .agent-approval-dock.agent-checkpoint-dock:not(.agent-checkpoint-card),
+.agent-view-sidebar .agent-checkpoint-dock:not(.agent-checkpoint-card),
 .agent-view-sidebar .agent-checkpoint-dock-sidebar {
   border: none;
   border-bottom: none;

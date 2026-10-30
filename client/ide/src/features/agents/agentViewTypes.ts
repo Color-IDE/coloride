@@ -21,6 +21,7 @@ export interface AgentViewProps {
     icon?: string | null;
   }>;
   onOpenExternalAgent?: (agentId: string) => void;
+  onOpenExternalAgentHistory?: (session: {sessionId:string; agentId:string; workspacePath:string}) => void;
   externalAgentTabs?: Array<{
     id: string;
     agentId: string;

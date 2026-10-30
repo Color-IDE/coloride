@@ -1,3 +1,4 @@
+import { notify } from "../../shared/ui/notifications";
 import {
   FileValidationIcon,
   GlobeIcon,
@@ -514,7 +515,15 @@ export function ExplorerEditor({
                   <button
                     className="absolute inset-0 rounded-[4px]"
                     onClick={(event) => {
-                      if (tabMissing) return;
+                      if (tabMissing) {
+                        notify({
+                          id: `deleted-file:${path}`,
+                          kind: "info",
+                          title: "File deleted",
+                          description: `"${name}" has been deleted and cannot be opened.`,
+                        });
+                        return;
+                      }
                       onSelectFile?.(path);
                       revealSelectedTab(event.currentTarget.parentElement);
                     }}

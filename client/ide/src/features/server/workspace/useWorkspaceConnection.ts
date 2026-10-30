@@ -20,7 +20,7 @@ import {
   isValidUsername,
   messageFromError,
 } from "./connectionValidation";
-import type { TreeUndoDeleteEntry } from "./types";
+import type { TreeUndoEntry } from "./types";
 import {
   type AuthMethod,
   type ConnectionState,
@@ -57,7 +57,7 @@ interface Dependencies {
   setTreeRefreshing: Dispatch<SetStateAction<boolean>>;
   treeRefreshInFlightRef: RefObject<boolean>;
   editorBuffersRef: RefObject<Map<string, EditorBuffer>>;
-  treeUndoStackRef: RefObject<TreeUndoDeleteEntry[]>;
+  treeUndoStackRef: RefObject<TreeUndoEntry[]>;
   setTreeUndoDepth: Dispatch<SetStateAction<number>>;
   agentEditBaseRef: RefObject<Map<string, string>>;
   editorLoadRequestRef: RefObject<number>;

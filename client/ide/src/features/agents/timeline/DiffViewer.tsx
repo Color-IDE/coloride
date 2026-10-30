@@ -1,3 +1,4 @@
+import { ToolScrollArea } from "./ToolScrollArea";
 import { FileDiffIcon } from "@hugeicons/core-free-icons";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "../../../shared/ui/Icon";
@@ -109,7 +110,7 @@ export function AgentDiffViewer({
           )}
         </div>
       )}
-      <div className="agent-diff-lines" ref={scrollerRef}>
+      <ToolScrollArea className="agent-diff-lines" ref={scrollerRef}>
         <div className="agent-diff-lines-inner">
           {visibleRows.map((row, index) => (
             <div
@@ -130,7 +131,7 @@ export function AgentDiffViewer({
             </div>
           ))}
         </div>
-      </div>
+      </ToolScrollArea>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { ToolScrollArea } from "./ToolScrollArea";
 import type { AgentTerminalReference } from "@coloride/contracts";
 import {
   Alert02Icon,
@@ -669,9 +670,9 @@ export function AgentGitStatusRow({ entry }: { entry: ToolTimelineEntry }) {
         className="agent-thinking-detail agent-git-status-detail"
         open={expanded && hasDetail}
       >
-        <div className={`agent-git-status-note${errorText ? " is-error" : ""}`}>
+        <ToolScrollArea className={`agent-git-status-note${errorText ? " is-error" : ""}`}>
           {bodyText}
-        </div>
+        </ToolScrollArea>
       </CollapsibleSection>
     </div>
   );
@@ -729,7 +730,7 @@ export function AgentGitDiffRow({ entry }: { entry: ToolTimelineEntry }) {
         open={expanded && hasDetail}
       >
         {errorText ? (
-          <div className="agent-git-diff-note is-error">{errorText}</div>
+          <ToolScrollArea className="agent-git-diff-note is-error">{errorText}</ToolScrollArea>
         ) : entry.diff || looksLikeUnifiedDiff(bodyText) ? (
           <AgentDiffViewer
             hideHeader
@@ -738,9 +739,9 @@ export function AgentGitDiffRow({ entry }: { entry: ToolTimelineEntry }) {
             preview={!entry.diff}
           />
         ) : (
-          <div className="agent-git-diff-note">
+          <ToolScrollArea className="agent-git-diff-note">
             {bodyText || "(no changes)"}
-          </div>
+          </ToolScrollArea>
         )}
       </CollapsibleSection>
     </div>
@@ -800,11 +801,11 @@ export function AgentDiagnosticsRow({ entry }: { entry: ToolTimelineEntry }) {
         className="agent-thinking-detail agent-diagnostics-detail"
         open={expanded && hasDetail}
       >
-        <div
+        <ToolScrollArea
           className={`agent-diagnostics-note${errorText ? " is-error" : ""}`}
         >
           {bodyText}
-        </div>
+        </ToolScrollArea>
       </CollapsibleSection>
     </div>
   );
@@ -904,11 +905,11 @@ export function AgentStartProcessRow({
         className="agent-thinking-detail agent-start-process-detail"
         open={expanded && hasDetail}
       >
-        <div
+        <ToolScrollArea
           className={`agent-start-process-note${errorText ? " is-error" : ""}`}
         >
           {bodyText}
-        </div>
+        </ToolScrollArea>
       </CollapsibleSection>
     </div>
   );
@@ -966,11 +967,11 @@ export function AgentReadProcessRow({ entry }: { entry: ToolTimelineEntry }) {
         className="agent-thinking-detail agent-read-process-detail"
         open={expanded && hasDetail}
       >
-        <div
+        <ToolScrollArea
           className={`agent-read-process-note${errorText ? " is-error" : ""}`}
         >
           {bodyText}
-        </div>
+        </ToolScrollArea>
       </CollapsibleSection>
     </div>
   );
@@ -1085,9 +1086,9 @@ export function AgentFetchUrlRow({ entry }: { entry: ToolTimelineEntry }) {
         className="agent-thinking-detail agent-fetch-url-detail"
         open={expanded && hasDetail}
       >
-        <div className={`agent-fetch-url-note${errorText ? " is-error" : ""}`}>
+        <ToolScrollArea className={`agent-fetch-url-note${errorText ? " is-error" : ""}`}>
           {bodyText}
-        </div>
+        </ToolScrollArea>
       </CollapsibleSection>
     </div>
   );
@@ -1145,11 +1146,11 @@ export function AgentBrowserToolRow({ entry }: { entry: ToolTimelineEntry }) {
         className="agent-thinking-detail agent-browser-tool-detail"
         open={expanded && hasDetail}
       >
-        <div
+        <ToolScrollArea
           className={`agent-browser-tool-note${errorText ? " is-error" : ""}`}
         >
           {bodyText}
-        </div>
+        </ToolScrollArea>
       </CollapsibleSection>
     </div>
   );
@@ -1391,7 +1392,7 @@ export function StreamingEditCode({ payload }: { payload: LiveEditPayload }) {
   }, [displayedRows.length, payload]);
 
   return (
-    <div className="agent-edit-stream" ref={scrollerRef}>
+    <ToolScrollArea className="agent-edit-stream" ref={scrollerRef}>
       <div className="agent-edit-stream-inner">
         {displayedRows.map((row, index) => (
           <div
@@ -1410,7 +1411,7 @@ export function StreamingEditCode({ payload }: { payload: LiveEditPayload }) {
           </div>
         ))}
       </div>
-    </div>
+    </ToolScrollArea>
   );
 }
 
@@ -1701,7 +1702,7 @@ export function AgentReviewRow({ entry }: { entry: ToolTimelineEntry }) {
         {hasDetail ? <span className={`agent-thinking-chevron${expanded ? " is-open" : ""}`}><ExpandChevronIcon /></span> : null}
       </button>
       <CollapsibleSection className="agent-thinking-detail" open={expanded && hasDetail}>
-        <div className="agent-browser-tool-note whitespace-pre-wrap">{entry.output}</div>
+        <ToolScrollArea className="agent-browser-tool-note whitespace-pre-wrap">{entry.output}</ToolScrollArea>
       </CollapsibleSection>
     </div>
   );

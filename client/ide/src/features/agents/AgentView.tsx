@@ -1936,9 +1936,15 @@ export function AgentView(props: AgentViewProps) {
             newChatShortcut={newTaskShortcut}
             onClose={() => setChatHistoryOpen(false)}
             onSelect={selectSession}
+            onSelectExternal={props.onOpenExternalAgentHistory}
             onNew={createNewTask}
             onPin={togglePinTask}
             onArchive={async (id) => {
+              if (id.startsWith("external:")) {
+                setArchivedTaskIds(current => current.includes(id) ? current : [...current, id]);
+                setPinnedTaskIds(current => current.filter(item => item !== id));
+                return;
+              }
               const archived = await api.archiveAgentSession(id, true);
               setSessions((current) =>
                 current.map((item) =>
@@ -1966,6 +1972,11 @@ export function AgentView(props: AgentViewProps) {
               setChatTitles((current) => ({ ...current, [id]: title }))
             }
             onRestore={async (id) => {
+              if (id.startsWith("external:")) {
+                setArchivedTaskIds(current => current.filter(item => item !== id));
+                setHiddenTaskIds(current => current.filter(item => item !== id));
+                return;
+              }
               const session = sessions.find((item) => item.sessionId === id);
               if (session?.archived || archivedTaskIds.includes(id)) {
                 const restored = await api.archiveAgentSession(id, false);

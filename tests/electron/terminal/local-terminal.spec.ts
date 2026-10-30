@@ -133,9 +133,9 @@ test("50,000 lines remain ordered; scroll, selection and visibility", async () =
   await expect.poll(position).toBeLessThan(before);
   await expect(scroll).toHaveCSS('cursor','default');
   await expect(scroll).toHaveCSS('outline-style','none');
-  // Drag Chromium's native scrollbar thumb from bottom to top.
+  // Drag the shared overlay scrollbar from bottom to top.
   await scroll.evaluate(el => {el.scrollTop=el.scrollHeight;});
-  const track = (await scroll.boundingBox())!;
+  const track = (await page.getByRole('scrollbar', {name:'Terminal history scroll'}).boundingBox())!;
   await page.mouse.move(track.x+track.width-3,track.y+track.height-10);
   await page.mouse.down();
   await page.mouse.move(track.x+track.width-3,track.y+10,{steps:12});
@@ -319,7 +319,8 @@ test("npm run dev keeps scroll usable without selecting terminal text", async ()
   await command("awk 'BEGIN {for(i=1;i<=200;i++) print \"SCROLL_HISTORY_\" i}'", "SCROLL_HISTORY_200");
   const scroll = page.locator('.xterm-viewport');
   await page.locator(".xterm-screen").hover();
-  expect(await scroll.evaluate(el => getComputedStyle(el,'::-webkit-scrollbar').display)).not.toBe('none');
+  expect(await scroll.evaluate(el => getComputedStyle(el,'::-webkit-scrollbar').display)).toBe('none');
+  await expect(page.getByRole('scrollbar', {name:'Terminal history scroll'})).toBeVisible();
   expect(await page.evaluate(() => (window as any).terminalUnderTest.hasSelection())).toBe(false);
   const net = await import("node:net");
   const port = await new Promise<number>(resolve => { const server = net.createServer(); server.listen(0,"127.0.0.1",() => {const n = (server.address() as any).port; server.close(() => resolve(n));}); });
@@ -327,7 +328,8 @@ test("npm run dev keeps scroll usable without selecting terminal text", async ()
   await writeFile(join(sandbox,"package.json"), JSON.stringify({private:true,scripts:{dev:`${quote(process.execPath)} ${quote(join(root,"client/ide/node_modules/vite/bin/vite.js"))} --host 127.0.0.1 --port ${port} --strictPort`}}));
   await command("npm run dev", "Local:");
   await page.locator(".xterm-screen").hover();
-  expect(await scroll.evaluate(el => getComputedStyle(el,'::-webkit-scrollbar').display)).not.toBe('none');
+  expect(await scroll.evaluate(el => getComputedStyle(el,'::-webkit-scrollbar').display)).toBe('none');
+  await expect(page.getByRole('scrollbar', {name:'Terminal history scroll'})).toBeVisible();
   expect(await page.evaluate(() => (window as any).terminalUnderTest.hasSelection())).toBe(false);
   await scroll.evaluate(el => {el.scrollTop=0;});
   await expect.poll(() => scroll.evaluate(el => el.scrollTop)).toBe(0);

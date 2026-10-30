@@ -1,4 +1,4 @@
-import type { Dispatch, RefObject, SetStateAction } from "react";
+import { useRef, type Dispatch, type RefObject, type SetStateAction } from "react";
 import { api, hydrateRuntimeFromDesktop } from "../../../shared/api/client";
 import type { Profile } from "../../../shared/api/types";
 import {
@@ -97,6 +97,8 @@ export function useWorkspaceTreeLoading({
   setTreeSessionReadyKey,
   activateWorkspaceRef,
 }: Dependencies) {
+  const requestOrder = useRef(new Map<string, number>());
+  const requestSequence = useRef(0);
   const loadDirectory = async (
     path: string,
     depth: number,
@@ -114,8 +116,16 @@ export function useWorkspaceTreeLoading({
       setLoadingDirs((current) => new Set(current).add(path));
     }
 
+    const requestedRoot = workspacePathRef.current;
+    const requestedProfile = activeProfileIdRef.current;
+    const requestKey = JSON.stringify([requestedProfile, requestedRoot, path]);
+    const requestId = ++requestSequence.current;
+    requestOrder.current.set(requestKey, requestId);
+    const stillCurrent = () => workspacePathRef.current === requestedRoot
+      && activeProfileIdRef.current === requestedProfile && requestOrder.current.get(requestKey) === requestId;
     try {
       const response = await api.listFiles(path);
+      if (!stillCurrent()) return false;
       const children = entriesToTreeItems(response.entries, depth);
       reconcileAgentEditReviewDirectory(path, children.map(getItemPath));
       dirFingerprintsRef.current.set(
@@ -124,6 +134,7 @@ export function useWorkspaceTreeLoading({
       );
 
       setTreeItems((current) => {
+        if (!stillCurrent()) return current;
         // Quiet/auto refreshes preserve expanded subtrees so rows keep their React
         // identity (no re-play of the tree-row enter animation after a save).
         // Force/manual refresh still does a hard replace so deleted nodes disappear.
@@ -172,13 +183,21 @@ export function useWorkspaceTreeLoading({
       });
 
       setLoadedDirs((current) => {
-        const next = new Set(current).add(path);
+        if (!stillCurrent()) return current;
+        // A hard replacement drops nested rows. Their cache flags must go too,
+        // otherwise reopening a folder would incorrectly treat it as loaded.
+        const hardReplace = !options?.quiet || Boolean(options?.force);
+        const next = hardReplace
+          ? new Set([...current].filter(dir => dir === path || !isUnderWorkspace(dir, path)))
+          : new Set(current);
+        next.add(path);
         loadedDirsRef.current = next;
         return next;
       });
       if (!options?.quiet) setExplorerError("");
       return true;
     } catch (error) {
+      if (!stillCurrent()) return false;
       if (isConnectionNotOpen(error)) {
         handleConnectionUnavailable();
         return false;
@@ -192,7 +211,7 @@ export function useWorkspaceTreeLoading({
       }
       return false;
     } finally {
-      if (!options?.quiet) {
+      if (workspacePathRef.current === requestedRoot && activeProfileIdRef.current === requestedProfile && !options?.quiet) {
         setLoadingDirs((current) => {
           const next = new Set(current);
           next.delete(path);

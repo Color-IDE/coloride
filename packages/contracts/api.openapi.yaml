@@ -16,6 +16,32 @@ components:
       type: http
       scheme: bearer
   schemas:
+    ExternalAgentHistoryEntry:
+      type: object
+      required: [session, firstMessage, preview, snippet, matches]
+      properties:
+        session: { $ref: "#/components/schemas/ExternalAgentSession" }
+        firstMessage: { type: string }
+        preview: { type: string }
+        snippet: { type: string }
+        matches: { type: boolean }
+    ExternalAgentAccountUsage:
+      type: object
+      required: [agentId, name, status, windows, updatedAt]
+      properties:
+        agentId: { type: string }
+        name: { type: string }
+        status: { type: string, enum: [available, unavailable, unsupported] }
+        updatedAt: { type: [string, "null"] }
+        windows:
+          type: array
+          items:
+            type: object
+            required: [usedPercent, windowMinutes, resetsAt]
+            properties:
+              usedPercent: { type: number, minimum: 0, maximum: 100 }
+              windowMinutes: { type: number, exclusiveMinimum: 0 }
+              resetsAt: { type: [number, "null"] }
     ErrorPayload:
       type: object
       required: [code, message, retryable]
@@ -1632,6 +1658,32 @@ paths:
       responses:
         "200":
           description: Path renamed.
+  /api/external-agents/history:
+    get:
+      operationId: externalAgentsHistory
+      parameters:
+        - name: query
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Persisted external-agent conversations with searchable message previews.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ExternalAgentHistoryEntry" }
+  /api/external-agents/usage:
+    get:
+      operationId: externalAgentsAccountUsage
+      responses:
+        "200":
+          description: Account quota windows for connected agents; unavailable is never reported as zero usage.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ExternalAgentAccountUsage" }
   /api/external-agents/registry:
     get:
       operationId: externalAgentsRegistry

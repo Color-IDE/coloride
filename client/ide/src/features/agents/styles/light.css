@@ -412,8 +412,8 @@ body[data-theme="light"] .agent-approval {
   color: #18181b;
 }
 
-body[data-theme="light"] .agent-approval-dock,
-body[data-theme="light"] .agent-checkpoint-dock {
+body[data-theme="light"] .agent-approval-dock:not(.agent-checkpoint-card),
+body[data-theme="light"] .agent-checkpoint-dock:not(.agent-checkpoint-card) {
   border: 1px solid #e4e4e7;
   border-bottom: 0;
   border-radius: 14px 14px 0 0;
@@ -424,7 +424,7 @@ body[data-theme="light"] .agent-checkpoint-dock {
   -webkit-backdrop-filter: none;
 }
 
-body[data-theme="light"] .agent-approval-dock.agent-checkpoint-dock {
+body[data-theme="light"] .agent-approval-dock.agent-checkpoint-dock:not(.agent-checkpoint-card) {
   padding: 0;
   min-height: 0;
 }
@@ -437,7 +437,7 @@ body[data-theme="light"] .agent-view-sidebar .agent-docks-stack {
   transform: translateX(-50%);
 }
 
-body[data-theme="light"] .agent-view-sidebar .agent-checkpoint-dock {
+body[data-theme="light"] .agent-view-sidebar .agent-checkpoint-dock:not(.agent-checkpoint-card) {
   border: none;
   border-bottom: none;
   border-radius: 12px 12px 0 0;
@@ -521,10 +521,13 @@ body[data-theme="light"] .agent-checkpoint-dock-right .agent-approval-skip:hover
 
 body[data-theme="light"] .agent-checkpoint-dock-full.agent-checkpoint-card,
 body[data-theme="light"] .agent-approval-dock.agent-checkpoint-dock-full.agent-checkpoint-card,
-body[data-theme="light"] .agent-approval-dock.agent-checkpoint-dock.agent-checkpoint-card {
-  padding: 10px 16px;
+body[data-theme="light"] .agent-approval-dock.agent-checkpoint-dock.agent-checkpoint-card,
+body[data-theme="light"] .agent-checkpoint-card,
+body[data-theme="light"] .agent-turn-checkpoint-card .agent-checkpoint-card {
+  padding: 6px 10px 8px;
   border: 1px solid #e4e4e6;
-  background: #f1f2f3;
+  border-radius: 8px;
+  background: #f4f4f5;
   box-shadow: none;
 }
 

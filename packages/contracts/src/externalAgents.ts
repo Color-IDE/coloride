@@ -167,3 +167,20 @@ export type ExternalAgentImage = {
   mimeType: string;
   name: string;
 };
+
+/** Account quota, distinct from the conversation context window. */
+export type ExternalAgentAccountUsage = {
+  agentId: string;
+  name: string;
+  status: "available" | "unavailable" | "unsupported";
+  windows: { usedPercent: number; windowMinutes: number; resetsAt: number | null }[];
+  updatedAt: string | null;
+};
+
+export type ExternalAgentHistoryEntry = {
+  session: ExternalAgentSession;
+  firstMessage: string;
+  preview: string;
+  snippet: string;
+  matches: boolean;
+};

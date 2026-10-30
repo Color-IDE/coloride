@@ -455,6 +455,7 @@ export type AgentTerminalReference = {
 
 export type {
   ExternalAgentAuthMethod,
+  ExternalAgentAccountUsage,
   ExternalAgentCapabilities,
   ExternalAgentConfig,
   ExternalAgentConfigChoice,
@@ -462,6 +463,7 @@ export type {
   ExternalAgentConnectionPhase,
   ExternalAgentDistributionKind,
   ExternalAgentEvent,
+  ExternalAgentHistoryEntry,
   ExternalAgentExecutionTarget,
   ExternalAgentInstallation,
   ExternalAgentImage,

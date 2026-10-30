@@ -111,7 +111,7 @@ try {
       scrollbar: getComputedStyle(viewport, '::-webkit-scrollbar').display};
   });
   console.log('Full IDE baseline geometry', JSON.stringify(await geometry()));
-  await expect.poll(async () => (await geometry()).scrollbar).not.toBe('none');
+  await expect.poll(async () => (await geometry()).scrollbar).toBe('none');
   await expect(viewport).toHaveCSS('cursor','default');
   const input = async text => {
     await page.locator('.xterm-helper-textarea').first().focus();
@@ -119,6 +119,8 @@ try {
   };
   await input("awk 'BEGIN {for(i=1;i<=250;i++) print \"IDE_HISTORY_\" i}'");
   await expect(page.locator('.xterm-rows').first()).toContainText('IDE_HISTORY_250');
+  await page.locator('.coloride-terminal').first().hover();
+  await expect(page.getByRole('scrollbar', {name:'Terminal history scroll'}).first()).toBeVisible();
   const win = await app.browserWindow(page);
   console.log('Full IDE: resize');
   for (const [width,height] of [[1100,800],[1600,1000],[900,700],[1300,900]]) {

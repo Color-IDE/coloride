@@ -37,7 +37,6 @@ export function useWorkspaceTreeNavigation({
   clearRemoteWorkspace,
   expandedIds,
   setExpandedIds,
-  loadedDirs,
   activeProfileIdRef,
   loadedDirsRef,
   expandedIdsRef,
@@ -46,7 +45,7 @@ export function useWorkspaceTreeNavigation({
   const refreshDirectory = async (path: string) => {
     const root = workspacePathRef.current || workspacePath;
     if (path === root) {
-      await loadDirectory(root, 0, true);
+      await loadDirectory(root, 0, true, false, { quiet: true });
       return;
     }
 
@@ -59,8 +58,10 @@ export function useWorkspaceTreeNavigation({
       : root
         ? itemDepthUnderRoot(path, root) + 1
         : 0;
-    await loadDirectory(path, depth, false);
+    await loadDirectory(path, depth, false, false, { quiet: true });
   };
+
+  const pendingExpansions = useRef(new Map<string, Promise<boolean>>());
 
   const handleToggleDir = (item: FileTreeItem) => {
     if (connectionState !== "connected") {
@@ -82,8 +83,15 @@ export function useWorkspaceTreeNavigation({
       return next;
     });
 
-    if (!isExpanded && !loadedDirs.has(path)) {
-      void loadDirectory(path, item.depth + 1);
+    // Cached children are already in the flat tree: expanding needs no I/O.
+    // The workspace watcher refreshes changes in the background.
+    if (!isExpanded && !loadedDirsRef.current.has(path)) {
+      const key = JSON.stringify([activeProfileIdRef.current, workspacePathRef.current, path]);
+      if (!pendingExpansions.current.has(key)) {
+        const pending = loadDirectory(path, item.depth + 1, false, false);
+        pendingExpansions.current.set(key, pending);
+        void pending.finally(() => pendingExpansions.current.delete(key));
+      }
     }
   };
 

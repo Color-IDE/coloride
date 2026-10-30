@@ -315,6 +315,18 @@ function AgentTabsWorkspace(props: HostProps & { storageNamespace: string }) {
         <AgentView
           {...props}
           active={Boolean(props.active)}
+          onOpenExternalAgentHistory={(history) => {
+            if (props.workspaceKind !== "local") {
+              setError("External conversations can only be resumed in a local workspace.");
+              return;
+            }
+            const existing = tabs.find(tab => tab.kind === "external" && tab.sessionId === history.sessionId);
+            const tabId = existing?.id ?? `external-agent:history:${history.sessionId}`;
+            if (!existing) setTabs(current => [...current, {id:tabId, kind:"external", agentId:history.agentId, sessionId:history.sessionId}]);
+            setExternalTitles(current => ({...current, [tabId]:"New chat"}));
+            setSelectedId(tabId);
+            setError("");
+          }}
           externalAgentOptions={installations
             .filter((item) => item.status === "installed")
             .map((item) => ({

@@ -648,7 +648,7 @@
 
 .agent-diff-line.is-addition .agent-diff-prefix {
   color: #75bd94;
-  font-weight: 600;
+  font-weight: 400;
   -webkit-text-stroke: 0;
 }
 
@@ -709,4 +709,27 @@
   max-width: 100%;
   min-width: 0;
   pointer-events: auto;
+}
+
+/* Overlay rails share the tree/tab strip's 2px thumbs and consume no layout space. */
+.agent-tool-scroll-surface {
+  position: relative;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.agent-tool-scroll-content {
+  scrollbar-width: none !important;
+  scrollbar-gutter: auto !important;
+}
+
+.agent-tool-scroll-content::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.agent-tool-scroll-surface:hover > .editor-tabs-hairline,
+.agent-tool-scroll-surface:focus-within > .editor-tabs-hairline {
+  opacity: 1;
 }

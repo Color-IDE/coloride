@@ -1,3 +1,4 @@
+import { updateConnectedAccount } from "./connectedAccounts";
 import type {
   ExternalAgentEvent,
   ExternalAgentSession,
@@ -129,6 +130,9 @@ export function useExternalAgentSession(
           if (disposed) return;
           loaded = await externalAgentsApi.session(sessionId);
           if (disposed) return;
+          if (loaded.phase === "ready" && identity?.phase !== "ready")
+            window.dispatchEvent(new Event("coloride:agent-account-changed"));
+          updateConnectedAccount(active ? loaded : null, sessionId);
           identity = loaded;
           const last = events.at(-1);
           if (last) sequence = last.sequence;
@@ -165,6 +169,7 @@ export function useExternalAgentSession(
       : null;
     return () => {
       disposed = true;
+      updateConnectedAccount(null, sessionId);
       socket?.close();
       if (timer !== null) window.clearInterval(timer);
     };

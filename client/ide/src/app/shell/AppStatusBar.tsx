@@ -1,3 +1,4 @@
+import { AgentAccountUsage } from "../../features/external-agents";
 import { useMemo } from "react";
 import { FileIcon, fileTreeIconColor } from "../../features/explorer/filetree/FileTree";
 
@@ -73,6 +74,7 @@ export function AppStatusBar({
           })}
         </ol>
       )}
+      <AgentAccountUsage />
     </footer>
   );
 }
