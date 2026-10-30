@@ -221,17 +221,19 @@ body[data-theme="light"] .agent-approval-dock.agent-checkpoint-dock-full {
 .agent-checkpoint-dock-full.agent-checkpoint-card,
 .agent-approval-dock.agent-checkpoint-dock-full.agent-checkpoint-card,
 .agent-docks-stack > .agent-dock-slot:first-child .agent-checkpoint-dock-full.agent-checkpoint-card,
-.agent-docks-stack > .agent-checkpoint-dock-slot .agent-checkpoint-dock-full.agent-checkpoint-card {
+.agent-docks-stack > .agent-checkpoint-dock-slot .agent-checkpoint-dock-full.agent-checkpoint-card,
+.agent-checkpoint-card,
+.agent-turn-checkpoint-card .agent-checkpoint-card {
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 0;
   margin-bottom: 8px;
-  padding: 6px 10px;
+  padding: 10px 14px 10px;
   min-height: 0;
   border: 1px solid rgb(255 255 255 / 7%);
   border-bottom: 1px solid rgb(255 255 255 / 7%);
-  border-radius: 8px;
+  border-radius: 12px;
   background: rgb(44 44 44 / 72%);
   box-shadow: none;
   overflow: hidden;
