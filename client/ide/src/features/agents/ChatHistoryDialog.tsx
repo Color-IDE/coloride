@@ -1,4 +1,4 @@
-import { externalAgentsApi } from "../external-agents/api";
+import { externalAgentsApi } from "../external-agents";
 import type {
   AgentChatHistoryEntry,
   ExternalAgentHistoryEntry,
