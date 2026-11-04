@@ -13,10 +13,8 @@ const SettingsWindow = lazy(() => import("./app/SettingsWindow"));
 const isSettingsWindow = new URLSearchParams(location.search).get("window") === "settings";
 
 // Renderer-side Sentry (pairs with main-process init). DSN is configured in main.
-initSentry({
-  // Keep light in UI; main owns the project DSN / release.
-  sendDefaultPii: true,
-});
+// Main owns the DSN, release and privacy options in Sentry Electron 8.
+initSentry();
 
 window.addEventListener("coloride:terminal-telemetry", (event) => {
   const detail = (event as CustomEvent<{ event?: string; workspaceKind?: string }>).detail;
