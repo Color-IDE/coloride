@@ -158,6 +158,7 @@ export function FileTree({
   /** True after the user interacts with the tree until they click/focus outside it. */
   const treeInteractionActiveRef = useRef(false);
   const focusedPathRef = useRef<string | null>(null);
+  const keyboardFocusPathRef = useRef<string | null>(null);
   const selectedPathsRef = useRef<Set<string>>(new Set());
   const [treeFadeEdges, setTreeFadeEdges] = useState({
     bottom: false,
@@ -1066,6 +1067,62 @@ export function FileTree({
     }
   };
 
+  const navigateTree = (key: string, extendSelection: boolean) => {
+    const path = focusedPathRef.current;
+    const index = visibleItems.findIndex(item => getTreeItemPath(item) === path);
+    const current = visibleItems[index];
+    const atRoot = path === workspacePath;
+    let target: FileTreeItem | undefined;
+    let targetPath: string | undefined;
+    if (key === "ArrowRight") {
+      if (atRoot) {
+        if (!workspaceExpanded) setWorkspaceExpanded(true);
+        else target = visibleItems[0];
+      } else if (current?.kind === "dir") {
+        if (!effectiveExpandedIds.has(getTreeItemPath(current))) toggleExpanded(current);
+        else {
+          const child = visibleItems[index + 1];
+          if (child && child.depth > current.depth) target = child;
+        }
+      }
+    } else if (key === "ArrowLeft") {
+      if (atRoot) setWorkspaceExpanded(false);
+      else if (current?.kind === "dir" && effectiveExpandedIds.has(getTreeItemPath(current))) toggleExpanded(current);
+      else if (current) {
+        target = visibleItems.slice(0, index).reverse().find(item => item.depth < current.depth);
+        if (!target) targetPath = workspacePath ?? undefined;
+      }
+    } else if (key === "Home") target = visibleItems[0];
+    else if (key === "End") target = visibleItems.at(-1);
+    else if (key === "ArrowDown") {
+      if (atRoot && !workspaceExpanded) setWorkspaceExpanded(true);
+      else target = visibleItems[Math.min(index + 1, visibleItems.length - 1)];
+    } else if (key === "ArrowUp") {
+      if (index === 0) targetPath = workspacePath ?? undefined;
+      else target = visibleItems[Math.max(index - 1, 0)];
+    }
+    targetPath ??= target ? getTreeItemPath(target) : undefined;
+    if (!targetPath) return;
+    keyboardFocusPathRef.current = targetPath;
+    focusedPathRef.current = targetPath;
+    if (extendSelection && target) selectVisibleRange(targetPath);
+    else selectOnlyPath(targetPath);
+    scrollRowIntoView(targetPath);
+  };
+
+  // Scrolling a virtual tree can mount the destination on the next render.
+  useLayoutEffect(() => {
+    const path = keyboardFocusPathRef.current;
+    if (!path) return;
+    const node = path === workspacePath
+      ? treeRootRef.current?.querySelector<HTMLElement>(".filetree-workspace-toggle")
+      : treeScrollRef.current?.querySelector<HTMLElement>(`[data-tree-path="${CSS.escape(path)}"]`);
+    if (node) {
+      keyboardFocusPathRef.current = null;
+      node.focus({ preventScroll: true });
+    }
+  }, [focusedPath, virtualRange.start, virtualRange.end, workspacePath, workspaceExpanded]);
+
   const {
     handleRootDragEnter,
     handleRootDragLeave,
@@ -1097,6 +1154,7 @@ export function FileTree({
     canUpload,
   });
   useTreeKeyboard({
+    onNavigate: navigateTree,
     workspaceExpanded,
     renamingItem,
     createDraft,

@@ -14,11 +14,11 @@ const isSettingsWindow = new URLSearchParams(location.search).get("window") === 
 
 // Renderer-side Sentry (pairs with main-process init). DSN is configured in main.
 // Main owns the DSN, release and privacy options in Sentry Electron 8.
-initSentry();
+if (window.colorideDesktop?.telemetryEnabled) initSentry();
 
 window.addEventListener("coloride:terminal-telemetry", (event) => {
   const detail = (event as CustomEvent<{ event?: string; workspaceKind?: string }>).detail;
-  if (!detail?.event) return;
+  if (!detail?.event || !window.colorideDesktop?.telemetryEnabled) return;
   captureMessage(`terminal.${detail.event}`, {
     level: detail.event === "failed" ? "error" : "info",
     tags: { workspaceKind: detail.workspaceKind || "unknown" },
