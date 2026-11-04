@@ -127,26 +127,27 @@ test("50,000 lines remain ordered; scroll, selection and visibility", async () =
   expect(rows).toEqual(Array.from({length: 50000}, (_,i) => `ROW_${String(i+1).padStart(5,"0")}`));
   await expect.poll(async () => (await text()).split("\n").filter(x => /^ROW_\d{5}$/.test(x)).length, { timeout: 60_000 }).toBe(50000);
   const scroll = page.locator('.xterm-viewport');
-  const position = () => scroll.evaluate(el => el.scrollTop);
+  // xterm 6 virtualizes its DOM viewport, so scrollTop can stay zero.
+  // Assert the actual visible buffer row for wheel and overlay-scroll actions.
+  const position = () => page.evaluate(() => (window as any).terminalUnderTest.buffer.active.viewportY);
   const before = await position();
   await page.locator('.xterm-screen').hover(); await page.mouse.wheel(0,-400);
   await expect.poll(position).toBeLessThan(before);
   await expect(scroll).toHaveCSS('cursor','default');
   await expect(scroll).toHaveCSS('outline-style','none');
   // Drag the shared overlay scrollbar from bottom to top.
-  await scroll.evaluate(el => {el.scrollTop=el.scrollHeight;});
+  await page.evaluate(() => (window as any).terminalUnderTest.scrollToBottom());
   const track = (await page.getByRole('scrollbar', {name:'Terminal history scroll'}).boundingBox())!;
   await page.mouse.move(track.x+track.width-3,track.y+track.height-10);
   await page.mouse.down();
   await page.mouse.move(track.x+track.width-3,track.y+10,{steps:12});
   await page.mouse.up();
   await expect.poll(position).toBeLessThan(before/2);
-  await scroll.evaluate(el => {el.scrollTop=el.scrollHeight;});
-  // Release background output only after both the terminal buffer and native
-  // viewport have reached the top; runner speed must not decide event order.
+  await page.evaluate(() => (window as any).terminalUnderTest.scrollToBottom());
+  // Release background output only after the terminal viewport has reached the
+  // top; runner speed must not decide event order.
   await command("(while [ ! -f release-async-output ]; do sleep 0.05; done; printf '\\nASYNC_%s\\n' OUTPUT) & printf '\\nWAIT_%s\\n' READY", "WAIT_READY");
   await page.evaluate(() => (window as any).terminalUnderTest.scrollToTop());
-  await expect.poll(() => page.evaluate(() => (window as any).terminalUnderTest.buffer.active.viewportY)).toBe(0);
   await expect.poll(position).toBe(0);
   await writeFile(join(sandbox, "release-async-output"), "ready");
   await expect.poll(async () => (await text()).split("\n").includes("ASYNC_OUTPUT")).toBe(true);
