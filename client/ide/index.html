@@ -62,12 +62,10 @@
         <div class="coloride-boot-splash-chrome"></div>
         <div class="coloride-boot-splash-stage">
           <div class="coloride-boot-splash-mark" aria-hidden="true">
-            <img src="../desktop/resources/branding/coloride-loading.svg" alt="" />
-            <script>
-              if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
-                document.currentScript.previousElementSibling.src = "../desktop/resources/branding/coloride-loading-reduced.svg";
-              }
-            </script>
+            <picture>
+              <source media="(prefers-reduced-motion: reduce)" srcset="../desktop/resources/branding/coloride-loading-reduced.svg" />
+              <img src="../desktop/resources/branding/coloride-loading.svg" alt="" />
+            </picture>
           </div>
         </div>
       </div>

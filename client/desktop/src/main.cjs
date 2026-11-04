@@ -45,8 +45,9 @@ if (process.env.COLORIDE_TEST_USER_DATA) {
 // Sentry as early as possible (main process + native crashes).
 // DSN from Sentry Electron project; override with COLORIDE_SENTRY_DSN if needed.
 const SENTRY_DSN = process.env.COLORIDE_SENTRY_DSN || "";
+const SENTRY_ENABLED = Boolean(SENTRY_DSN) && process.env.COLORIDE_SENTRY_DISABLED !== "1";
 
-if (SENTRY_DSN && process.env.COLORIDE_SENTRY_DISABLED !== "1") {
+if (SENTRY_ENABLED) {
   Sentry.init({
     dsn: SENTRY_DSN,
     release: `coloride@${getColorideVersion()}`,
@@ -58,6 +59,7 @@ if (SENTRY_DSN && process.env.COLORIDE_SENTRY_DISABLED !== "1") {
     tracesSampleRate: app.isPackaged ? 0.2 : 1.0,
   });
 }
+ipcMain.on("coloride:telemetryEnabled", (event) => { event.returnValue = SENTRY_ENABLED; });
 
 // Prefer "Coloride" over the host binary name ("Electron") in menus / About.
 try {
@@ -425,8 +427,10 @@ async function checkForUpdates(channel) {
     return emptyResult;
   }
 
+  const configuredManifestUrl = process.env.COLORIDE_UPDATE_MANIFEST_URL || updateManifestUrls[nextChannel];
+  if (!configuredManifestUrl) return emptyResult;
   const manifestUrl = validateHttpsUrl(
-    process.env.COLORIDE_UPDATE_MANIFEST_URL || updateManifestUrls[nextChannel],
+    configuredManifestUrl,
     "Update manifest URL"
   );
   const controller = new AbortController();
@@ -1617,15 +1621,6 @@ function createStartupSplash(win, appearance) {
     dispose();
   });
   return state.ready;
-}
-
-function keepStartupSplashOnTop(win) {
-  const view = startupSplashes.get(win)?.view;
-  if (view && !view.webContents.isDestroyed()) {
-    // Re-adding an existing child only moves it to the top. A restored browser
-    // pane must not cover the loading mark while its app shell is still fading.
-    win.contentView.addChildView(view);
-  }
 }
 
 async function finishStartupSplash(win) {

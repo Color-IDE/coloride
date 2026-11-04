@@ -13,14 +13,14 @@ const SettingsWindow = lazy(() => import("./app/SettingsWindow"));
 const isSettingsWindow = new URLSearchParams(location.search).get("window") === "settings";
 
 // Renderer-side Sentry (pairs with main-process init). DSN is configured in main.
-initSentry({
+if (window.colorideDesktop?.telemetryEnabled) initSentry({
   // Keep light in UI; main owns the project DSN / release.
   sendDefaultPii: true,
 });
 
 window.addEventListener("coloride:terminal-telemetry", (event) => {
   const detail = (event as CustomEvent<{ event?: string; workspaceKind?: string }>).detail;
-  if (!detail?.event) return;
+  if (!detail?.event || !window.colorideDesktop?.telemetryEnabled) return;
   captureMessage(`terminal.${detail.event}`, {
     level: detail.event === "failed" ? "error" : "info",
     tags: { workspaceKind: detail.workspaceKind || "unknown" },

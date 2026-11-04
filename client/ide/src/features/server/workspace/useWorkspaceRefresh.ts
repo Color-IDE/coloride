@@ -348,7 +348,8 @@ export function useWorkspaceRefresh({
 
           for (const path of batch) {
             try {
-              const response = await api.listFiles(path);
+              const response = await api.listAllFiles(path, () =>
+                connectionStateRef.current === "connected" && workspacePathRef.current === rootPath);
               const nextFingerprint = fingerprintEntries(response.entries);
               const prevFingerprint = dirFingerprintsRef.current.get(path);
               if (prevFingerprint == null) {
@@ -362,6 +363,7 @@ export function useWorkspaceRefresh({
                 break;
               }
             } catch (error) {
+              if (connectionStateRef.current !== "connected" || workspacePathRef.current !== rootPath) return;
               if (isConnectionNotOpen(error)) {
                 handleConnectionUnavailable();
                 return;

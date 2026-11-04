@@ -207,6 +207,17 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ path, offset, limit })
     }),
+  listAllFiles: async (path: string, isCurrent = () => true): Promise<FileListResponse> => {
+    const entries: FileListResponse["entries"] = [];
+    const limit = 500;
+    for (;;) {
+      if (!isCurrent()) throw new DOMException("Directory request superseded", "AbortError");
+      const page = await api.listFiles(path, entries.length, limit);
+      if (!isCurrent()) throw new DOMException("Directory request superseded", "AbortError");
+      entries.push(...page.entries);
+      if (page.entries.length < limit) return { entries };
+    }
+  },
   searchFiles: (path: string, query: string, include = "", limit = 100) =>
     request<FileNameSearchResponse>("/api/files/search", {
       method: "POST",
