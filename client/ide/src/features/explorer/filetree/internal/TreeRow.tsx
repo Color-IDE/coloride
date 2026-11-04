@@ -115,7 +115,9 @@ export function TreeRow({
   return (
     <div
       aria-busy={loading}
-      aria-selected={active}
+      aria-selected={active || multiSelected}
+      aria-expanded={item.kind === "dir" ? expanded : undefined}
+      aria-level={item.depth + 1}
       className={`tree-row-appear group relative flex h-[22px] w-full shrink-0 items-center rounded-[2px] border-0 py-0 pr-2 text-left font-normal outline-none transition-[background-color,color] duration-75 hover:bg-white/[0.05] focus-visible:bg-white/[0.06] focus-visible:outline-none ${
         multiSelected
           ? "tree-row-multi-selected bg-white/[0.09] text-[#f0f4f8]"

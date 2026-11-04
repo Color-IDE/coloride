@@ -49,6 +49,7 @@ interface Dependencies {
   onPasteItem: ((contextItem?: FileTreeItem) => Promise<boolean>) | undefined;
   runPaste: (contextItem?: FileTreeItem) => Promise<void>;
   canPaste: boolean;
+  onNavigate: (key: string, extendSelection: boolean) => void;
 }
 export function useTreeKeyboard({
   workspaceExpanded,
@@ -89,13 +90,12 @@ export function useTreeKeyboard({
   onPasteItem,
   runPaste,
   canPaste,
+  onNavigate,
 }: Dependencies) {
   // Tree shortcuts (clipboard + multi-delete + rename).
   // Prefer DOM focus inside the tree, but also honor recent tree interaction /
   // highlighted rows when expand or virtualization drops focus to <body>.
   useEffect(() => {
-    if (!workspaceExpanded) return;
-
     const ownsTreeShortcut = (event: KeyboardEvent) => {
       if (renamingItem || createDraft || isEditableTarget(event.target))
         return false;
@@ -154,7 +154,17 @@ export function useTreeKeyboard({
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return;
       if (!ownsTreeShortcut(event)) return;
+      if (!modKey(event) && !event.altKey
+        && ["ArrowDown", "ArrowUp", "ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)
+        && event.target instanceof Element
+        && event.target.closest('[role="treeitem"], .filetree-workspace-toggle, .filetree-scroll')) {
+        event.preventDefault();
+        onNavigate(event.key, event.shiftKey);
+        return;
+      }
+      if (!workspaceExpanded) return;
       if (modKey(event) && event.altKey && event.key.toLowerCase() === "c") {
         const item =
           focusedPathRef.current === workspacePath && workspacePath
@@ -340,5 +350,6 @@ export function useTreeKeyboard({
     deleteItems,
     isWorkspaceRootItem,
     beginRename,
+    onNavigate,
   ]);
 }

@@ -50,6 +50,8 @@ node --test tests/electron/unit/sidecar-*.test.cjs
 # Full IDE with the production frontend build:
 corepack pnpm build:web
 node tests/electron/smoke/packaged-smoke.mjs --source
+# File tree: opening, pagination, keyboard, file operations and stale workspace responses:
+node tests/electron/smoke/file-tree.mjs
 # Sidebar prompt stability during submit, streamed output and completion (no model calls):
 node tests/electron/smoke/sidebar-submit-stability.mjs --source dark
 node tests/electron/smoke/sidebar-submit-stability.mjs --source light

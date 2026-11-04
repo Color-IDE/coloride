@@ -75,6 +75,7 @@ interface Window {
   __FORGE__?: ColorideRuntimeConfig;
   __COLORIDE__?: ColorideRuntimeConfig;
   colorideDesktop?: {
+    telemetryEnabled?: boolean;
     cloudConfig?: ColorideCloudConfig;
     openSettings?: (section?: string) => Promise<void>;
     onSettingsSectionChange?: (callback: (section: string) => void) => () => void;
