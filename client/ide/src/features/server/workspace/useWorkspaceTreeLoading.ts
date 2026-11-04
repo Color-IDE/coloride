@@ -375,13 +375,15 @@ export function useWorkspaceTreeLoading({
     clearRemoteWorkspace();
     const restoreGen = sessionRestoreGenRef.current;
     connectionUnavailableRef.current = false;
+    // Establish identity before listing: React may apply the queued tree updater
+    // after this async function resumes. Its stale-response guard must see the
+    // same root both when receiving the response and when committing the rows.
+    workspacePathRef.current = normalized;
+    setWorkspacePath(normalized);
     const loaded = await loadDirectory(normalized, 0, true, true);
     if (sessionRestoreGenRef.current !== restoreGen) return false;
     if (!loaded) {
-      // Keep previous workspace if a mid-session switch fails (e.g. bad agent path).
-      if (!workspacePathRef.current) {
-        setWorkspacePath("");
-      }
+      // Report a failed listing without committing a superseded activation.
       if (!connectionUnavailableRef.current) {
         setConnectionState("connected");
       }

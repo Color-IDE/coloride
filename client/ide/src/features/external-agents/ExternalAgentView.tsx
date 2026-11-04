@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api, encodeBytesToBase64 } from "../../shared/api/client";
 import { useComposerAttachments } from "../../shared/ui/composer/useComposerAttachments";
 import { workspaceFilePath } from "./workspaceFilePath";
@@ -29,7 +29,7 @@ export function ExternalAgentView({
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const editor = useRef({ workspacePath, workspaceKind, onOpenExplorerFile });
   editor.current = { workspacePath, workspaceKind, onOpenExplorerFile };
-  const openEditorFile = async (request: { path: string; line?: number }) => {
+  const openEditorFile = useCallback(async (request: { path: string; line?: number }) => {
     const current = editor.current;
     if (current.workspaceKind !== "local" || !current.workspacePath || !current.onOpenExplorerFile) return;
     const path = workspaceFilePath(request.path, current.workspacePath, session?.workspacePath);
@@ -41,7 +41,7 @@ export function ExternalAgentView({
       if (!root?.exists || root.kind !== "dir" || !file?.exists || file.kind !== "file" || !workspaceFilePath(file.path, root.path)) return;
       await editor.current.onOpenExplorerFile?.(file.path, request.line ? { line: request.line } : undefined);
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not open the file."); }
-  };
+  }, [session?.workspacePath, setError]);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [authenticating, setAuthenticating] = useState(false);

@@ -4,6 +4,8 @@ import asyncio
 import contextlib
 import json
 import os
+import subprocess
+import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -27,6 +29,8 @@ MANAGED_LLM_PROVIDERS = frozenset({"fireworks", "gemini", "openai", "xai"})
 
 
 class AgentSecretStore(Protocol):
+    async def has_api_key(self, provider: str) -> bool: ...
+
     async def get_api_key(self, provider: str) -> str | None: ...
 
     async def save_api_key(self, provider: str, api_key: str) -> None: ...
@@ -37,6 +41,9 @@ class AgentSecretStore(Protocol):
 class InMemoryAgentSecretStore:
     def __init__(self) -> None:
         self._keys: dict[str, str] = {}
+
+    async def has_api_key(self, provider: str) -> bool:
+        return bool(self._keys.get(provider))
 
     async def get_api_key(self, provider: str) -> str | None:
         return self._keys.get(provider)
@@ -56,6 +63,24 @@ class KeyringAgentSecretStore:
     @staticmethod
     def _account(provider: str) -> str:
         return f"{provider}:api-key"
+
+    async def has_api_key(self, provider: str) -> bool:
+        if sys.platform != "darwin":
+            return bool(await self.get_api_key(provider))
+        # Query item attributes only. Never pass -g or -w: those request the
+        # protected password and can display a Python keychain permission dialog.
+        def exists() -> bool:
+            try:
+                result = subprocess.run(
+                    ["/usr/bin/security", "find-generic-password",
+                     "-s", self.SERVICE, "-a", self._account(provider)],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                    timeout=5, check=False,
+                )
+                return result.returncode == 0
+            except (OSError, subprocess.TimeoutExpired):
+                return False
+        return await asyncio.to_thread(exists)
 
     async def get_api_key(self, provider: str) -> str | None:
         try:
@@ -180,7 +205,7 @@ class AgentConfigStore:
             source = "environment" if self._environment_key(provider) else "none"
             if not definition.requires_key:
                 source = "local"
-            if source == "none" and await self.secrets.get_api_key(provider):
+            if source == "none" and await self.secrets.has_api_key(provider):
                 source = "keychain"
             values = self._stored_provider_settings(provider, stored)
             if active["provider"] == provider:
@@ -203,7 +228,7 @@ class AgentConfigStore:
         caps = self.registry().capabilities(str(settings["provider"]), str(settings["model"]))
         provider = str(settings["provider"])
         managed_llm = self._managed_llm_enabled() and provider in MANAGED_LLM_PROVIDERS
-        source, _ = await self._resolve_credentials(provider)
+        source = await self._credential_source(provider)
         # When using managed LLM, public baseUrl still shows the logical provider
         # default — actual requests go to api.coloride.com/v1/llm.
         result: dict[str, object] = {
@@ -256,6 +281,17 @@ class AgentConfigStore:
             protocol=self.registry().get(provider).protocol,
             model_capabilities=self.registry().capabilities(provider, str(public["model"])),
         )
+
+    async def _credential_source(self, provider: str) -> str:
+        """Inspect availability without reading protected macOS passwords."""
+        definition = self.registry().get(provider)
+        if not definition.requires_key:
+            return "local"
+        if self._managed_llm_enabled() and definition.managed and get_cloud_access_token():
+            return "coloride"
+        if self._environment_key(provider):
+            return "environment"
+        return "keychain" if await self.secrets.has_api_key(provider) else "none"
 
     async def _resolve_credentials(self, provider: str) -> tuple[str, str | None]:
         """Return (credential_source, secret). Prefer managed Coloride LLM."""

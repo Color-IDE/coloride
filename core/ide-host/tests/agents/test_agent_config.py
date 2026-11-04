@@ -255,3 +255,42 @@ async def test_failed_key_save_preserves_all_provider_settings(tmp_path, monkeyp
         await store.update(provider="gemini", model="other", api_key="new-key", activate=False)
     assert path.read_bytes() == before
     assert (await store.resolve()).api_key == "original-key"
+
+
+async def test_macos_status_never_reads_protected_passwords(tmp_path, monkeypatch) -> None:
+    from coloride_desktop.agents.config import KeyringAgentSecretStore
+
+    monkeypatch.setattr("coloride_desktop.agents.config.sys.platform", "darwin")
+    commands = []
+
+    def metadata_only(command, **kwargs):
+        from types import SimpleNamespace
+        commands.append(command)
+        assert "-g" not in command and "-w" not in command
+        assert kwargs["timeout"] == 5
+        return SimpleNamespace(returncode=0 if "openai:api-key" in command else 44)
+
+    def protected_read(*args):
+        raise AssertionError("Status must not read a protected password")
+
+    monkeypatch.setattr("coloride_desktop.agents.config.subprocess.run", metadata_only)
+    monkeypatch.setattr("coloride_desktop.agents.config.keyring.get_password", protected_read)
+    store = AgentConfigStore(
+        path=tmp_path / "agent-config.json",
+        secrets=KeyringAgentSecretStore(),
+        environ={"COLORIDE_MANAGED_LLM": "0"},
+    )
+    await store.update(provider="openai", model="gpt-5.3-codex")
+    status = await store.status(include_providers=True)
+    assert status["configured"] is True
+    assert status["credentialSource"] == "keychain"
+    providers = {entry["provider"]: entry for entry in status["providers"]}
+    assert providers["openai"]["configured"] is True
+    assert providers["xai"]["configured"] is False
+    assert commands
+
+    monkeypatch.setattr(
+        "coloride_desktop.agents.config.keyring.get_password",
+        lambda service, account: "saved-secret" if account == "openai:api-key" else None,
+    )
+    assert (await store.resolve()).api_key == "saved-secret"
