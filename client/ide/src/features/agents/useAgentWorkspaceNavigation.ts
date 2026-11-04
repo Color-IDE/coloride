@@ -1,7 +1,6 @@
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import { useCallback } from "react";
 import type { AgentTerminalReference } from "../../shared/api/types";
-import { applyBrowserProxy } from "../explorer/browserProxy";
 import { type AgentOpenFileRequest } from "./AgentTimeline";
 import { type AgentWorkspaceToolKind } from "./AgentWorkspacePanel";
 import type { AgentViewProps } from "./agentViewTypes";
@@ -27,10 +26,7 @@ interface Dependencies {
       terminal?: AgentTerminalReference;
     } | null>
   >;
-  SIDEBAR_BROWSER_TAB_ID: "coloride-agent-sidebar-browser";
-  setWorkspaceBrowserRequest: Dispatch<
-    SetStateAction<{ url: string; nonce: number } | null>
-  >;
+
 }
 export function useAgentWorkspaceNavigation({
   agentWorkspacePath,
@@ -39,8 +35,6 @@ export function useAgentWorkspaceNavigation({
   setWorkspaceFileRequest,
   selectedSessionIdRef,
   setWorkspaceOpenRequest,
-  SIDEBAR_BROWSER_TAB_ID,
-  setWorkspaceBrowserRequest,
 }: Dependencies) {
   const openWorkspaceFile = useCallback(
     (request: AgentOpenFileRequest | string) => {
@@ -107,10 +101,7 @@ export function useAgentWorkspaceNavigation({
     [isSidebar],
   );
 
-  /**
-   * Open links in the agent workspace, except from the Explorer sidebar where
-   * they belong in a separate Coloride Browser window (same VPS SOCKS session).
-   */
+  /** Open chat links in the system browser. */
   const openWorkspaceBrowser = useCallback(
     (rawUrl: string) => {
       const trimmed = String(rawUrl || "").trim();
@@ -140,46 +131,13 @@ export function useAgentWorkspaceNavigation({
         }
       }
 
-      if (isSidebar) {
-        const browserEmbed = window.colorideDesktop?.browserEmbed;
-        if (browserEmbed?.popOut) {
-          void (async () => {
-            try {
-              await applyBrowserProxy(props.workspaceKind ?? "ssh");
-              let title = "Browser";
-              try {
-                title = new URL(url).hostname || title;
-              } catch {
-                // URL is already normalised above; retain the generic title.
-              }
-              await browserEmbed.popOut({
-                tabId: SIDEBAR_BROWSER_TAB_ID,
-                url,
-                title,
-              });
-            } catch (error) {
-              console.error(
-                "[coloride] failed to open sidebar browser window",
-                error,
-              );
-            }
-          })();
-          return;
-        }
-
-        // Browser pop-out only exists in Electron. A web build keeps a safe
-        // fallback instead of silently swallowing the user click.
-        if (window.colorideDesktop?.openExternal) {
-          void window.colorideDesktop.openExternal(url);
-        } else {
-          window.open(url, "_blank", "noopener,noreferrer");
-        }
-        return;
+      if (window.colorideDesktop?.openExternal) {
+        void window.colorideDesktop.openExternal(url);
+      } else {
+        window.open(url, "_blank", "noopener,noreferrer");
       }
-
-      setWorkspaceBrowserRequest({ url, nonce: Date.now() });
     },
-    [isSidebar],
+    [],
   );
 
   return { openWorkspaceFile, openWorkspaceTerminal, openWorkspaceBrowser };

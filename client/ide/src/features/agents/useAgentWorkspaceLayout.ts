@@ -1,7 +1,6 @@
 import {
   useCallback,
   useEffect,
-  useRef,
   useState
 } from "react";
 import type { AgentTerminalReference } from "../../shared/api/types";
@@ -30,24 +29,14 @@ export function useAgentWorkspaceLayout({ props }: Dependencies) {
     line?: number;
     nonce: number;
   } | null>(null);
-  const [workspaceBrowserRequest, setWorkspaceBrowserRequest] = useState<{
-    url: string;
-    nonce: number;
-  } | null>(null);
   const [workspaceTabCount, setWorkspaceTabCount] = useState(0);
-  const handledBrowserOpenKeys = useRef(new Set<string>());
   const viewActive = props.active !== false;
   const workspaceCardOpen = workspaceTabCount > 0;
-  /** Browser fills the agent main area; chat column collapses until exit. */
-  const [browserExpanded, setBrowserExpanded] = useState(false);
   /** Stable callback — inline lambdas re-fired child effects and could loop setState. */
   const handleWorkspaceTabsChange = useCallback((count: number) => {
     setWorkspaceTabCount((prev) => (prev === count ? prev : count));
-    if (count === 0) {
-      setBrowserExpanded((prev) => (prev ? false : prev));
-    }
   }, []);
-  /** Width of the right workspace (browser/files/terminal) when docked beside chat. */
+  /** Width of the right workspace (files/terminal) when docked beside chat. */
   const [workspacePaneWidth, setWorkspacePaneWidth] = useState(() => {
     try {
       const raw = window.localStorage.getItem(
@@ -118,18 +107,13 @@ export function useAgentWorkspaceLayout({ props }: Dependencies) {
   );
   return {
     setWorkspaceTerminalRecovery,
-    setWorkspaceBrowserRequest,
     workspaceTerminalRecovery,
     workspaceOpenRequest,
     setWorkspaceOpenRequest,
     workspaceFileRequest,
     setWorkspaceFileRequest,
-    workspaceBrowserRequest,
-    handledBrowserOpenKeys,
     viewActive,
     workspaceCardOpen,
-    browserExpanded,
-    setBrowserExpanded,
     handleWorkspaceTabsChange,
     workspacePaneWidth,
     startWorkspaceResize,

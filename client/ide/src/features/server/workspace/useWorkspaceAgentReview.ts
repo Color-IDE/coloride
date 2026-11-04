@@ -6,7 +6,7 @@ import {
   notifyIdeAcceptedPaths,
   notifyIdeRejectedPaths,
 } from "../../editor/agentEditBridge";
-import { isBrowserTabKey } from "../../explorer/BrowserPane";
+import { isBrowserTabKey } from "../../../shared/lib/legacyBrowserTabs";
 import { messageFromError } from "./connectionValidation";
 import { type ConnectionState, type EditorBuffer } from "./types";
 

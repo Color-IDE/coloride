@@ -9,7 +9,7 @@ import {
   isPathOrDescendant as workspaceIsPathOrDescendant,
   workspacePathParts,
 } from "../../../shared/lib/workspacePath";
-import { isBrowserTabKey } from "../../explorer/BrowserPane";
+import { isBrowserTabKey } from "../../../shared/lib/legacyBrowserTabs";
 import type { FileTreeItem } from "../../explorer/filetree/FileTree";
 
 export const getItemPath = (item: FileTreeItem) => item.path ?? item.id;

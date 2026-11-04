@@ -33,25 +33,6 @@
   overflow: hidden;
 }
 
-/* Browser full-screen inside the agent view: chat column collapses, workspace fills. */
-.agent-main-split.is-browser-expanded > .agent-main[aria-hidden="true"] {
-  display: none;
-  width: 0;
-  min-width: 0;
-  flex-grow: 0;
-  flex-basis: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  overflow: hidden;
-}
-
-.agent-workspace-card.is-browser-expanded {
-  flex: 1 1 100% !important;
-  width: auto !important;
-  min-width: 0;
-}
-
 /* Nested inside the unified app-main-card — no second chrome / radius. */
 .agent-workspace-panel {
   border-radius: 0;
