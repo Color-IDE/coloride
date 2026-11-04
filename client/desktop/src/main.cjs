@@ -1619,15 +1619,6 @@ function createStartupSplash(win, appearance) {
   return state.ready;
 }
 
-function keepStartupSplashOnTop(win) {
-  const view = startupSplashes.get(win)?.view;
-  if (view && !view.webContents.isDestroyed()) {
-    // Re-adding an existing child only moves it to the top. A restored browser
-    // pane must not cover the loading mark while its app shell is still fading.
-    win.contentView.addChildView(view);
-  }
-}
-
 async function finishStartupSplash(win) {
   if (!win || win.isDestroyed()) return false;
   const state = startupSplashes.get(win);
