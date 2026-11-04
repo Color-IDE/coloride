@@ -187,7 +187,6 @@ export function AgentComposerDock({
   changeAccess,
   changeMode,
   setComplementsOpen,
-  openWorkspaceKind,
   setQueuedFollowUps,
   selectComposerModel,
   handleSlashCommand,
@@ -576,7 +575,6 @@ export function AgentComposerDock({
               onChangeAccess={(level) => void changeAccess(level)}
               onChangeMode={(next) => void changeMode(next)}
               onBrowseComplements={() => setComplementsOpen(true)}
-              onOpenBrowser={() => openWorkspaceKind("browser")}
               onRestoreQueuedFollowUp={(index) => {
                 setQueuedFollowUps((current) => {
                   if (index < 0 || index >= current.length) return current;

@@ -83,7 +83,6 @@ export const AgentComposerCard = memo(function AgentComposerCard({
   onChangeAccess,
   onChangeMode,
   onBrowseComplements,
-  onOpenBrowser: _onOpenBrowser,
   onRestoreQueuedFollowUp,
   onSelectModel,
   onSlashCommand,
@@ -125,7 +124,6 @@ export const AgentComposerCard = memo(function AgentComposerCard({
   onChangeAccess?: (level: AgentAccessLevel) => void;
   onChangeMode: (mode: AgentMode) => void;
   onBrowseComplements?: () => void;
-  onOpenBrowser: () => void;
   /** Pull a queued message back into the input for editing (by index). */
   onRestoreQueuedFollowUp?: (index: number) => void;
   onSelectModel: (option: ComposerModelOption) => void;

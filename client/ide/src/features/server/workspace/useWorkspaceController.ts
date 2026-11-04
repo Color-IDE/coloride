@@ -17,9 +17,7 @@ import { agentLogTabKey, isAgentLogTabKey } from "../../editor/agentLogTab";
 import { lspSyncChange } from "../../editor/lsp/documentSync";
 import { lspSessionManager } from "../../editor/lsp/LspSessionManager";
 import { applyLineEdits, type LineTextEdit } from "../../editor/lsp/textEdits";
-import {
-  isBrowserTabKey
-} from "../../explorer/BrowserPane";
+import { isBrowserTabKey } from "../../../shared/lib/legacyBrowserTabs";
 import type { FileTreeItem } from "../../explorer/filetree/FileTree";
 import {
   readLastSession,
@@ -154,8 +152,6 @@ export function useServerWorkspace() {
     setSelectedFile,
     openFiles,
     setOpenFiles,
-    browserTabs,
-    setBrowserTabs,
     editorValue,
     setEditorValue,
     editorImageUrl,
@@ -368,7 +364,6 @@ export function useServerWorkspace() {
     sessionRestoreGenRef,
     setTreeSessionReadyKey,
     setEditorSessionReadyKey,
-    setBrowserTabs,
     setTreeItems,
     setExpandedIds,
     setLoadedDirs,
@@ -821,7 +816,7 @@ export function useServerWorkspace() {
     selectedFile,
     workspacePath,
   ]);
-  const { noteEditorCursor, closeEditorFile, updateBrowserTab, openBrowserUrl } = useWorkspaceEditorTabs({
+  const { noteEditorCursor, closeEditorFile } = useWorkspaceEditorTabs({
     editorSessionReadyKey,
     editorCursorRef,
     appPreferences,
@@ -834,7 +829,6 @@ export function useServerWorkspace() {
     editorBuffersRef,
     setDirtyFiles,
     setMissingFiles,
-    setBrowserTabs,
     selectedFile,
     editorLoadRequestRef,
     activateEditorFile,
@@ -848,8 +842,6 @@ export function useServerWorkspace() {
     setEditorLoading,
     rememberActiveEditor,
     editorDirty,
-    connectionState,
-    setExplorerError,
   });
 
   const { saveSelectedFile, saveAllFiles, handleEditorChange } =
@@ -1297,8 +1289,6 @@ export function useServerWorkspace() {
     loadingDirs,
     openLoadDropdown,
     openFiles,
-    browserTabs,
-    openBrowserUrl,
     openRemoteDirectory,
     applyRenameFiles: async (
       files: { path: string; edits: LineTextEdit[] }[],
@@ -1371,7 +1361,6 @@ export function useServerWorkspace() {
     commitAgentEditContent,
     getPendingAgentEditReview,
     agentEditReviewTick,
-    updateBrowserTab,
     password,
     port,
     profilesError,

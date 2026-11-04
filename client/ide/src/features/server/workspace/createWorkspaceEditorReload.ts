@@ -3,9 +3,7 @@ import {
   api,
   decodeBase64ToText
 } from "../../../shared/api/client";
-import {
-  isBrowserTabKey
-} from "../../explorer/BrowserPane";
+import { isBrowserTabKey } from "../../../shared/lib/legacyBrowserTabs";
 import {
   isApiNotFound,
   isConnectionNotOpen,
