@@ -4,6 +4,7 @@ let settingsSection;
 ipcRenderer.on("coloride:settingsSection", (_event, section) => { settingsSection = section; });
 
 const desktopApi = {
+  telemetryEnabled: ipcRenderer.sendSync("coloride:telemetryEnabled"),
   cloudConfig: ipcRenderer.sendSync("coloride:cloudConfig"),
   startupAppearance: process.argv.find(arg => arg.startsWith("--coloride-startup-theme="))?.split("=")[1],
   nativeStartupSplash: process.argv.includes("--coloride-native-startup-splash")
@@ -154,29 +155,7 @@ const desktopApi = {
     return () => ipcRenderer.removeListener("sidecar:exit", listener);
   },
 
-  // Real Chromium embed (WebContentsView) routed through VPS SSH SOCKS.
-  browserEmbed: {
-    open: (payload) => ipcRenderer.invoke("coloride:browserEmbed:open", payload),
-    navigate: (payload) => ipcRenderer.invoke("coloride:browserEmbed:navigate", payload),
-    reload: (payload) => ipcRenderer.invoke("coloride:browserEmbed:reload", payload),
-    goBack: (payload) => ipcRenderer.invoke("coloride:browserEmbed:goBack", payload),
-    goForward: (payload) => ipcRenderer.invoke("coloride:browserEmbed:goForward", payload),
-    setBounds: (payload) => ipcRenderer.invoke("coloride:browserEmbed:setBounds", payload),
-    hide: (payload) => ipcRenderer.invoke("coloride:browserEmbed:hide", payload),
-    hideAll: () => ipcRenderer.invoke("coloride:browserEmbed:hideAll"),
-    close: (payload) => ipcRenderer.invoke("coloride:browserEmbed:close", payload),
-    setSocks: (payload) => ipcRenderer.invoke("coloride:browserEmbed:setSocks", payload),
-    /** Open embed in a separate OS window (same VPS SOCKS session). */
-    popOut: (payload) => ipcRenderer.invoke("coloride:browserEmbed:popOut", payload),
-    /** Return a popped-out embed into the main Coloride window. */
-    dock: (payload) => ipcRenderer.invoke("coloride:browserEmbed:dock", payload),
-    isPoppedOut: (payload) => ipcRenderer.invoke("coloride:browserEmbed:isPoppedOut", payload),
-    onEvent: (callback) => {
-      const listener = (_event, payload) => callback(payload);
-      ipcRenderer.on("coloride:browserEmbed:event", listener);
-      return () => ipcRenderer.removeListener("coloride:browserEmbed:event", listener);
-    }
-  }
+
 };
 contextBridge.exposeInMainWorld("colorideDesktop", desktopApi);
 contextBridge.exposeInMainWorld("recturyDesktop", desktopApi);

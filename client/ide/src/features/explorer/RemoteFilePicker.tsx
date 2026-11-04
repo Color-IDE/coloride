@@ -288,7 +288,7 @@ export function RemoteFilePicker({
     setSelectedPath(null);
 
     try {
-      const response = await api.listFiles(path);
+      const response = await api.listAllFiles(path);
       setEntries(response.entries);
     } catch (err) {
       setEntries([]);

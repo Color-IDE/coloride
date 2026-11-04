@@ -17,7 +17,6 @@
 @import "../features/auth/styles/onboarding.css";
 @import "../features/agents/styles/sidebar.css";
 @import "../features/editor/styles/chrome.css";
-@import "../features/explorer/styles/browser.css";
 @import "./styles/dialogs.css";
 @import "./styles/light-surfaces.css";
 @import "../features/server/styles/connection.css";

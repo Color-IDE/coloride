@@ -71,68 +71,11 @@ type ColorideMenuAction =
   | "toggle-side-panel"
   | "toggle-terminal";
 
-type ColorideBrowserEmbedBounds = {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-};
-
-type ColorideBrowserEmbedOpenResult = {
-  ok: boolean;
-  tabId: string;
-  url: string;
-  title: string;
-  socks: boolean;
-  socksPort: number | null;
-  poppedOut?: boolean;
-};
-
-type ColorideBrowserEmbedEvent = {
-  tabId: string;
-  type: string;
-  loading?: boolean;
-  url?: string;
-  title?: string;
-  message?: string;
-  poppedOut?: boolean;
-};
-
-type ColorideBrowserEmbedApi = {
-  open: (payload: {
-    tabId: string;
-    url: string;
-    socksPort?: number | null;
-    bounds?: ColorideBrowserEmbedBounds;
-  }) => Promise<ColorideBrowserEmbedOpenResult>;
-  navigate: (payload: { tabId: string; url: string }) => Promise<{ ok: boolean; url: string }>;
-  reload: (payload: { tabId: string }) => Promise<{ ok: boolean }>;
-  goBack: (payload: { tabId: string }) => Promise<{ ok: boolean; canGoBack?: boolean }>;
-  goForward: (payload: { tabId: string }) => Promise<{ ok: boolean; canGoForward?: boolean }>;
-  setBounds: (payload: {
-    tabId: string;
-    bounds?: ColorideBrowserEmbedBounds;
-    visible?: boolean;
-  }) => Promise<{ ok: boolean; visible?: boolean }>;
-  hide: (payload: { tabId: string }) => Promise<{ ok: boolean }>;
-  hideAll: () => Promise<{ ok: boolean }>;
-  close: (payload: { tabId: string }) => Promise<{ ok: boolean }>;
-  setSocks: (payload: { socksPort?: number | null }) => Promise<{ ok: boolean; socksPort?: number; reason?: string }>;
-  /** Separate OS window with the same SOCKS/VPS browser session. */
-  popOut: (payload: {
-    tabId: string;
-    url?: string;
-    title?: string;
-  }) => Promise<{ ok: boolean; poppedOut: boolean; tabId: string }>;
-  dock: (payload: { tabId: string }) => Promise<{ ok: boolean; poppedOut: boolean; tabId?: string }>;
-  isPoppedOut: (payload: { tabId: string }) => Promise<{ ok: boolean; poppedOut: boolean }>;
-  onEvent: (callback: (event: ColorideBrowserEmbedEvent) => void) => () => void;
-};
-
 interface Window {
   __FORGE__?: ColorideRuntimeConfig;
   __COLORIDE__?: ColorideRuntimeConfig;
   colorideDesktop?: {
+    telemetryEnabled?: boolean;
     cloudConfig?: ColorideCloudConfig;
     openSettings?: (section?: string) => Promise<void>;
     onSettingsSectionChange?: (callback: (section: string) => void) => () => void;
@@ -207,6 +150,5 @@ interface Window {
     };
     onMenuAction: (callback: (action: ColorideMenuAction) => void) => () => void;
     onSidecarExit: (callback: (payload: { code: number | null; signal: string | null }) => void) => () => void;
-    browserEmbed?: ColorideBrowserEmbedApi;
   };
 }

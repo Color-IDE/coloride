@@ -122,11 +122,16 @@ export function useWorkspaceTreeLoading({
     const requestKey = JSON.stringify([requestedProfile, requestedRoot, path]);
     const requestId = ++requestSequence.current;
     requestOrder.current.set(requestKey, requestId);
-    const stillCurrent = () => sessionRestoreGenRef.current === requestedGeneration
-      && workspacePathRef.current === requestedRoot
-      && activeProfileIdRef.current === requestedProfile && requestOrder.current.get(requestKey) === requestId;
+    // Activation publishes the new root after the listing resolves. React may
+    // apply the queued state update after that publication; it is still the
+    // same request/session, not a stale result from a previous workspace.
+    const ownsWorkspace = () => sessionRestoreGenRef.current === requestedGeneration
+      && activeProfileIdRef.current === requestedProfile
+      && (workspacePathRef.current === requestedRoot
+        || (replaceRoot && allowDuringConnect && workspacePathRef.current === path));
+    const stillCurrent = () => ownsWorkspace() && requestOrder.current.get(requestKey) === requestId;
     try {
-      const response = await api.listFiles(path);
+      const response = await api.listAllFiles(path, stillCurrent);
       if (!stillCurrent()) return false;
       const children = entriesToTreeItems(response.entries, depth);
       reconcileAgentEditReviewDirectory(path, children.map(getItemPath));
@@ -213,7 +218,7 @@ export function useWorkspaceTreeLoading({
       }
       return false;
     } finally {
-      if (sessionRestoreGenRef.current === requestedGeneration && workspacePathRef.current === requestedRoot && activeProfileIdRef.current === requestedProfile && !options?.quiet) {
+      if (ownsWorkspace() && !options?.quiet) {
         setLoadingDirs((current) => {
           const next = new Set(current);
           next.delete(path);

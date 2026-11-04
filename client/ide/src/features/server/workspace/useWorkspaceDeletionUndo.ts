@@ -5,7 +5,7 @@ import {
   decodeBase64ToText,
 } from "../../../shared/api/client";
 import { lspSyncClose } from "../../editor/lsp/documentSync";
-import { isBrowserTabKey } from "../../explorer/BrowserPane";
+import { isBrowserTabKey } from "../../../shared/lib/legacyBrowserTabs";
 import type { FileTreeItem } from "../../explorer/filetree/FileTree";
 import {
   MAX_TREE_UNDO,

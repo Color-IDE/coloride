@@ -12,7 +12,6 @@ import { ensureCloudSessionAlive } from "../features/auth/cloudAuth";
 import { LoginGate } from "../features/auth/LoginGate";
 import { StartView } from "../features/start/StartView";
 import { useCloudProductSync } from "../features/auth/useCloudProductSync";
-import { applyBrowserProxy } from "../features/explorer/browserProxy";
 import { ExplorerTab } from "../features/explorer/ExplorerTab";
 import type { ServerSubTab } from "../features/server/ServerView";
 import { useServerWorkspace } from "../features/server/useServerWorkspace";
@@ -86,9 +85,6 @@ const PANEL_SIZE_KEYS = [
   "terminal-height",
   "agent-width",
 ] as const;
-// This browser is deliberately not an Explorer tab. Reusing one native embed
-// avoids creating a hidden Chromium view for every title-bar click.
-const TITLE_BAR_BROWSER_TAB_ID = "coloride-title-bar-browser";
 const ONBOARDING_STEP_KEY = "coloride.onboarding.step.v1";
 
 const readOnboardingStep = () => {
@@ -209,9 +205,6 @@ export function App() {
 
   const serverConnected = workspace.connectionState === "connected";
   const sshConnected = serverConnected && workspace.workspaceKind === "ssh";
-  const localWorkspaceOpen =
-    serverConnected && workspace.workspaceKind === "local";
-  const browserAvailable = sshConnected || localWorkspaceOpen;
   const workspaceReady = serverConnected && Boolean(workspace.workspacePath);
   const workspaceSelectionRequired =
     serverConnected && !workspace.workspacePath;
@@ -332,31 +325,6 @@ export function App() {
     }
   };
 
-  /** Opens Coloride Browser in its own native window, never in the Monaco pane. */
-  const openColorideBrowser = useCallback(() => {
-    if (!serverConnectedRef.current) {
-      denyProtectedTab("explorer");
-      return;
-    }
-
-    const browserEmbed = window.colorideDesktop?.browserEmbed;
-    if (!browserEmbed?.popOut) return;
-
-    void (async () => {
-      try {
-        // Local = this computer (direct). SSH = VPS via SOCKS.
-        await applyBrowserProxy(workspaceKindRef.current);
-        await browserEmbed.popOut({
-          tabId: TITLE_BAR_BROWSER_TAB_ID,
-          url: "https://www.google.com",
-          title: "Google",
-        });
-      } catch (error) {
-        console.error("[coloride] failed to open browser window", error);
-      }
-    })();
-  }, [denyProtectedTab]);
-
   // After the user connects (list or modal) and a workspace is ready → Explorer.
   // Also covers clicking the same saved VPS while SSH is already up.
   useEffect(() => {
@@ -371,12 +339,6 @@ export function App() {
     navigateTo({ activeTab: "explorer", serverSubTab: "health" });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- react to ready + explicit re-click
   }, [closeRemoteFilePicker, connectIntentNonce, navigateTo, workspaceReady]);
-
-  // Keep the embed's proxy in sync when switching local folder ↔ SSH.
-  useEffect(() => {
-    if (!serverConnected) return;
-    void applyBrowserProxy(workspace.workspaceKind);
-  }, [serverConnected, workspace.workspaceKind]);
 
   // If a live SSH session actually drops while on Explorer/Server → Welcome.
   // Do not kick during connecting, boot restore, or a first click before the
@@ -1006,15 +968,12 @@ export function App() {
         >
           <DesktopTitleBar
             accountActive={activeTab === "settings"}
-            browserAvailable={browserAvailable}
-            browserLocal={localWorkspaceOpen}
             canGoBack={navigation.index > 0}
             canGoForward={navigation.index < navigation.entries.length - 1}
             isElectron={isElectron}
             onGoBack={goBack}
             onGoForward={goForward}
             onOpenSettings={handleOpenSettings}
-            onOpenBrowser={openColorideBrowser}
             onToggleRightPanel={() =>
               setExplorerAgentOpen((current) => !current)
             }
@@ -1041,7 +1000,7 @@ export function App() {
               <div className="relative flex-1 min-h-0 overflow-hidden">
                 {/*
                 Explorer + Agents stay mounted while connected so terminal PTYs,
-                browser embeds, composer drafts, and scroll survive tab switches.
+                composer drafts, and scroll survive tab switches.
                 Server/Settings/Welcome still use the shared enter/exit animation.
               */}
                 {/*

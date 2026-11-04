@@ -10,11 +10,6 @@ import {
 import { queueAgentEditHighlight } from "../editor/agentEditBridge";
 import { lspSyncChange, lspSyncClose, lspSyncOpen } from "../editor/lsp/documentSync";
 import { applyLineEdits } from "../editor/lsp/textEdits";
-import {
-  BrowserPane,
-  browserTabKey,
-  type BrowserTabState,
-} from "../explorer/BrowserPane";
 import { TerminalPanel } from "../terminal/TerminalPanel";
 import { OverflowFadeText } from "../../shared/components/OverflowFadeText";
 import { EditorTabsHairline } from "../../shared/ui/EditorTabsHairline";
@@ -25,7 +20,7 @@ import { useAppPreferences, useResolvedTheme } from "../settings/preferences";
 import { AgentGitSourceControl } from "./AgentGitSourceControl";
 
 /** Manual tools from the rail / + menu. Files open only via chat edits. */
-export type AgentWorkspaceToolKind = "browser" | "terminal" | "git";
+export type AgentWorkspaceToolKind = "terminal" | "git";
 export type AgentWorkspaceKind = AgentWorkspaceToolKind | "file";
 
 export type AgentWorkspaceTab =
@@ -45,7 +40,6 @@ export type AgentWorkspaceTab =
       /** Baseline before agent/git change — green/red via CodeEditor agent-edit marks. */
       originalValue?: string | null;
     }
-  | { id: string; kind: "browser"; title: string; browserId: string; tab: BrowserTabState }
   | { id: string; kind: "terminal"; title: string; terminal?: AgentTerminalReference }
   | { id: string; kind: "git"; title: string };
 
@@ -248,7 +242,7 @@ function originalFromMinusLines(patch: string): string | null {
 interface AgentWorkspacePanelProps {
   active: boolean;
   connected: boolean;
-  /** Browser / Terminal from the rail or + menu. */
+  /** Terminal from the rail or + menu. */
   terminalRecovery?: AgentTerminalReference[];
   openRequest: { kind: AgentWorkspaceToolKind; nonce: number; terminal?: AgentTerminalReference } | null;
   /**
@@ -256,16 +250,8 @@ interface AgentWorkspacePanelProps {
    * (write_file / replace_in_file), not a manual File button.
    */
   openFileRequest: { path: string; patch?: string; content?: string; line?: number; nonce: number } | null;
-  /**
-   * Open / navigate the right-side Coloride browser (chat links, agent browser_open).
-   * Uses the embedded SOCKS browser — not the system browser.
-   */
-  openBrowserRequest: { url: string; nonce: number } | null;
   /** Notify parent so the right card can collapse when the last tab closes. */
   onTabsChange?: (count: number) => void;
-  /** Browser fills the agent main area (chat column collapsed). */
-  browserExpanded?: boolean;
-  onBrowserExpandedChange?: (expanded: boolean) => void;
   workspacePath: string | null;
   workspaceKind: "local" | "ssh";
   connectionId?: string | null;
@@ -282,10 +268,7 @@ export function AgentWorkspacePanel({
   openRequest,
   terminalRecovery,
   openFileRequest,
-  openBrowserRequest,
   onTabsChange,
-  browserExpanded = false,
-  onBrowserExpandedChange,
   workspacePath,
   workspaceKind,
   connectionId,
@@ -315,7 +298,6 @@ export function AgentWorkspacePanel({
   const [tabScroll, setTabScroll] = useState({ left: 0, width: 0, client: 0 });
   const handledOpenNonce = useMemo(() => ({ current: 0 }), []);
   const handledFileNonce = useMemo(() => ({ current: 0 }), []);
-  const handledBrowserNonce = useMemo(() => ({ current: 0 }), []);
   const tabsRef = useRef(tabs);
   tabsRef.current = tabs;
   const activeTabIdRef = useRef(activeTabId);
@@ -326,15 +308,12 @@ export function AgentWorkspacePanel({
   );
 
   const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? tabs[0] ?? null;
-  const browserIsActive = activeTab?.kind === "browser";
 
   const onTabsChangeRef = useRef(onTabsChange);
   onTabsChangeRef.current = onTabsChange;
-  const onBrowserExpandedChangeRef = useRef(onBrowserExpandedChange);
-  onBrowserExpandedChangeRef.current = onBrowserExpandedChange;
   const lastTabsCountRef = useRef<number | null>(null);
 
-  // Each chat owns its file/Git/browser tabs. Switching chats must neither show
+  // Each chat owns its file/Git tabs. Switching chats must neither show
   // another workspace's buffers nor save an old tab through the new session grant.
   useLayoutEffect(() => {
     const previousScope = panelScopeKeyRef.current;
@@ -349,7 +328,6 @@ export function AgentWorkspacePanel({
     setActiveTabId(next?.activeTabId ?? null);
     setFileLoadError("");
     setAddMenuOpen(false);
-    onBrowserExpandedChangeRef.current?.(false);
   }, [panelScopeKey]);
 
   useEffect(() => {
@@ -362,26 +340,7 @@ export function AgentWorkspacePanel({
     onTabsChangeRef.current?.(tabs.length);
   }, [tabs.length]);
 
-  // Leaving the browser tab (or closing all tabs) always exits expanded mode.
-  useEffect(() => {
-    if (!browserIsActive && browserExpanded) {
-      onBrowserExpandedChangeRef.current?.(false);
-    }
-  }, [browserExpanded, browserIsActive]);
-
-  useEffect(() => {
-    if (!browserExpanded) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onBrowserExpandedChangeRef.current?.(false);
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [browserExpanded]);
-
-  // Inline + picker lives in the tab bar (HTML only) — never covers the native browser embed.
+  // Inline + picker lives in the tab bar.
   useEffect(() => {
     if (!addMenuOpen) return;
     const onPointerDown = (event: MouseEvent) => {
@@ -628,107 +587,9 @@ export function AgentWorkspacePanel({
     [sessionId, upsertFileTab],
   );
 
-  /** Create a brand-new browser tab (always). Optional url to navigate on open. */
-  const openNewBrowserTab = useCallback((rawUrl?: string) => {
-    setAddMenuOpen(false);
-    const url = String(rawUrl || "").trim();
-
-    setTabs((current) => {
-      const browserId = nextId("ui");
-      const id = browserTabKey(browserId);
-      const count = current.filter((tab) => tab.kind === "browser").length;
-      setActiveTabId(id);
-      const browserTab: BrowserTabState = {
-        browserId,
-        url,
-        title: "",
-        loading: Boolean(url),
-        error: "",
-        navToken: url ? 1 : 0,
-      };
-      return [
-        ...current,
-        {
-          id,
-          kind: "browser",
-          title: count === 0 ? "Browser" : `Browser ${count + 1}`,
-          browserId,
-          tab: browserTab,
-        },
-      ];
-    });
-  }, []);
-
-  /**
-   * Navigate an existing browser (prefer active), or open one if none.
-   * Used by chat links / agent browser_open — not by the + menu.
-   */
-  const openBrowserUrl = useCallback((rawUrl?: string) => {
-    setAddMenuOpen(false);
-    const url = String(rawUrl || "").trim();
-
-    setTabs((current) => {
-      const activeBrowser =
-        activeTabId != null
-          ? current.find((tab) => tab.id === activeTabId && tab.kind === "browser")
-          : undefined;
-      const existing =
-        (activeBrowser && activeBrowser.kind === "browser" ? activeBrowser : null) ??
-        current.find((tab) => tab.kind === "browser");
-
-      if (existing && existing.kind === "browser") {
-        setActiveTabId(existing.id);
-        if (!url) return current;
-        return current.map((tab) =>
-          tab.id === existing.id && tab.kind === "browser"
-            ? {
-                ...tab,
-                tab: {
-                  ...tab.tab,
-                  url,
-                  loading: true,
-                  error: "",
-                  // Bump so BrowserPane navigates even if the same URL is repeated.
-                  navToken: (tab.tab.navToken ?? 0) + 1,
-                },
-              }
-            : tab,
-        );
-      }
-
-      const browserId = nextId("ui");
-      const id = browserTabKey(browserId);
-      setActiveTabId(id);
-      const browserTab: BrowserTabState = {
-        browserId,
-        url,
-        title: "",
-        loading: Boolean(url),
-        error: "",
-        navToken: url ? 1 : 0,
-      };
-      return [
-        ...current,
-        {
-          id,
-          kind: "browser",
-          title: "Browser",
-          browserId,
-          tab: browserTab,
-        },
-      ];
-    });
-  }, [activeTabId]);
-
   const openKind = useCallback((kind: AgentWorkspaceToolKind) => {
     setAddMenuOpen(false);
     if (kind === "git" && !gitAvailable) return;
-
-    // Each + → Browser / Terminal opens a NEW outer tab (never reuse).
-    if (kind === "browser") {
-      openNewBrowserTab();
-      return;
-    }
 
     if (kind === "git") {
       setTabs((current) => {
@@ -757,7 +618,7 @@ export function AgentWorkspacePanel({
         },
       ];
     });
-  }, [gitAvailable, openNewBrowserTab]);
+  }, [gitAvailable]);
 
   useEffect(() => {
     if (!openRequest) return;
@@ -799,41 +660,6 @@ export function AgentWorkspacePanel({
     }
     void openFileFromPath(path, openFileRequest.patch);
   }, [handledFileNonce, openFileFromPath, openFileRequest, upsertFileTab]);
-
-  // Chat links + agent browser_open → our right-side browser (not Chrome/Safari).
-  useEffect(() => {
-    if (!openBrowserRequest) return;
-    if (openBrowserRequest.nonce === handledBrowserNonce.current) return;
-    handledBrowserNonce.current = openBrowserRequest.nonce;
-    const url = String(openBrowserRequest.url || "").trim();
-    if (!url) return;
-    openBrowserUrl(url);
-  }, [handledBrowserNonce, openBrowserRequest, openBrowserUrl]);
-
-  // Hide only THIS panel's browser embeds when suspended — never hideAll(),
-  // which would also blank Explorer browser tabs that stay mounted.
-  const agentBrowserIds = useMemo(
-    () =>
-      tabs
-        .filter((tab): tab is Extract<AgentWorkspaceTab, { kind: "browser" }> => tab.kind === "browser")
-        .map((tab) => tab.browserId),
-    [tabs],
-  );
-
-  useEffect(() => {
-    if (active) return;
-    for (const browserId of agentBrowserIds) {
-      void window.colorideDesktop?.browserEmbed?.hide?.({ tabId: browserId });
-    }
-  }, [active, agentBrowserIds]);
-
-  useEffect(() => {
-    if (!active) return;
-    if (activeTab?.kind === "browser") return;
-    for (const browserId of agentBrowserIds) {
-      void window.colorideDesktop?.browserEmbed?.hide?.({ tabId: browserId });
-    }
-  }, [active, activeTab?.id, activeTab?.kind, agentBrowserIds]);
 
   const saveFileTab = useCallback(
     async (id: string) => {
@@ -923,9 +749,6 @@ export function AgentWorkspacePanel({
     ) {
       return;
     }
-    if (closing?.kind === "browser") {
-      void window.colorideDesktop?.browserEmbed?.close?.({ tabId: closing.browserId });
-    }
     if (closing?.kind === "terminal" && closing.terminal) {
       void closeManagedTerminalSession(closing.terminal.sessionId)
         .then((closed) => closed ? undefined : api.closeTerminal(closing.terminal!.termId))
@@ -944,22 +767,6 @@ export function AgentWorkspacePanel({
       });
       return next;
     });
-  };
-
-  const updateBrowserTab = (id: string, next: Partial<BrowserTabState>) => {
-    setTabs((current) =>
-      current.map((tab) => {
-        if (tab.id !== id || tab.kind !== "browser") return tab;
-        const updated = { ...tab.tab, ...next };
-        // Prefer the page title when present; keep the tab label (Browser / Browser 2) otherwise.
-        const pageTitle = String(updated.title || "").trim();
-        return {
-          ...tab,
-          tab: updated,
-          title: pageTitle || tab.title || "Browser",
-        };
-      }),
-    );
   };
 
   const updateFileValue = (id: string, value: string) => {
@@ -1008,7 +815,6 @@ export function AgentWorkspacePanel({
   }, [updateTabScroll]);
 
   const tabLabel = (tab: AgentWorkspaceTab) => {
-    if (tab.kind === "browser") return tab.title || "Browser";
     if (tab.kind === "terminal") return tab.title || "Terminal";
     if (tab.kind === "git") return tab.title || "Source Control";
     return tab.title || tab.path?.split("/").filter(Boolean).at(-1) || "Untitled";
@@ -1042,7 +848,6 @@ export function AgentWorkspacePanel({
                     type="button"
                   />
                   <span className="pointer-events-none relative flex min-w-0 items-center gap-1.5">
-                    {tab.kind === "browser" && <AgentWorkspaceBrowserGlyph />}
                     {tab.kind === "terminal" && <AgentWorkspaceTerminalGlyph />}
                     {tab.kind === "git" && <AgentWorkspaceGitGlyph />}
                     {tab.kind === "file" && <AgentWorkspaceFileGlyph />}
@@ -1096,15 +901,6 @@ export function AgentWorkspacePanel({
               >
                 <button
                   className="flex h-6 items-center gap-1.5 rounded-lg px-2 text-[12px] text-[#d4d4d7] transition-colors hover:bg-white/[0.08] hover:text-white"
-                  onClick={() => openKind("browser")}
-                  role="menuitem"
-                  type="button"
-                >
-                  <AgentWorkspaceBrowserGlyph />
-                  Browser
-                </button>
-                <button
-                  className="flex h-6 items-center gap-1.5 rounded-lg px-2 text-[12px] text-[#d4d4d7] transition-colors hover:bg-white/[0.08] hover:text-white"
                   onClick={() => openKind("terminal")}
                   role="menuitem"
                   type="button"
@@ -1112,15 +908,6 @@ export function AgentWorkspacePanel({
                   <AgentWorkspaceTerminalGlyph />
                   Terminal
                 </button>
-                {gitAvailable ? <button
-                  className="flex h-6 items-center gap-1.5 rounded-lg px-2 text-[12px] text-[#d4d4d7] transition-colors hover:bg-white/[0.08] hover:text-white"
-                  onClick={() => openKind("git")}
-                  role="menuitem"
-                  type="button"
-                >
-                  <AgentWorkspaceGitGlyph />
-                  Git
-                </button> : null}
                 <button
                   aria-label="Close add menu"
                   className="flex size-6 items-center justify-center rounded-lg text-[#878888] transition-colors hover:bg-white/[0.08] hover:text-white"
@@ -1180,7 +967,7 @@ export function AgentWorkspacePanel({
           <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
             <p className="text-[13px] text-[#878888]">No tab open</p>
             <p className="max-w-xs text-[12px] leading-5 text-[#5c5c5c]">
-              Use + for Browser, Terminal, or Git. Files open here when the agent edits them in chat.
+              Use + for Terminal. Files open here when the agent edits them in chat.
             </p>
           </div>
         ) : null}
@@ -1202,7 +989,13 @@ export function AgentWorkspacePanel({
                   embedded
                   hideHeader
                   surfaceActive={visible && active}
-                  onOpenBrowserUrl={(url) => openBrowserUrl(url)}
+                  onOpenBrowserUrl={(url) => {
+                    if (window.colorideDesktop?.openExternal) {
+                      void window.colorideDesktop.openExternal(url);
+                    } else {
+                      window.open(url, "_blank", "noopener,noreferrer");
+                    }
+                  }}
                   workspacePath={workspacePath}
                   workspaceKind={workspaceKind}
                   connectionId={connectionId}
@@ -1226,34 +1019,6 @@ export function AgentWorkspacePanel({
                   workspacePath={workspacePath}
                   onOpenWorkspacePath={onOpenGitWorkspace}
                   onOpenFileDiff={openGitFileDiff}
-                />
-              </div>
-            );
-          })}
-
-        {/* Keep browsers mounted while their tab exists so embeds/history survive tab switches. */}
-        {tabs
-          .filter((tab): tab is Extract<AgentWorkspaceTab, { kind: "browser" }> => tab.kind === "browser")
-          .map((tab) => {
-            const visible = activeTab?.id === tab.id;
-            return (
-              <div
-                key={tab.id}
-                aria-hidden={!visible}
-                className={`absolute inset-0 min-h-0 ${visible ? "z-10" : "pointer-events-none invisible z-0"}`}
-              >
-                <BrowserPane
-                  tab={tab.tab}
-                  workspaceKind={workspaceKind}
-                  onUpdate={(next) => updateBrowserTab(tab.id, next)}
-                  // Only the focused browser tab may show its native WebContentsView.
-                  overlaySuspended={!visible || !active}
-                  expanded={browserExpanded && visible}
-                  onToggleExpanded={
-                    visible && onBrowserExpandedChange
-                      ? () => onBrowserExpandedChange(!browserExpanded)
-                      : undefined
-                  }
                 />
               </div>
             );
@@ -1341,26 +1106,7 @@ function AgentWorkspaceAddIcon() {
   );
 }
 
-function AgentWorkspaceBrowserGlyph() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="size-3.5 shrink-0 text-[#878888]"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <path d="M8 12C8 18 12 22 12 22C12 22 16 18 16 12C16 6 12 2 12 2C12 2 8 6 8 12Z" strokeLinejoin="round" />
-      <path d="M21 15H3" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M21 9H3" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
 
-/** Plain file icon (document + folded corner — no type-specific <>). */
 function AgentWorkspaceFileGlyph() {
   return (
     <svg

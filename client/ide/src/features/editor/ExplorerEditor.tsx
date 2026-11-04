@@ -1,15 +1,9 @@
 import { notify } from "../../shared/ui/notifications";
 import {
   FileValidationIcon,
-  GlobeIcon,
 } from "@hugeicons/core-free-icons";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import {
-  BrowserPane,
-  browserTabLabel,
-  isBrowserTabKey,
-  type BrowserTabState,
-} from "../explorer/BrowserPane";
+import { isBrowserTabKey } from "../../shared/lib/legacyBrowserTabs";
 import { FileIcon, fileTreeIconColor } from "../explorer/filetree/FileTree";
 import { OverflowFadeText } from "../../shared/components/OverflowFadeText";
 import { EditorTabsHairline } from "../../shared/ui/EditorTabsHairline";
@@ -61,7 +55,6 @@ type ExplorerEditorProps = {
   error?: string;
   readOnly?: boolean;
   truncated?: boolean;
-  browserTabs?: Record<string, BrowserTabState>;
   /** Navigate editor to a line when token changes (search match open). */
   revealLine?: { line: number; column?: number; token: number } | null;
   onChange?: (value: string) => void;
@@ -78,7 +71,6 @@ type ExplorerEditorProps = {
       newText: string;
     }>;
   }>) => void | Promise<void>;
-  onUpdateBrowserTab?: (tabKey: string, next: Partial<BrowserTabState>) => void;
   openFiles?: string[];
   /** Workspace root — used for a quiet relative path bar under the tabs. */
   workspacePath?: string | null;
@@ -91,8 +83,6 @@ type ExplorerEditorProps = {
     errors: number;
     warnings: number;
   } | null) => void;
-  /** Hide native browser embed (other app tab) without destroying it. */
-  overlaySuspended?: boolean;
   /** Bumps when agent Accept/Reject reviews change. */
   agentEditReviewTick?: number;
   /** Resolved app theme from the root shell. Keeps editor and chrome in sync. */
@@ -121,19 +111,15 @@ export function ExplorerEditor({
   error = "",
   readOnly = false,
   truncated = false,
-  browserTabs = {},
   revealLine = null,
   onChange,
   onCloseFile,
   onSelectFile,
   onOpenLocation,
   onApplyRenameFiles,
-  onUpdateBrowserTab,
   openFiles = [],
   workspacePath = null,
-  workspaceKind = "ssh",
   onEditorStatus,
-  overlaySuspended = false,
   agentEditReviewTick = 0,
   theme,
   onAcceptAgentEdit,
@@ -279,7 +265,6 @@ export function ExplorerEditor({
     return () => window.removeEventListener("keydown", onKey, true);
   }, [acceptAgentEdit, agentReview, filePath, rejectAgentEdit]);
   const activeIsBrowser = Boolean(filePath && isBrowserTabKey(filePath));
-  const activeBrowser = activeIsBrowser && filePath ? browserTabs[filePath] : undefined;
   const unsupportedError = (error || "").toLowerCase();
   const isUnsupportedFile = Boolean(
     error
@@ -313,13 +298,6 @@ export function ExplorerEditor({
       window.removeEventListener("coloride:editor-command", onCommand);
     };
   }, [showCodeChrome]);
-
-  // Native WebContentsView sits above the DOM — hide every embed when the
-  // active explorer tab is not a browser (e.g. image.png / code editor).
-  useEffect(() => {
-    if (activeIsBrowser) return;
-    void window.colorideDesktop?.browserEmbed?.hideAll?.();
-  }, [activeIsBrowser, filePath]);
 
   const updateTabFadeEdges = useCallback(() => {
     const element = tabsScrollRef.current;
@@ -377,7 +355,7 @@ export function ExplorerEditor({
     updateTabFadeEdges();
   }, [openFiles, updateTabFadeEdges]);
 
-  // A tab can be focused by the agent, a deep link, or the Browser button —
+  // A tab can be focused by the agent, a deep link, or an editor action —
   // not only by clicking the tab itself. Keep that programmatic selection in
   // view as soon as the header has rendered it.
   useLayoutEffect(() => {
@@ -484,21 +462,16 @@ export function ExplorerEditor({
           ref={tabsScrollRef}
         >
           {openFiles.map((path, index) => {
-            const browser = isBrowserTabKey(path) ? browserTabs[path] : undefined;
-            const name = browser
-              ? browserTabLabel(browser)
-              : isAgentLogTabKey(path)
+            const name = isAgentLogTabKey(path)
                 ? agentLogTabLabel(path)
                 : isUntitledPath(path)
                   ? "Untitled"
                   : workspaceBasename(path);
             const active = path === filePath;
-            const tabDirty = browser ? false : (dirtyFiles?.has(path) ?? (active && dirty));
-            const tabAgentStreaming = browser ? false : Boolean(agentStreamingFiles?.has(path));
-            const tabMissing = browser ? false : Boolean(missingFiles?.has(path));
-            const tabErrors = browser
-              ? 0
-              : (tabDiagByPath[path]?.errors
+            const tabDirty = (dirtyFiles?.has(path) ?? (active && dirty));
+            const tabAgentStreaming = Boolean(agentStreamingFiles?.has(path));
+            const tabMissing = Boolean(missingFiles?.has(path));
+            const tabErrors = (tabDiagByPath[path]?.errors
                 ?? tabDiagByPath[normalizeEditorPath(path)]?.errors
                 ?? 0);
             const tabHasError = tabErrors > 0;
@@ -510,7 +483,7 @@ export function ExplorerEditor({
                 <Tab
                   active={active && !tabMissing}
                   className={`editor-file-tab${onCloseFile ? "" : " pr-2.5"}${tabMissing ? " is-missing" : ""}`}
-                  title={tabMissing ? `${path} — file not found` : browser ? browser.url || path : path}
+                  title={tabMissing ? `${path} — file not found` : path}
                 >
                   <button
                     className="absolute inset-0 rounded-[4px]"
@@ -540,15 +513,11 @@ export function ExplorerEditor({
                       <span aria-hidden="true" className="editor-tab-agent-dot" title="Agent editing" />
                     ) : tabDirty ? (
                       <span aria-hidden="true" className="editor-tab-dirty-dot" title="Unsaved changes" />
-                    ) : browser ? (
-                      <Icon icon={GlobeIcon} className="size-3.5 flex-shrink-0 text-[#878888]" size={14} strokeWidth={1.8} />
                     ) : null}
-                    {!browser ? (
-                      <FileIcon
+                    <FileIcon
                         className={`size-3.5 shrink-0 ${tabMissing ? "text-[#6f6f6f]" : fileTreeIconColor(name)}`}
                         name={name}
-                      />
-                    ) : null}
+                    />
                     <OverflowFadeText className={`flex-1 ${tabMissing ? "editor-tab-missing-label" : ""}`}>
                       {name}
                     </OverflowFadeText>
@@ -608,16 +577,7 @@ export function ExplorerEditor({
           />
         ) : null}
         <div className="relative min-h-0 flex-1 overflow-hidden">
-        {activeIsBrowser && activeBrowser ? (
-          <BrowserPane
-            tab={activeBrowser}
-            workspaceKind={workspaceKind}
-            overlaySuspended={overlaySuspended}
-            onUpdate={(next) => {
-              if (filePath) onUpdateBrowserTab?.(filePath, next);
-            }}
-          />
-        ) : filePath && imageUrl !== null ? (
+        {filePath && imageUrl !== null ? (
           <div className="flex h-full min-h-0 items-center justify-center overflow-auto bg-[#171717] p-6">
             {imageUrl && (
               <img

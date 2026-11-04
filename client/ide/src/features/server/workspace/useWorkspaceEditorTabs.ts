@@ -2,12 +2,7 @@ import type { Dispatch, RefObject, SetStateAction } from "react";
 import { useEffect, useRef } from "react";
 import { confirmUntitledClose, isUntitledPath } from "./untitledFile";
 import { lspSyncClose } from "../../editor/lsp/documentSync";
-import {
-  browserTabKey,
-  closeBrowserEmbed,
-  isBrowserTabKey,
-  type BrowserTabState,
-} from "../../explorer/BrowserPane";
+import { isBrowserTabKey } from "../../../shared/lib/legacyBrowserTabs";
 import type { AppPreferences } from "../../settings/preferences";
 import {
   editorSessionStorageKey
@@ -30,7 +25,6 @@ interface Dependencies {
   editorBuffersRef: RefObject<Map<string, EditorBuffer>>;
   setDirtyFiles: Dispatch<SetStateAction<Set<string>>>;
   setMissingFiles: Dispatch<SetStateAction<ReadonlySet<string>>>;
-  setBrowserTabs: Dispatch<SetStateAction<Record<string, BrowserTabState>>>;
   selectedFile: string | null;
   editorLoadRequestRef: RefObject<number>;
   activateEditorFile: (path: string, rememberCurrent?: boolean, options?: { reveal?: boolean; }) => Promise<boolean | undefined>;
@@ -44,8 +38,6 @@ interface Dependencies {
   setEditorLoading: Dispatch<SetStateAction<boolean>>;
   rememberActiveEditor: () => void;
   editorDirty: boolean;
-  connectionState: ConnectionState;
-  setExplorerError: Dispatch<SetStateAction<string>>;
 }
 
 export function useWorkspaceEditorTabs({
@@ -61,7 +53,7 @@ export function useWorkspaceEditorTabs({
   editorBuffersRef,
   setDirtyFiles,
   setMissingFiles,
-  setBrowserTabs,
+
   selectedFile,
   editorLoadRequestRef,
   activateEditorFile,
@@ -75,8 +67,6 @@ export function useWorkspaceEditorTabs({
   setEditorLoading,
   rememberActiveEditor,
   editorDirty,
-  connectionState,
-  setExplorerError,
 }: Dependencies) {
 
   const editorSessionReadyKeyRef = useRef("");
@@ -158,19 +148,6 @@ export function useWorkspaceEditorTabs({
     if (!isBrowserTabKey(path)) {
       void lspSyncClose(path);
     }
-    if (isBrowserTabKey(path)) {
-      let browserIdToClose = "";
-      setBrowserTabs((current) => {
-        browserIdToClose = current[path]?.browserId ?? "";
-        const next = { ...current };
-        delete next[path];
-        return next;
-      });
-      // Destroy native Chromium WebContentsView for this tab.
-      if (browserIdToClose) {
-        void closeBrowserEmbed(browserIdToClose);
-      }
-    }
     if (selectedFile !== path) return;
 
     editorLoadRequestRef.current += 1;
@@ -217,53 +194,5 @@ export function useWorkspaceEditorTabs({
     closeEditorFileImmediately(path, { keepUnsaved: Boolean(buffer?.dirty) });
   };
 
-  const updateBrowserTab = (tabKey: string, next: Partial<BrowserTabState>) => {
-    setBrowserTabs((current) => {
-      const existing = current[tabKey];
-      if (!existing) return current;
-      return { ...current, [tabKey]: { ...existing, ...next } };
-    });
-  };
-
-  const openBrowserUrl = async (rawUrl: string) => {
-    if (connectionState !== "connected") {
-      setExplorerError("Connect to a server first.");
-      return false;
-    }
-
-    let url = rawUrl.trim();
-    if (!/^https?:\/\//i.test(url)) {
-      url = `https://${url}`;
-    }
-
-    // Real Chromium embed (Electron WebContentsView + SSH SOCKS) — no remote JPEG session.
-    const browserId = `ui-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-    const tabKey = browserTabKey(browserId);
-    const tab: BrowserTabState = {
-      browserId,
-      url,
-      title: "",
-      loading: true,
-      error: "",
-    };
-
-    if (selectedFile && !isBrowserTabKey(selectedFile)) {
-      rememberActiveEditor();
-    }
-    setOpenFiles((current) =>
-      current.includes(tabKey) ? current : [...current, tabKey],
-    );
-    setBrowserTabs((current) => ({ ...current, [tabKey]: tab }));
-    setSelectedFile(tabKey);
-    setEditorLoading(false);
-    setEditorError("");
-    setEditorDirty(false);
-    setEditorImageUrl(null);
-    setEditorValue("");
-    setEditorEtag(null);
-    setEditorTruncated(false);
-    setExplorerError("");
-    return true;
-  };
-  return { noteEditorCursor, closeEditorFile, updateBrowserTab, openBrowserUrl };
+  return { noteEditorCursor, closeEditorFile };
 }

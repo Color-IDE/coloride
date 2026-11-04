@@ -4,7 +4,7 @@ import {
   clearAgentEditReview,
   queueAgentEditHighlight,
 } from "../../editor/agentEditBridge";
-import { isBrowserTabKey } from "../../explorer/BrowserPane";
+import { isBrowserTabKey } from "../../../shared/lib/legacyBrowserTabs";
 import type { FileTreeItem } from "../../explorer/filetree/FileTree";
 import { isApiNotFound, messageFromError } from "./connectionValidation";
 import { getImageMimeType } from "./editorFiles";

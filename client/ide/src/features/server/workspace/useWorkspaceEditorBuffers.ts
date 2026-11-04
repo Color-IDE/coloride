@@ -6,7 +6,7 @@ import {
 } from "../../editor/agentEditBridge";
 import { isAgentLogTabKey } from "../../editor/agentLogTab";
 import { lspSyncOpen } from "../../editor/lsp/documentSync";
-import { isBrowserTabKey } from "../../explorer/BrowserPane";
+import { isBrowserTabKey } from "../../../shared/lib/legacyBrowserTabs";
 import type { FileTreeItem } from "../../explorer/filetree/FileTree";
 import {
   isApiNotFound,
