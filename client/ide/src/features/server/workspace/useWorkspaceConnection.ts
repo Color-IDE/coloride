@@ -4,10 +4,6 @@ import { api, hydrateRuntimeFromDesktop } from "../../../shared/api/client";
 import type { HostKeyInfo, Profile } from "../../../shared/api/types";
 import { clearAgentEditReview } from "../../editor/agentEditBridge";
 import { lspSessionManager } from "../../editor/lsp/LspSessionManager";
-import {
-  closeBrowserEmbed,
-  type BrowserTabState,
-} from "../../explorer/BrowserPane";
 import type { FileTreeItem } from "../../explorer/filetree/FileTree";
 import { readLastSession, writeLastSession } from "../../settings/lastSession";
 import type { AppPreferences } from "../../settings/preferences";
@@ -32,7 +28,6 @@ interface Dependencies {
   sessionRestoreGenRef: RefObject<number>;
   setTreeSessionReadyKey: Dispatch<SetStateAction<string>>;
   setEditorSessionReadyKey: Dispatch<SetStateAction<string>>;
-  setBrowserTabs: Dispatch<SetStateAction<Record<string, BrowserTabState>>>;
   setTreeItems: Dispatch<SetStateAction<FileTreeItem[]>>;
   setExpandedIds: Dispatch<SetStateAction<Set<string>>>;
   setLoadedDirs: Dispatch<SetStateAction<Set<string>>>;
@@ -125,7 +120,7 @@ export function useWorkspaceConnection({
   sessionRestoreGenRef,
   setTreeSessionReadyKey,
   setEditorSessionReadyKey,
-  setBrowserTabs,
+
   setTreeItems,
   setExpandedIds,
   setLoadedDirs,
@@ -191,13 +186,6 @@ export function useWorkspaceConnection({
     sessionRestoreGenRef.current += 1;
     setTreeSessionReadyKey("");
     setEditorSessionReadyKey("");
-    // Tear down any native Chromium embeds before dropping tab state.
-    setBrowserTabs((current) => {
-      for (const tab of Object.values(current)) {
-        if (tab.browserId) void closeBrowserEmbed(tab.browserId);
-      }
-      return {};
-    });
     setTreeItems([]);
     setExpandedIds(new Set());
     setLoadedDirs(new Set());

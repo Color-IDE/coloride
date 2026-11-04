@@ -40,8 +40,6 @@ interface DesktopTitleBarProps {
   onGoBack: () => void;
   onGoForward: () => void;
   onOpenSettings?: () => void;
-  /** Open Coloride's embedded browser workspace. */
-  onOpenBrowser: () => void;
   onToggleSidePanel: () => void;
   onToggleTerminal: () => void;
   /** Toggle Explorer right agent dock (or Agents tools rail). */
@@ -50,10 +48,6 @@ interface DesktopTitleBarProps {
   sidePanelOpen: boolean;
   rightPanelOpen?: boolean;
   rightPanelAvailable?: boolean;
-  /** Browser needs an SSH tunnel or an open local folder. */
-  browserAvailable?: boolean;
-  /** Local folder: traffic is this computer, not the VPS. */
-  browserLocal?: boolean;
   /** Terminal needs a connected server (can still close when open). */
   terminalAvailable?: boolean;
   terminalOpen: boolean;
@@ -67,7 +61,6 @@ export function DesktopTitleBar({
   onGoBack,
   onGoForward,
   onOpenSettings,
-  onOpenBrowser,
   onToggleSidePanel,
   onToggleTerminal,
   onToggleRightPanel,
@@ -75,8 +68,6 @@ export function DesktopTitleBar({
   sidePanelOpen,
   rightPanelOpen = false,
   rightPanelAvailable = false,
-  browserAvailable = false,
-  browserLocal = false,
   terminalAvailable = false,
   terminalOpen,
 }: DesktopTitleBarProps) {
@@ -287,19 +278,6 @@ export function DesktopTitleBar({
             (pill): pill is NonNullable<typeof pill> => Boolean(pill),
           )}
         />
-        <TitleBarButton
-          disabled={!browserAvailable}
-          label={
-            browserAvailable
-              ? browserLocal
-                ? "Open browser (this computer)"
-                : "Open Coloride browser"
-              : "Connect a server or open a local folder to use the browser"
-          }
-          onClick={onOpenBrowser}
-        >
-          <ExternalBrowserIcon />
-        </TitleBarButton>
         <TitleBarButton
           disabled={!terminalAvailable && !terminalOpen}
           label={
@@ -596,16 +574,6 @@ function ForwardIcon() {
   );
 }
 
-function ExternalBrowserIcon() {
-  return (
-    <svg aria-hidden="true" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="10" />
-      <path d="M8 12C8 18 12 22 12 22C12 22 16 18 16 12C16 6 12 2 12 2C12 2 8 6 8 12Z" strokeLinejoin="round" />
-      <path d="M21 15H3" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M21 9H3" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
 
 function TerminalClosedIcon() {
   return <svg aria-hidden="true" className="size-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.6" viewBox="0 0 24 24"><path d="M11 3H13C16.7712 3 18.6569 3 19.8284 4.17157C21 5.34315 21 7.22876 21 11V13C21 16.7712 21 18.6569 19.8284 19.8284C18.6569 21 16.7712 21 13 21H11C7.22876 21 5.34315 21 4.17157 19.8284C3 18.6569 3 16.7712 3 13V11C3 7.22876 3 5.34315 4.17157 4.17157C5.34315 3 7.22876 3 11 3Z" /><path d="M16 16H8" /></svg>;

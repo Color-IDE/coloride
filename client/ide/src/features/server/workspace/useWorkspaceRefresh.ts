@@ -7,9 +7,7 @@ import {
   isAbsoluteWorkspacePath
 } from "../../../shared/lib/workspacePath";
 import { lspSessionManager } from "../../editor/lsp/LspSessionManager";
-import {
-  isBrowserTabKey
-} from "../../explorer/BrowserPane";
+import { isBrowserTabKey } from "../../../shared/lib/legacyBrowserTabs";
 import type { FileTreeItem } from "../../explorer/filetree/FileTree";
 import {
   isConnectionNotOpen

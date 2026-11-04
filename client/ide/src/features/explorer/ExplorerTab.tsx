@@ -242,7 +242,6 @@ export function ExplorerTab({
             className={`min-h-0 min-w-0 flex-1 flex-col overflow-hidden ${terminalPlacement === "center" && terminalOpen ? "hidden" : "flex"}`}
           >
             <ExplorerEditor
-              browserTabs={workspace.browserTabs}
               className="rounded-none border-0"
               dirty={workspace.editorDirty}
               dirtyFiles={workspace.dirtyFiles}
@@ -256,7 +255,6 @@ export function ExplorerTab({
               filePath={workspace.selectedFile}
               imageUrl={workspace.editorImageUrl}
               loading={workspace.editorLoading}
-              overlaySuspended={!active}
               onChange={workspace.handleEditorChange}
               onCloseFile={workspace.closeEditorFile}
               onSelectFile={(path) => {
@@ -264,7 +262,6 @@ export function ExplorerTab({
               }}
               onOpenLocation={workspace.openRemoteFile}
               onApplyRenameFiles={workspace.applyRenameFiles}
-              onUpdateBrowserTab={workspace.updateBrowserTab}
               openFiles={workspace.openFiles}
               readOnly={workspace.editorReadOnly}
               revealLine={editorRevealLine}

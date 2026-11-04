@@ -10,7 +10,7 @@ import { lspSyncChange, lspSyncSave } from "../../editor/lsp/documentSync";
 import { lspSessionManager } from "../../editor/lsp/LspSessionManager";
 import { lspDocumentLanguageId } from "../../editor/lsp/pathUri";
 import { applyLineEdits } from "../../editor/lsp/textEdits";
-import { isBrowserTabKey } from "../../explorer/BrowserPane";
+import { isBrowserTabKey } from "../../../shared/lib/legacyBrowserTabs";
 import type { AppPreferences } from "../../settings/preferences";
 import { messageFromError } from "./connectionValidation";
 import { fingerprintEntries, getParentPath } from "./treeModel";

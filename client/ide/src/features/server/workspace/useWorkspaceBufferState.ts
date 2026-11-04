@@ -1,17 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  type BrowserTabState
-} from "../../explorer/BrowserPane";
-import {
   type EditorBuffer
 } from "./types";
 
 export function useWorkspaceBufferState() {
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [openFiles, setOpenFiles] = useState<string[]>([]);
-  const [browserTabs, setBrowserTabs] = useState<
-    Record<string, BrowserTabState>
-  >({});
   const [editorValue, setEditorValue] = useState("");
   const [editorImageUrl, setEditorImageUrl] = useState<string | null>(null);
   const [editorEtag, setEditorEtag] = useState<string | null>(null);
@@ -128,8 +122,6 @@ export function useWorkspaceBufferState() {
     setSelectedFile,
     openFiles,
     setOpenFiles,
-    browserTabs,
-    setBrowserTabs,
     editorValue,
     setEditorValue,
     editorImageUrl,

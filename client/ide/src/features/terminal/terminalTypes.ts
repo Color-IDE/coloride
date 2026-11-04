@@ -40,7 +40,6 @@ export type TerminalSplitNode = TerminalPaneNode | TerminalSplitBranch;
 
 export type WorkspaceCenterItem =
   | { id: string; kind: "file"; path: string }
-  | { id: string; kind: "browser"; browserId: string }
   | { id: string; kind: "terminal"; sessionId: string };
 
 export interface PersistedTerminalWorkspace {

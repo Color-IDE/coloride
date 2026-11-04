@@ -129,9 +129,6 @@ const MotionMenu = motion.create(Menu);
 
 export type { AgentAccessLevel } from "../settings/agentAccess";
 
-// The Explorer chat should never paint a browser over Monaco. This stable id
-// lets links reuse one independent Coloride Browser window instead.
-const SIDEBAR_BROWSER_TAB_ID = "coloride-agent-sidebar-browser";
 
 export function AgentView(props: AgentViewProps) {
   const isSidebar = props.presentation === "sidebar";
@@ -322,17 +319,12 @@ export function AgentView(props: AgentViewProps) {
     setWorkspaceOpenRequest,
     workspaceFileRequest,
     setWorkspaceFileRequest,
-    workspaceBrowserRequest,
-    handledBrowserOpenKeys,
     viewActive,
     workspaceCardOpen,
-    browserExpanded,
-    setBrowserExpanded,
     handleWorkspaceTabsChange,
     workspacePaneWidth,
     startWorkspaceResize,
     setWorkspaceTerminalRecovery,
-    setWorkspaceBrowserRequest,
   } = useAgentWorkspaceLayout({ props });
 
   const selectedSessionRecord =
@@ -1680,8 +1672,6 @@ export function AgentView(props: AgentViewProps) {
       setWorkspaceFileRequest,
       selectedSessionIdRef,
       setWorkspaceOpenRequest,
-      SIDEBAR_BROWSER_TAB_ID,
-      setWorkspaceBrowserRequest,
     });
   const renderTimelineItem = useCallback(
     (index: number, turn: ReturnType<typeof groupTimelineTurns>[number]) => {
@@ -1736,42 +1726,6 @@ export function AgentView(props: AgentViewProps) {
   );
   const renderedTimelineTurns = timelineTurns.slice(timelineRenderStart);
   const timelineCanShowEarlier = timelineRenderStart > 0 || historyHasOlder;
-
-  // When the agent calls browser_open during this session, mirror into our right browser.
-  // Seed known keys while history is loading so old tools don't all pop the panel.
-  useEffect(() => {
-    if (historyLoading) {
-      for (const entry of timeline) {
-        if (entry.kind !== "tool" || entry.tool !== "browser_open") continue;
-        const key = entry.itemId || entry.id;
-        if (key) handledBrowserOpenKeys.current.add(key);
-      }
-      return;
-    }
-    let latestUrl: string | null = null;
-    let latestKey: string | null = null;
-    for (const entry of timeline) {
-      if (entry.kind !== "tool" || entry.tool !== "browser_open") continue;
-      if (!entry.complete || entry.failed) continue;
-      const key = entry.itemId || entry.id;
-      if (!key || handledBrowserOpenKeys.current.has(key)) continue;
-      const meta = entry.metadata as Record<string, unknown>;
-      const fromMeta = typeof meta.url === "string" ? meta.url.trim() : "";
-      const fromArgs =
-        entry.arguments && typeof entry.arguments.url === "string"
-          ? String(entry.arguments.url).trim()
-          : "";
-      const url = fromMeta || fromArgs;
-      if (!url) {
-        handledBrowserOpenKeys.current.add(key);
-        continue;
-      }
-      latestKey = key;
-      latestUrl = url;
-      handledBrowserOpenKeys.current.add(key);
-    }
-    if (latestUrl && latestKey) openWorkspaceBrowser(latestUrl);
-  }, [historyLoading, openWorkspaceBrowser, timeline]);
 
   // Per-session drafts live in composerDrafts (and AgentComposerCard).
   // Switching chats restores that chat's text — never wipe on tab change.
@@ -2145,15 +2099,10 @@ export function AgentView(props: AgentViewProps) {
                 : undefined
             }
             className={`agent-main-split flex min-h-0 min-w-0 flex-1 overflow-hidden gap-0${complementsOpen ? " hidden" : ""
-              }${browserExpanded ? " is-browser-expanded" : ""
               }${workspaceCardOpen ? " has-workspace" : ""}`}
           >
             <section
-              aria-hidden={browserExpanded}
-              className={`agent-main flex min-h-0 min-w-0 overflow-hidden border-0 ${browserExpanded
-                ? "pointer-events-none flex-[0_0_0%] opacity-0"
-                : "flex-1 opacity-100"
-                }`}
+              className="agent-main flex min-h-0 min-w-0 flex-1 overflow-hidden border-0 opacity-100"
             >
               {/* Chat column — content centers here; tools live in a separate right rail. */}
               <div
@@ -2340,8 +2289,8 @@ export function AgentView(props: AgentViewProps) {
               </div>
             </section>
 
-            {/* Seam + resize between chat and workspace (browser / files / terminal). */}
-            {!isSidebar && workspaceCardOpen && !browserExpanded ? (
+            {/* Seam + resize between chat and workspace (files / terminal). */}
+            {!isSidebar && workspaceCardOpen ? (
               <div
                 className="app-split-seam relative z-10 shrink-0 self-stretch w-px"
                 title="Drag to resize workspace"
@@ -2358,13 +2307,11 @@ export function AgentView(props: AgentViewProps) {
               <section
                 aria-hidden={!workspaceCardOpen}
                 className={`agent-workspace-card flex min-h-0 overflow-hidden ${workspaceCardOpen
-                  ? browserExpanded
-                    ? "min-w-0 flex-[1_1_100%] opacity-100"
-                    : "shrink-0 opacity-100"
+                  ? "shrink-0 opacity-100"
                   : "pointer-events-none min-w-0 flex-[0_0_0%] opacity-0"
-                  }${browserExpanded ? " is-browser-expanded" : ""}`}
+                  }`}
                 style={
-                  workspaceCardOpen && !browserExpanded
+                  workspaceCardOpen
                     ? {
                       width: workspacePaneWidth,
                       flexBasis: workspacePaneWidth,
@@ -2374,9 +2321,7 @@ export function AgentView(props: AgentViewProps) {
               >
                 <AgentWorkspacePanel
                   active={viewActive && workspaceCardOpen}
-                  browserExpanded={browserExpanded}
                   connected={props.connected}
-                  onBrowserExpandedChange={setBrowserExpanded}
                   onOpenGitWorkspace={(path) => {
                     void (async () => {
                       const preparedPath = await prepareNewTaskWorkspace(path);
@@ -2387,7 +2332,6 @@ export function AgentView(props: AgentViewProps) {
                     })();
                   }}
                   onTabsChange={handleWorkspaceTabsChange}
-                  openBrowserRequest={workspaceBrowserRequest}
                   openFileRequest={workspaceFileRequest}
                   terminalRecovery={workspaceTerminalRecovery}
                   openRequest={workspaceOpenRequest}
