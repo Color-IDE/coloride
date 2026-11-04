@@ -4,6 +4,7 @@ let settingsSection;
 ipcRenderer.on("coloride:settingsSection", (_event, section) => { settingsSection = section; });
 
 const desktopApi = {
+  telemetryEnabled: ipcRenderer.sendSync("coloride:telemetryEnabled"),
   cloudConfig: ipcRenderer.sendSync("coloride:cloudConfig"),
   startupAppearance: process.argv.find(arg => arg.startsWith("--coloride-startup-theme="))?.split("=")[1],
   nativeStartupSplash: process.argv.includes("--coloride-native-startup-splash")

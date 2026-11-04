@@ -908,15 +908,6 @@ export function AgentWorkspacePanel({
                   <AgentWorkspaceTerminalGlyph />
                   Terminal
                 </button>
-                {gitAvailable ? <button
-                  className="flex h-6 items-center gap-1.5 rounded-lg px-2 text-[12px] text-[#d4d4d7] transition-colors hover:bg-white/[0.08] hover:text-white"
-                  onClick={() => openKind("git")}
-                  role="menuitem"
-                  type="button"
-                >
-                  <AgentWorkspaceGitGlyph />
-                  Git
-                </button> : null}
                 <button
                   aria-label="Close add menu"
                   className="flex size-6 items-center justify-center rounded-lg text-[#878888] transition-colors hover:bg-white/[0.08] hover:text-white"
@@ -976,7 +967,7 @@ export function AgentWorkspacePanel({
           <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
             <p className="text-[13px] text-[#878888]">No tab open</p>
             <p className="max-w-xs text-[12px] leading-5 text-[#5c5c5c]">
-              Use + for Terminal or Git. Files open here when the agent edits them in chat.
+              Use + for Terminal. Files open here when the agent edits them in chat.
             </p>
           </div>
         ) : null}
