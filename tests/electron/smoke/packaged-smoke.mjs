@@ -108,10 +108,13 @@ try {
     const offset=surface.getBoundingClientRect().top-slot.getBoundingClientRect().top;
     return {offset, host: host.toJSON(), grid: grid.toJSON(), scrollTop: viewport.scrollTop,
       scrollHeight: viewport.scrollHeight, clientHeight: viewport.clientHeight,
+      nativeScrollbarsHidden: [...el.querySelectorAll('.xterm-scrollable-element > .scrollbar')]
+        .every(bar => getComputedStyle(bar).display === 'none'),
       scrollbar: getComputedStyle(viewport, '::-webkit-scrollbar').display};
   });
   console.log('Full IDE baseline geometry', JSON.stringify(await geometry()));
   await expect.poll(async () => (await geometry()).scrollbar).toBe('none');
+  await expect.poll(async () => (await geometry()).nativeScrollbarsHidden).toBe(true);
   await expect(viewport).toHaveCSS('cursor','default');
   const input = async text => {
     await page.locator('.xterm-helper-textarea').first().focus();
