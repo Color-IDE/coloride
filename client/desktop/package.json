@@ -23,7 +23,7 @@
     "build:agent": "node src/agent-runtime/build.mjs"
   },
   "dependencies": {
-    "@sentry/electron": "^7.16.0",
+    "@sentry/electron": "^8.3.0",
     "electron-updater": "^6.6.2"
   },
   "devDependencies": {
