@@ -120,7 +120,11 @@ try {
   await input("awk 'BEGIN {for(i=1;i<=250;i++) print \"IDE_HISTORY_\" i}'");
   await expect(page.locator('.xterm-rows').first()).toContainText('IDE_HISTORY_250');
   await page.locator('.coloride-terminal').first().hover();
-  await expect(page.getByRole('scrollbar', {name:'Terminal history scroll'}).first()).toBeVisible();
+  const historyScroll = page.getByRole('scrollbar', {name:'Terminal history scroll'}).first();
+  await expect(historyScroll).toBeVisible();
+  // xterm 6 virtualizes the DOM viewport. The shared scrollbar exposes the
+  // terminal buffer's visible row for both native and virtual scrolling.
+  const historyPosition = async () => Number(await historyScroll.getAttribute('aria-valuenow'));
   const win = await app.browserWindow(page);
   console.log('Full IDE: resize');
   for (const [width,height] of [[1100,800],[1600,1000],[900,700],[1300,900]]) {
@@ -130,8 +134,10 @@ try {
       return Math.abs(g.offset)<0.5 && g.grid.right <= g.host.right + 1 && g.grid.bottom <= g.host.bottom + 1 && g.grid.width > 100;
     }).toBe(true);
   }
+  const beforeWheel = await historyPosition();
+  expect(beforeWheel).toBeGreaterThan(0);
   await page.locator('.xterm-screen').first().hover(); await page.mouse.wheel(0,-1000);
-  await expect.poll(async () => {const g=await geometry(); return g.scrollTop < g.scrollHeight-g.clientHeight-50;}).toBe(true);
+  await expect.poll(historyPosition).toBeLessThan(beforeWheel);
   console.log('Full IDE: panel toggles');
   // Exercise actual IDE chrome while output and font geometry are live.
   for (const pair of [['Hide agent panel','Show agent panel'], ['Hide side panel','Show side panel'], ['Hide terminal','Show terminal']]) {
@@ -155,8 +161,10 @@ try {
   await expect(page.locator('.xterm-rows').first()).toContainText('Local:');
   for(let i=0;i<3;i++) await fetch(`http://127.0.0.1:${port}/main.ts`);
   await expect(page.locator('.xterm-rows').first()).toContainText('viteTransformMiddleware');
+  const beforeDevWheel = await historyPosition();
+  expect(beforeDevWheel).toBeGreaterThan(0);
   await page.locator('.xterm-screen').first().hover(); await page.mouse.wheel(0,-500);
-  await expect.poll(async () => {const g=await geometry(); return g.scrollTop < g.scrollHeight-g.clientHeight-20;}).toBe(true);
+  await expect.poll(historyPosition).toBeLessThan(beforeDevWheel);
   await page.locator('.xterm-helper-textarea').first().focus(); await page.keyboard.press('Control+c');
   await input("printf '%s' $$ > pid-after.txt; printf '\\nVISIBLE_%s\\n' AFTER");
   await expect.poll(async () => {try{return await readFile(join(sandbox,'project with spaces','pid-after.txt'),'utf8');}catch{return '';}}).toBe(pid);
